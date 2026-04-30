@@ -1,6 +1,6 @@
 require "rails_helper"
 
-describe "pages/index.html.erb" do
+describe "pages/index.html.erb", :feature_multiple_branches do
   let(:form) { create :form, pages: }
   let(:pages) { [] }
   let(:mark_complete_input) { Forms::MarkPagesSectionCompleteInput.new(form:).assign_form_values }

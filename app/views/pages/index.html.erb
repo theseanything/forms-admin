@@ -4,7 +4,9 @@
 
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
-    <%= render PageListComponent::ErrorSummary::View.new(current_form) %>
+    <% unless FeatureService.new(group: current_form.group).enabled?(:multiple_branches) %>
+      <%= render PageListComponent::ErrorSummary::View.new(current_form) %>
+    <% end %>
 
     <h1 class="govuk-heading-l govuk-!-margin-bottom-2">
       <span class="govuk-caption-l"><%= current_form.name %></span><span class="govuk-visually-hidden"> - </span>
