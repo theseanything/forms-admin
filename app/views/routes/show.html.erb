@@ -8,5 +8,42 @@
       <span class="govuk-visually-hidden"> - </span>
       <%= t("page_titles.routes") %>
     </h1>
+
+    <%= form_with(model: @routes_input, url: routes_path(@routes_input.form)) do |f| %>
+      <% if @routes_input&.errors&.present? %>
+        <%= f.govuk_error_summary(presenter: ErrorSummaryPresenter.new(@routes_input.errors)) %>
+      <% end %>
+
+      <%= govuk_summary_list(actions: false) do |summary_list|
+
+        @routes_input.routes.group_by(&:page).each do |page, routes|
+          summary_list.with_row do |row|
+            row.with_key(classes: "app-routes-list__key", html_attributes: { id: "page-#{page.position}"}) { page.position.to_s }
+            row.with_value do
+              capture do %>
+              <p> <%= page.question_text %> </p>
+              <% if page.has_next_page? %>
+                <ul class="govuk-list">
+                  <% routes.each do |route| %>
+                    <li>
+                      <%= f.fields_for :routes, route do |route_form|
+                        route_form.hidden_field(:id) +
+                          route_form.hidden_field(:page_id) +
+                          route_form.hidden_field(:answer_value) +
+                          route_form.govuk_select(:goto, options_for_select(route_form.object.goto_options, route_form.object.goto), label: route_form.object.label)
+                      end %>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= f.govuk_submit t("save_and_continue") %>
+
+  <% end %>
   </div>
 </div>
