@@ -4,6 +4,19 @@ class RoutesController < FormsController
 
   def show
     authorize current_form, :can_view_form?
+    @routes_input = Forms::RoutesInput.new(form: form_with_pages_and_conditions).assign_form_values
+  end
+
+  def create
+    authorize current_form, :can_edit_form?
+
+    @routes_input = Forms::RoutesInput.new(routes_params)
+
+    if @routes_input.submit
+      redirect_to form_pages_path(@routes_input.form), success: t("banner.success.form.routing_saved")
+    else
+      render :show, status: :unprocessable_content
+    end
   end
 
 private
@@ -16,5 +29,13 @@ private
     return if current_form.group.multiple_branches_enabled
 
     render "errors/not_found", status: :not_found, formats: :html
+  end
+
+  def routes_params
+    params.require(:forms_routes_input).permit(routes_attributes: %i[id page_id answer_value goto]).merge(form: form_with_pages_and_conditions)
+  end
+
+  def form_with_pages_and_conditions
+    Form.includes(pages: [:routing_conditions]).find(current_form.id)
   end
 end
