@@ -1,6 +1,6 @@
 require "rails_helper"
 
-describe "pages/index.html.erb", :feature_multiple_branches do
+describe "pages/index.html.erb", feature_multiple_branches: false do
   let(:form) { create :form, pages: }
   let(:pages) { [] }
   let(:mark_complete_input) { Forms::MarkPagesSectionCompleteInput.new(form:).assign_form_values }
@@ -43,9 +43,8 @@ describe "pages/index.html.erb", :feature_multiple_branches do
     end
   end
 
-  describe "when the group has multiple branches enabled" do
-    let(:group) { create(:group, multiple_branches_enabled: true) }
-    let(:form) { create(:form, :with_group, group:) }
+  describe "when the multiple branches feature is enabled", :feature_multiple_branches do
+    let(:form) { create(:form) }
 
     it "has a link to add a page routing" do
       expect(rendered).to have_link("Edit question routes", href: routes_path(form.id))
