@@ -159,6 +159,11 @@ class User < ApplicationRecord
     update!(last_signed_in_at: Time.zone.now)
   end
 
+  def as_json(options = {})
+    options[:only] ||= %i[name email]
+    super(options)
+  end
+
 private
 
   def requires_name?

@@ -20,4 +20,12 @@ class Organisation < ApplicationRecord
   def admin_users
     users.organisation_admin
   end
+
+  alias_method :organisation_admin_users, :admin_users
+
+  def as_json(options = {})
+    options[:only] ||= %i[id name]
+    options[:methods] ||= %i[organisation_admin_users]
+    super(options)
+  end
 end

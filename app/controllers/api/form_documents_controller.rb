@@ -3,6 +3,10 @@ class Api::FormDocumentsController < ApplicationController
     render json: form_document.content
   end
 
+  def group
+    render json: Form.find_by!(id: form_id).group
+  end
+
 private
 
   def form_document
@@ -16,5 +20,9 @@ private
     permitted_params[:language] ||= "en"
 
     permitted_params
+  end
+
+  def form_id
+    params.require(:form_id)
   end
 end

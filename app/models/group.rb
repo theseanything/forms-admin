@@ -34,9 +34,19 @@ class Group < ApplicationRecord
     external_id
   end
 
+  def as_json(options = {})
+    options[:only] ||= %i[name external_id]
+    options[:methods] ||= %i[group_admin_users organisation]
+    super(options)
+  end
+
 private
 
   def set_external_id
     self.external_id = ExternalIdProvider.generate_unique_id_for(Group)
+  end
+
+  def group_admin_users
+    users.group_admins
   end
 end
