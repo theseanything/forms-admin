@@ -11,6 +11,10 @@ RSpec.describe Forms::MakeLiveController, type: :request do
   let(:group_role) { :group_admin }
   let(:group) { create(:group, organisation:, status: :active) }
 
+  before do
+    form.set_task_status_service(TaskStatusService.new(form:))
+  end
+
   describe "#new" do
     before do
       Membership.create!(group_id: group.id, user:, added_by: user, role: group_role)

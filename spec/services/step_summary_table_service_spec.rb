@@ -15,6 +15,10 @@ describe StepSummaryTableService do
   let(:form_document_step) { FormDocument::Step.new(page.as_form_document_step(nil)) }
   let(:welsh_form_document) { FormDocument::Content.from_form_document(form.live_welsh_form_document) }
 
+  before do
+    form.set_task_status_service(TaskStatusService.new(form:))
+  end
+
   def create_form(attributes = {})
     default_attributes = {
       id: 1,

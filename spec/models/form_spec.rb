@@ -9,21 +9,6 @@ RSpec.describe Form, type: :model do
       expect(form).to be_valid
     end
 
-    it "has a ready for live trait" do
-      form = build :form, :ready_for_live, :with_group
-      expect(form.ready_for_live).to be true
-      expect(form.incomplete_tasks).to be_empty
-      expect(form.task_statuses).to include(
-        declaration_status: :completed,
-        make_live_status: :not_started,
-        name_status: :completed,
-        pages_status: :completed,
-        privacy_policy_status: :completed,
-        support_contact_details_status: :completed,
-        what_happens_next_status: :completed,
-      )
-    end
-
     it "has a live trait" do
       form = build :form, :live
       expect(form.state).to eq "live"
@@ -50,9 +35,36 @@ RSpec.describe Form, type: :model do
       expect(form.pages.map(&:position)).to eq [1, 2, 3, 4, 5]
     end
 
-    it "has a missing pages trait" do
-      form = build :form, :missing_pages
-      expect(form.incomplete_tasks).to eq %i[missing_pages]
+    describe "task status traits" do
+      before do
+        form.set_task_status_service(TaskStatusService.new(form:))
+      end
+
+      describe "ready for live trait" do
+        let(:form) { build :form, :ready_for_live, :with_group }
+
+        it "creates a form that is ready to be made live" do
+          expect(form.ready_for_live).to be true
+          expect(form.incomplete_tasks).to be_empty
+          expect(form.task_statuses).to include(
+            declaration_status: :completed,
+            make_live_status: :not_started,
+            name_status: :completed,
+            pages_status: :completed,
+            privacy_policy_status: :completed,
+            support_contact_details_status: :completed,
+            what_happens_next_status: :completed,
+          )
+        end
+      end
+
+      describe "missing pages trait" do
+        let(:form) { build :form, :missing_pages }
+
+        it "creates a form with missing pages" do
+          expect(form.incomplete_tasks).to eq %i[missing_pages]
+        end
+      end
     end
   end
 
@@ -503,6 +515,10 @@ RSpec.describe Form, type: :model do
   end
 
   describe "FormStateMachine" do
+    before do
+      form.set_task_status_service(TaskStatusService.new(form: form))
+    end
+
     describe "#make_live!" do
       let(:form) { create :form, :ready_for_live }
 
@@ -861,16 +877,20 @@ RSpec.describe Form, type: :model do
   end
 
   describe "#ready_for_live" do
+    before do
+      form.set_task_status_service(TaskStatusService.new(form:))
+    end
+
     context "when a form is complete and ready to be made live" do
-      let(:completed_form) { create(:form, :live) }
+      let(:form) { create(:form, :live) }
 
       it "returns true" do
-        expect(completed_form.ready_for_live).to be true
+        expect(form.ready_for_live).to be true
       end
     end
 
     context "when a form is incomplete and should still be in draft state" do
-      let(:new_form) { build :form, :new_form }
+      let(:form) { build :form, :new_form }
 
       [
         {
@@ -891,27 +911,31 @@ RSpec.describe Form, type: :model do
         },
       ].each do |scenario|
         it "returns false if #{scenario[:attribute]} is missing" do
-          new_form.send("#{scenario[:attribute]}=", scenario[:attribute_value])
-          expect(new_form.ready_for_live).to be false
+          form.send("#{scenario[:attribute]}=", scenario[:attribute_value])
+          expect(form.ready_for_live).to be false
         end
       end
     end
   end
 
   describe "#all_incomplete_tasks" do
+    before do
+      form.set_task_status_service(TaskStatusService.new(form: form))
+    end
+
     context "when a form is complete and ready to be made live" do
-      let(:completed_form) { build :form, :live }
+      let(:form) { build :form, :live }
 
       it "returns no missing sections" do
-        expect(completed_form.all_incomplete_tasks).to be_empty
+        expect(form.all_incomplete_tasks).to be_empty
       end
     end
 
     context "when a form is incomplete and should still be in draft state" do
-      let(:new_form) { build :form, :new_form }
+      let(:form) { build :form, :new_form }
 
       it "returns a set of keys related to missing fields" do
-        expect(new_form.all_incomplete_tasks).to match_array(%i[missing_pages missing_submission_email missing_privacy_policy_url missing_contact_details missing_what_happens_next share_preview_not_completed])
+        expect(form.all_incomplete_tasks).to match_array(%i[missing_pages missing_submission_email missing_privacy_policy_url missing_contact_details missing_what_happens_next share_preview_not_completed])
       end
     end
   end
@@ -975,6 +999,8 @@ RSpec.describe Form, type: :model do
       task_status_service = instance_double(TaskStatusService)
       allow(TaskStatusService).to receive(:new).and_return(task_status_service)
       allow(task_status_service).to receive(:mandatory_tasks_completed?).and_return(mandatory_tasks_completed)
+
+      form.set_task_status_service(task_status_service)
     end
 
     context "when not all mandatory tasks have been completed" do
@@ -997,6 +1023,10 @@ RSpec.describe Form, type: :model do
   describe "#all_task_statuses" do
     let(:group) { create :group }
     let(:completed_form) { build :form, :live, :with_group, group: }
+
+    before do
+      completed_form.set_task_status_service(TaskStatusService.new(form: completed_form))
+    end
 
     it "returns a hash with each of the task statuses" do
       expected_hash = {

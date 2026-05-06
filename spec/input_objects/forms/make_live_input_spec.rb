@@ -2,6 +2,12 @@ require "rails_helper"
 
 RSpec.describe Forms::MakeLiveInput, type: :model do
   let(:error_message) { I18n.t("activemodel.errors.models.forms/make_live_input.attributes.confirm.blank") }
+  let(:form) { create :form, :ready_for_live }
+  let(:user) { build :user }
+
+  before do
+    form.set_task_status_service(TaskStatusService.new(form:))
+  end
 
   describe "validations" do
     it "is invalid if blank" do
