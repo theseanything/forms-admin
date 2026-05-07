@@ -6,6 +6,10 @@ describe MakeFormLiveService do
   let(:live_form_document) { current_form.live_form_document }
   let(:current_user) { build :user }
 
+  before do
+    current_form.set_task_status_service(TaskStatusService.new(form: current_form, current_user:))
+  end
+
   describe "#make_live" do
     it "makes the form live" do
       expect {

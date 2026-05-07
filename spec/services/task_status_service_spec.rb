@@ -1,12 +1,13 @@
 require "rails_helper"
 
 describe TaskStatusService do
-  let(:group) { create :group }
-  let(:task_status_service) do
-    described_class.new(form:)
+  subject(:task_status_service) do
+    described_class.new(form:, current_user:)
   end
 
-  let(:current_user) { build(:user, role: :editor) }
+  let(:group) { create :group }
+
+  let(:current_user) { build(:user, role: :standard) }
 
   describe "statuses" do
     describe "name status" do
@@ -274,16 +275,19 @@ describe TaskStatusService do
       end
 
       context "and Welsh translation is completed" do
-        let(:form) { create(:form, :live, :with_group, available_languages: %w[en cy], welsh_completed: true, group:) }
-
-        before do
-          welsh_translation_input = instance_double(Forms::WelshTranslationInput)
-          allow(welsh_translation_input).to receive_messages(assign_form_values: welsh_translation_input, invalid?: false)
-          allow(Forms::WelshTranslationInput).to receive(:new).and_return(welsh_translation_input)
-        end
+        let(:form) { create(:form, :live, :with_group, :with_welsh_translation, group:) }
 
         it "returns completed" do
           expect(task_status_service.task_statuses[:welsh_language_status]).to eq :completed
+        end
+
+        context "and the support email contains a non-gov.uk email with the same domain as the user" do
+          let(:current_user) { build(:user, role: :standard, email: "example@example.com") }
+          let(:form) { create(:form, :ready_for_live, :with_group, :with_welsh_translation, welsh_completed: true, group:, support_email_cy: "support@example.com") }
+
+          it "returns completed" do
+            expect(task_status_service.task_statuses[:welsh_language_status]).to eq :completed
+          end
         end
       end
 

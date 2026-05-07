@@ -52,6 +52,8 @@ class Form < ApplicationRecord
   after_update :update_draft_form_document
   ATTRIBUTES_NOT_IN_FORM_DOCUMENT = %i[state external_id pages question_section_completed declaration_section_completed share_preview_completed welsh_completed].freeze
 
+  attr_accessor :task_status_service
+
   def save_question_changes!
     self.question_section_completed = false
     # Make sure the updated_at is updated as we use this to determine if the form has changed in forms-runner.
@@ -218,6 +220,10 @@ class Form < ApplicationRecord
       (previous_state.to_sym == :archived && archived_with_draft?)
   end
 
+  def set_task_status_service(service)
+    self.task_status_service = service
+  end
+
 private
 
   def set_external_id
@@ -226,13 +232,6 @@ private
 
   def update_draft_form_document
     FormDocumentSyncService.new(self).update_draft_form_document
-  end
-
-  def task_status_service
-    # TODO: refactor this in favour of dependency injection
-    # https://trello.com/c/TVN9BNxQ/3448-refactor-formtaskstatusservice-to-use-dependency-injection
-    # it can also lead to use of `allow_any_instance_of` in testing
-    @task_status_service ||= TaskStatusService.new(form: self)
   end
 
   def has_routing_conditions

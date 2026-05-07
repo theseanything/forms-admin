@@ -13,6 +13,12 @@ describe StepSummaryCardService do
 
   let(:pages) { form.pages }
 
+  let(:current_user) { build :user }
+
+  before do
+    form.set_task_status_service(TaskStatusService.new(form:, current_user:))
+  end
+
   describe "#all_options_for_answer_type" do
     context "with uk and international address" do
       let(:page) { create :page, :with_address_settings, form:, uk_address: "true", international_address: "true" }

@@ -1,6 +1,7 @@
 class TaskStatusService
-  def initialize(form:)
+  def initialize(form:, current_user:)
     @form = form
+    @current_user = current_user
   end
 
   def mandatory_tasks_completed?(ignore_missing_welsh: false)
@@ -144,7 +145,7 @@ private
 
   def welsh_translations_invalid
     @welsh_translations_invalid ||= begin
-      translation_input = Forms::WelshTranslationInput.new(form: @form, mark_complete: true).assign_form_values
+      translation_input = Forms::WelshTranslationInput.new(form: @form, mark_complete: true, current_user: @current_user).assign_form_values
       translation_input.invalid?
     end
   end
