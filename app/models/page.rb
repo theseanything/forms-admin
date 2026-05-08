@@ -133,6 +133,10 @@ class Page < ApplicationRecord
     routing_conditions.each(&:normalise_welsh!)
   end
 
+  def page_position_id
+    "page-#{position}"
+  end
+
 private
 
   def guidance_fields_presence

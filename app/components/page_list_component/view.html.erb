@@ -52,6 +52,11 @@
                     <%= condition_description2(page.routing_conditions.first) %>
                   </p>
                 <% end %>
+                <dd class="govuk-summary-list__actions govuk-!-padding-bottom-6">
+                  <%= govuk_link_to routes_path(form_id: @form.id, anchor: page.page_position_id) do %>
+                    <%= t("forms.form_overview.edit_with_visually_hidden_text_html", visually_hidden_text: t("page_conditions.condition_name", question_number: page.position)) %>
+                  <% end %>
+                </dd>
               </dd>
             </div>
           <% else %>

@@ -182,6 +182,68 @@ RSpec.describe PageListComponent::View, type: :component do
     end
   end
 
+  describe "rendering component with multiple branches feature", :feature_multiple_branches do
+    context "when the form has multiple pages" do
+      let(:form) { create :form, :ready_for_routing }
+      let(:first_page) { form.pages.first }
+      let(:third_page) { form.pages.third }
+      let(:fourth_page) { form.pages.fourth }
+
+      context "when the page has a single condition" do
+        let!(:condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
+
+        before do
+          render_inline(page_list_component)
+        end
+
+        it "renders the condition description" do
+          condition_description = "If the answer is:"
+          condition_detail = "“#{condition.answer_value}” go to #{third_page.position}, “#{third_page.question_text}”"
+
+          expect(page).to have_css("dd.govuk-summary-list__value", text: condition_description)
+          expect(page).to have_css("dd.govuk-summary-list__value", text: condition_detail)
+        end
+
+        it "renders link" do
+          expect(page).to have_link("Edit", href: routes_path(form_id: form.id, anchor: "page-#{first_page.position}"))
+        end
+      end
+
+      context "when the page has branching conditions" do
+        let!(:first_condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
+        let!(:second_condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 2", goto_page_id: fourth_page.id }
+
+        before do
+          render_inline(page_list_component)
+        end
+
+        it "renders the condition description" do
+          condition_description = "If the answer is:"
+          first_condition_detail = "“#{first_condition.answer_value}” go to #{third_page.position}, “#{third_page.question_text}”"
+          second_condition_detail = "“#{second_condition.answer_value}” go to #{fourth_page.position}, “#{fourth_page.question_text}”"
+
+          expect(page).to have_css("dd.govuk-summary-list__value", text: condition_description)
+          expect(page).to have_css("dd.govuk-summary-list__value", text: first_condition_detail)
+          expect(page).to have_css("dd.govuk-summary-list__value", text: second_condition_detail)
+        end
+      end
+
+      context "when the page has an unconditional route" do
+        before do
+          create :condition, routing_page_id: first_page.id, goto_page_id: third_page.id
+
+          render_inline(page_list_component)
+        end
+
+        it "renders the condition description" do
+          unconditional_route_description = "Go to #{third_page.position}, “#{third_page.question_text}”"
+
+          expect(page).to have_css("dd.govuk-summary-list__value", text: unconditional_route_description)
+        end
+      end
+    end
+  end
+
   describe "class methods", feature_multiple_branches: false do
     let(:form) { create :form, :with_pages }
 

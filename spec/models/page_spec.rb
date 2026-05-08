@@ -872,4 +872,10 @@ RSpec.describe Page, type: :model do
       end
     end
   end
+
+  describe "#page_position_id" do
+    it "returns a string for the page position id" do
+      expect(page.page_position_id).to eq "page-#{page.position}"
+    end
+  end
 end

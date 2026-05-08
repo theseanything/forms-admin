@@ -18,7 +18,7 @@
 
         @routes_input.routes.group_by(&:page).each do |page, routes|
           summary_list.with_row do |row|
-            row.with_key(classes: "app-routes-list__key", html_attributes: { id: "page-#{page.position}"}) { page.position.to_s }
+            row.with_key(classes: "app-routes-list__key", html_attributes: { id: page.page_position_id}) { page.position.to_s }
             row.with_value do
               capture do %>
               <p> <%= page.question_text %> </p>
