@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_24_143146) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -133,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_143146) do
     t.string "s3_bucket_aws_account_id"
     t.string "s3_bucket_name"
     t.string "s3_bucket_region"
+    t.string "send_copy_of_answers", default: "disabled", null: false
     t.boolean "send_daily_submission_batch", default: false
     t.boolean "send_weekly_submission_batch", default: false
     t.boolean "share_preview_completed", default: false, null: false
