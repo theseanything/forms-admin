@@ -1,0 +1,154 @@
+require "rails_helper"
+
+RSpec.describe Forms::RoutesInput do
+  subject(:routes_input) { described_class.new(form:) }
+
+  let(:pages) { build_stubbed_list(:page, 2) }
+  let(:form) { build_stubbed(:form, id: 1, pages:) }
+
+  describe "#initialize" do
+    it "assigns the form" do
+      expect(routes_input.form).to eq(form)
+    end
+  end
+
+  describe "#submit" do
+    let(:sync_service_double) { instance_double(Routes::SyncService, sync_conditions_from_routes: true) }
+
+    before do
+      allow(Routes::SyncService).to receive(:new).and_return(sync_service_double)
+      allow(form).to receive(:save_draft!)
+    end
+
+    it "calls the Routes::SyncService with the correct arguments" do
+      routes_input.submit
+      expect(Routes::SyncService).to have_received(:new).with(form:, routes: routes_input.routes)
+    end
+
+    it "calls sync_conditions_from_routes on the service" do
+      routes_input.submit
+      expect(sync_service_double).to have_received(:sync_conditions_from_routes)
+    end
+
+    it "returns true" do
+      expect(routes_input.submit).to be true
+    end
+  end
+
+  describe "#assign_form_values" do
+    let(:built_routes) { [instance_double(Forms::RouteInput)] }
+    let(:build_service_double) { instance_double(Routes::BuildService, build_routes: built_routes) }
+
+    before do
+      allow(Routes::BuildService).to receive(:new).and_return(build_service_double)
+    end
+
+    it "calls the Routes::BuildService with the form" do
+      routes_input.assign_form_values
+      expect(Routes::BuildService).to have_received(:new).with(form:)
+    end
+
+    it "assigns the result to the routes attribute" do
+      routes_input.assign_form_values
+      expect(routes_input.routes).to eq(built_routes)
+    end
+
+    it "returns self" do
+      expect(routes_input.assign_form_values).to eq(routes_input)
+    end
+  end
+
+  describe "#routes_attributes=" do
+    let(:goto_options) { [["Go to page 2", pages.second.id]] }
+    let(:route_build_service) { instance_double(Routes::BuildService, options_for_page: goto_options) }
+    let(:pages) { create_list(:page, 2) }
+    let(:form) { create(:form, id: 1, pages:) }
+
+    before do
+      allow(Routes::BuildService).to receive(:new).with(form:).and_return(route_build_service)
+      # allow Forms::RouteInput to be created and just return a simple object
+      # so we can inspect what it was initialized with.
+      allow(Forms::RouteInput).to receive(:new) { |args| OpenStruct.new(args) }
+    end
+
+    context "with valid attributes for existing pages" do
+      let(:attributes) do
+        {
+          "0" => { "page_id" => pages.first.id.to_s, "goto" => pages.second.id.to_s },
+          "1" => { "page_id" => pages.second.id.to_s, "goto" => "1" },
+        }
+      end
+
+      it "initializes a RouteInput for each valid page" do
+        routes_input.routes_attributes = attributes
+        expect(Forms::RouteInput).to have_received(:new).twice
+      end
+
+      it "initializes RouteInput with the correct page object and options" do
+        routes_input.routes_attributes = attributes
+
+        expect(Forms::RouteInput).to have_received(:new).with(
+          page_id: pages.first.id.to_s,
+          goto: pages.second.id.to_s,
+          page: pages.first,
+          goto_options:,
+        )
+        expect(Forms::RouteInput).to have_received(:new).with(
+          page_id: pages.second.id.to_s,
+          goto: "1",
+          page: pages.second,
+          goto_options:,
+        )
+      end
+
+      it "assigns the created RouteInput objects to routes" do
+        routes_input.routes_attributes = attributes
+        expect(routes_input.routes.length).to eq(2)
+        expect(routes_input.routes.first.page).to eq(pages.first)
+        expect(routes_input.routes.second.page).to eq(pages.second)
+      end
+    end
+
+    context "with attributes containing a non-existent page_id" do
+      let(:attributes) do
+        {
+          "0" => { "page_id" => pages.first.id.to_s },
+          "1" => { "page_id" => "999" }, # This page ID does not exist on the form
+        }
+      end
+
+      it "skips the invalid entry and only creates RouteInput for the valid one" do
+        routes_input.routes_attributes = attributes
+
+        expect(Forms::RouteInput).to have_received(:new).once
+        expect(Forms::RouteInput).to have_received(:new).with(
+          page_id: pages.first.id.to_s,
+          page: pages.first,
+          goto_options:,
+        )
+      end
+
+      it "assigns only the valid RouteInput object to routes" do
+        routes_input.routes_attributes = attributes
+        expect(routes_input.routes.length).to eq(1)
+        expect(routes_input.routes.first.page).to eq(pages.first)
+      end
+    end
+
+    context "when a page_id is nil or blank" do
+      let(:attributes) do
+        {
+          "0" => { "page_id" => pages.first.id.to_s },
+          "1" => { "page_id" => nil },
+        }
+      end
+
+      it "compacts the list and only includes valid routes" do
+        routes_input.routes_attributes = attributes
+
+        expect(routes_input.routes.length).to eq(1)
+        expect(routes_input.routes.map(&:page)).to eq([pages.first])
+      end
+    end
+  end
+end
