@@ -403,7 +403,7 @@ GEM
       opentelemetry-instrumentation-active_support (~> 0.10)
     opentelemetry-instrumentation-active_support (0.12.0)
       opentelemetry-instrumentation-base (~> 0.25)
-    opentelemetry-instrumentation-all (0.92.0)
+    opentelemetry-instrumentation-all (0.93.0)
       opentelemetry-instrumentation-active_model_serializers (~> 0.25.0)
       opentelemetry-instrumentation-anthropic (~> 0.5.0)
       opentelemetry-instrumentation-aws_lambda (~> 0.7.0)
@@ -431,7 +431,7 @@ GEM
       opentelemetry-instrumentation-que (~> 0.13.0)
       opentelemetry-instrumentation-racecar (~> 0.7.0)
       opentelemetry-instrumentation-rack (~> 0.31.0)
-      opentelemetry-instrumentation-rails (~> 0.41.0)
+      opentelemetry-instrumentation-rails (~> 0.42.0)
       opentelemetry-instrumentation-rake (~> 0.6.0)
       opentelemetry-instrumentation-rdkafka (~> 0.10.0)
       opentelemetry-instrumentation-redis (~> 0.29.0)
@@ -502,7 +502,7 @@ GEM
       opentelemetry-instrumentation-base (~> 0.25)
     opentelemetry-instrumentation-rack (0.31.0)
       opentelemetry-instrumentation-base (~> 0.25)
-    opentelemetry-instrumentation-rails (0.41.0)
+    opentelemetry-instrumentation-rails (0.42.0)
       opentelemetry-instrumentation-action_mailer (~> 0.7)
       opentelemetry-instrumentation-action_pack (~> 0.17)
       opentelemetry-instrumentation-action_view (~> 0.12)
@@ -834,7 +834,7 @@ DEPENDENCIES
   omniauth-auth0
   omniauth-rails_csrf_protection
   opentelemetry-exporter-otlp (~> 0.33.0)
-  opentelemetry-instrumentation-all (~> 0.92.0)
+  opentelemetry-instrumentation-all (~> 0.93.0)
   opentelemetry-propagator-xray (~> 0.27.0)
   opentelemetry-sdk (~> 1.11)
   pagy
@@ -999,7 +999,7 @@ CHECKSUMS
   opentelemetry-instrumentation-active_record (0.13.0) sha256=239fceaae5a42e82dd9dd87bc63b1888bea32058dac0779b5ea36110fcb3a299
   opentelemetry-instrumentation-active_storage (0.5.0) sha256=39920d405fd111cd98c01a90a24b19413f4cb5bc8de2a24d7882f785e8f02c19
   opentelemetry-instrumentation-active_support (0.12.0) sha256=29a2cbdcb3aad4a42f4c9e829dab11167b71ed8a5205ad54587fe4d59d8ee704
-  opentelemetry-instrumentation-all (0.92.0) sha256=9fc460db8c3f0b702a59c43ca6390ecea908518e8d7f274ce272047e9023220d
+  opentelemetry-instrumentation-all (0.93.0) sha256=e1f918add0d5ec48502cb2fbb49c122457fc2bd2cb54ee85e2db872308bfcb24
   opentelemetry-instrumentation-anthropic (0.5.0) sha256=a6b1e1f324d35323d4714a7f204c9d34c46da07529877a725829420a4a44bb13
   opentelemetry-instrumentation-aws_lambda (0.7.0) sha256=50e5a32c454f2d38ecb53cc94e77dc646b33c47294cc6e6363e7c226097fa132
   opentelemetry-instrumentation-aws_sdk (0.12.0) sha256=e2f48bf471cefe4d4bd9cfdafabffce65790b73381040e82d337933ac8bfb366
@@ -1027,7 +1027,7 @@ CHECKSUMS
   opentelemetry-instrumentation-que (0.13.0) sha256=95e04b8c17e89eaa446f5dff7975cf72c2e74f7e1e84717be47facf510613112
   opentelemetry-instrumentation-racecar (0.7.0) sha256=93a991917687aa0a6e785ccd8d0de5746af110122552b2bf1e3abe12ab04584a
   opentelemetry-instrumentation-rack (0.31.0) sha256=bae9f424a2bb1dde2aa5e2c7e02dbbb80c972e7f4964ab820431229f276e0bfc
-  opentelemetry-instrumentation-rails (0.41.0) sha256=90dda50f73b52b2b1bd7cd6990c7b8dd24d0aa8a90d2de0e534d9af476a39306
+  opentelemetry-instrumentation-rails (0.42.0) sha256=5ea3808373ca73ee9fa4ecf337471bad1c28e98ea64460b89ab225f5b6eaf8b3
   opentelemetry-instrumentation-rake (0.6.0) sha256=71746e4e172560f8ccf1d3c91354196f5aa0fd9b0c477d6ff17a451cef901822
   opentelemetry-instrumentation-rdkafka (0.10.0) sha256=ad1a4aa78c0ab43c1f130d961f54e1d6ac20c674b0180b87d4364770b81ec209
   opentelemetry-instrumentation-redis (0.29.0) sha256=5f855d31ff7f72f79ef97e846655eaf31455a5c9549578725918196df09545ec
