@@ -32,6 +32,7 @@ class FormDocument::Content
   attribute :what_happens_next_markdown, :string
   attribute :send_daily_submission_batch, :boolean
   attribute :send_weekly_submission_batch, :boolean
+  attribute :send_copy_of_answers, :string
 
   alias_attribute :id, :form_id
 

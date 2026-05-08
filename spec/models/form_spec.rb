@@ -951,6 +951,21 @@ RSpec.describe Form, type: :model do
     end
   end
 
+  describe "answer email copy" do
+    describe "enum" do
+      it "returns a list of email copy answers values" do
+        expect(described_class.send_copy_of_answers.keys).to eq(%w[disabled enabled])
+        expect(described_class.send_copy_of_answers.values).to eq(%w[disabled enabled])
+      end
+    end
+
+    it "defaults to disabled" do
+      form = build(:form)
+      expect(form.send_copy_of_answers).to eq("disabled")
+      expect(form.disabled?).to be true
+    end
+  end
+
   describe "submission format" do
     let(:form) { create :form }
 
