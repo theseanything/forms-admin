@@ -26,14 +26,16 @@ class Routes::BuildService
   end
 
   def options_for_page(page)
-    return [] unless page.has_next_page?
+    next_page = form.next_page_after(page)
+
+    return [] unless next_page
 
     # Don't include the current page in the options
     options_without_page = all_goto_options.reject { |_, value| value == page.id }
 
     # Replace the next page with the default option
     options_without_page.map do |name, value|
-      if value == page.next_page
+      if value == next_page.id
         ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
       else
         [name, value]
