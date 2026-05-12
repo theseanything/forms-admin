@@ -22,7 +22,7 @@
             row.with_value do
               capture do %>
               <p> <%= page.question_text %> </p>
-              <% if page.has_next_page? %>
+              <% if @routes_input.form.next_page_after(page).present? %>
                 <ul class="govuk-list">
                   <% routes.each do |route| %>
                     <li>
