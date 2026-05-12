@@ -1464,4 +1464,21 @@ RSpec.describe Form, type: :model do
       end
     end
   end
+
+  describe "#next_page_after" do
+    let(:pages) { [] }
+    let(:form) { build :form, pages: }
+
+    it "returns nil if there is no next page" do
+      expect(form.next_page_after(form.pages.first)).to be_nil
+    end
+
+    context "when there is a next page" do
+      let(:pages) { build_list :page, 5 }
+
+      it "returns the next page" do
+        expect(form.next_page_after(form.pages.second)).to eq(form.pages.third)
+      end
+    end
+  end
 end

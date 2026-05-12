@@ -224,6 +224,14 @@ class Form < ApplicationRecord
     self.task_status_service = service
   end
 
+  # Return the next page or nil if there is no next page
+  # Use this when all pages are loaded to avoid N+1 queries,
+  # prefer Page.next_page for individual queries.
+  def next_page_after(current_page)
+    pair = pages.each_cons(2).find { |p, _next_p| p == current_page }
+    pair&.last
+  end
+
 private
 
   def set_external_id
