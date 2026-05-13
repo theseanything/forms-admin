@@ -28,11 +28,21 @@ module PageListComponent
       end
     end
 
-    def condition_description2(condition)
-      if condition.answer_value.present?
-        I18n.t("page_conditions.condition_description2", goto_page_question_text: goto_page_text_for_condition(condition), answer_value: answer_value_text_for_condition(condition))
+    def unconditional_description(condition)
+      if condition.goto_page_id.present?
+        goto_page = @pages.find { |page| page.id == condition.goto_page_id }
+        I18n.t("page_conditions.unconditional_goto_page_text", goto_page_question_number: goto_page.position, goto_page_question_text: goto_page.question_text)
+      elsif condition.skip_to_end
+        I18n.t("page_conditions.unconditional_skip_to_end_text")
+      end
+    end
+
+    def condition_group_description(group)
+      if group.first.skip_to_end
+        I18n.t("page_conditions.condition_group_description_end_of_form")
       else
-        I18n.t("page_conditions.unconditional_description", goto_page_question_text: goto_page_text_for_condition(condition))
+        goto_page = @pages.find { |page| page.id == group.first.goto_page_id }
+        I18n.t("page_conditions.condition_group_description", goto_page_question_text: goto_page.question_text, goto_page_question_number: goto_page.position)
       end
     end
 
@@ -45,6 +55,15 @@ module PageListComponent
       if condition.answer_value.present?
         answer_value = condition.answer_value == :none_of_the_above.to_s ? I18n.t("page_conditions.none_of_the_above") : condition.answer_value
         I18n.t("page_conditions.condition_answer_value_text", answer_value:)
+      else
+        I18n.t("page_conditions.condition_answer_value_text_with_errors")
+      end
+    end
+
+    def answer_value_text_for_condition2(condition)
+      if condition.answer_value.present?
+        answer_value = condition.answer_value == :none_of_the_above.to_s ? I18n.t("page_conditions.none_of_the_above") : condition.answer_value
+        I18n.t("page_conditions.condition_answer_value_text2", answer_value:)
       else
         I18n.t("page_conditions.condition_answer_value_text_with_errors")
       end
@@ -79,6 +98,10 @@ module PageListComponent
     def skip_condition_route_page_text(condition)
       routing_page = @pages.find { |page| page.id == condition.routing_page_id }
       I18n.t("page_conditions.skip_condition_route_page_text", route_page_question_text: routing_page.question_text, route_page_question_number: routing_page.position)
+    end
+
+    def answer_value_groups(page)
+      page.routing_conditions.group_by(&:goto_page_id).sort_by { |goto_page_id, _| goto_page_id || Float::INFINITY }
     end
   end
 end

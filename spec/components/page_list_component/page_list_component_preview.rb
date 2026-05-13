@@ -96,6 +96,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
       (build :page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: routing_conditions_2),
       (build :page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: []),
       (build :page, id: 4, position: 4, question_text: "What kind of pet do you want?", routing_conditions: []),
+      (build :page, id: 5, position: 5, question_text: "What is your favourite colour?", routing_conditions: []),
     ]
 
     form = build(:form, :with_group, id: 1, pages:)

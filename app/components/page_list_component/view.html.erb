@@ -35,21 +35,23 @@
           <% if FeatureService.new(group: @form.group).enabled?(:multiple_branches) && page.routing_conditions.present? %>
             <div class="govuk-summary-list__row">
               <dt class="govuk-summary-list__key app-page-list__key">
-                <%= t("page_conditions.condition_name", question_number: page.position) %>
+                <%= t("page_conditions.condition_list_key", count: page.routing_conditions.count, question_number: page.position) %>
               </dt>
               <dd class="govuk-summary-list__value">
                 <% if page.routing_conditions.first.answer_value.present? %>
-                  <p><%= I18n.t("page_conditions.if_answer_is") %></p>
-                  <ul class="govuk-list govuk-list--bullet">
-                    <% page.routing_conditions.each do |condition| %>
-                      <li>
-                        <%= condition_description2(condition) %>
-                      </li>
-                    <% end %>
-                  </ul>
+                  <% answer_value_groups(page).each do |_, group| %>
+                    <p><%= condition_group_description(group) %></p>
+                    <ul class="govuk-list govuk-list--bullet">
+                      <% group.each do |condition| %>
+                        <li>
+                          <%= answer_value_text_for_condition2(condition) %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% end %>
                 <% else %>
                   <p>
-                    <%= condition_description2(page.routing_conditions.first) %>
+                    <%= unconditional_description(page.routing_conditions.first) %>
                   </p>
                 <% end %>
                 <dd class="govuk-summary-list__actions govuk-!-padding-bottom-6">
