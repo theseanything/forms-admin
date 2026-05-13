@@ -114,6 +114,22 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
             expect(response).to redirect_to(form_path(form_id: form.id))
           end
         end
+
+        context "and the form has an incomplete Welsh translation" do
+          subject(:form) { create :form, :ready_for_live, :with_welsh_translation, welsh_completed: false }
+
+          it "redirects to the confirmation page" do
+            post(make_language_live_path(form_id: form.id, language:), params: form_params)
+            expect(response).to redirect_to(make_language_live_show_confirmation_path(form_id: form.id, language:))
+          end
+
+          it "creates an English FormDocument and makes the form live" do
+            expect {
+              post(make_language_live_path(form_id: form.id, language:), params: form_params)
+            }.to change { FormDocument.where(language:).count }.by(1)
+            .and change { form.reload.state }.to("live")
+          end
+        end
       end
 
       context "when the language being made live is Welsh" do
@@ -156,6 +172,17 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
           it "redirects to the form task list" do
             post(make_language_live_path(form_id: form.id, language:), params: form_params)
             expect(response).to redirect_to(form_path(form_id: form.id))
+          end
+        end
+
+        context "and the form has an incomplete Welsh translation" do
+          subject(:form) { create :form, :ready_for_live, :with_welsh_translation, welsh_completed: false }
+
+          it "returns 422 and does not make the Welsh version live" do
+            expect {
+              post(make_language_live_path(form_id: form.id, language:), params: form_params)
+            }.not_to(change { FormDocument.where(language:).count })
+            expect(response).to have_http_status(:unprocessable_content)
           end
         end
       end

@@ -52,7 +52,7 @@ module Forms
   private
 
     def make_language_live_input_params
-      params.require(:forms_make_live_input).permit(:confirm).merge(form: current_form)
+      params.require(:forms_make_live_input).permit(:confirm).merge(form: current_form, language: params[:language])
     end
 
     def render_new(status: :ok)
