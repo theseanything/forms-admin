@@ -1,0 +1,33 @@
+<% set_page_title(title_with_error_prefix(t("page_titles.group_confirm_new"), @confirm_new_input.errors.any?)) %>
+<% content_for :back_link, govuk_back_link_to(groups_path,t("back_link.groups")) %>
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <%= form_with(model: @confirm_new_input, url: confirm_new_groups_path) do |f| %>
+      <% if @confirm_new_input&.errors.any? %>
+        <%= f.govuk_error_summary %>
+      <% end %>
+
+      <h1 class="govuk-heading-l"><%= t("page_titles.group_confirm_new") %></h1>
+
+      <% if @organisation.admin_users.empty? %>
+        <%= t(".without_org_admin.body_html") %>
+      <% else %>
+        <%= t(".with_org_admin.body_html") %>
+
+        <p><%= t(".with_org_admin.org_admin_list_title") %></p>
+        <ul class="govuk-list govuk-list--bullet">
+          <% @organisation.admin_users.order(:email).each do |user| %>
+            <li><%= user.email %></li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <%= f.govuk_collection_radio_buttons :confirm,
+        @confirm_new_input.values, ->(option) { option }, ->(option) { t('helpers.label.confirm_action_input.options.' + "#{option}") },
+        legend: { text: t('groups.confirm_new.radios_legend'), size: 'm' },
+        inline: true %>
+      <%= f.govuk_submit t("continue") %>
+    <% end %>
+  </div>
+</div>

@@ -653,6 +653,20 @@ en:
       title: Add an editor to this group
       title_show_role_options: Add an editor or group admin to this group
   groups:
+    confirm_new:
+      radios_legend: Do you still want to create a new group?
+      with_org_admin:
+        body_html: |
+          <p>Each form needs to be created in a ‘group’. Once you have a group, you can add other people to create and edit forms in it.</p>
+          <p>When you first create a group, it will be a ‘trial’ group. That means you can test how the platform works, but you cannot make any forms in the group live.</p>
+          <p>You’ll only be able to make forms live if you get permission from your organisation’s GOV.UK Forms admin.</p>
+          <p>If you want to use this group to create live forms, or if you are not sure you should make a new group, contact your organisation’s GOV.UK Forms admin before you continue. They’ll be able to advise about how they’re managing the use of the platform and the creation of forms in your organisation.</p>
+        org_admin_list_title: 'Your organisation’s GOV.UK forms admins are:'
+      without_org_admin:
+        body_html: |
+          <p>Each form needs to be created in a ‘group’. Once you have a group, you can add other people to create and edit forms in it.</p>
+          <p>When you first create a group, it will be a ‘trial’ group. That means you can test how the platform works, but you cannot make any forms in the group live.</p>
+          <p>If you’re not sure if you should make a new group, or you want to use this group for live forms, contact your organisation’s GOV.UK publishing team.</p>
     confirm_upgrade:
       body_html: |
         <p>If you upgrade this group:</p>
@@ -1464,6 +1478,7 @@ en:
     error_prefix: 'Error: '
     exit_page_new: Add exit page
     forbidden: You cannot view this page
+    group_confirm_new: Create a new group for forms
     group_confirm_upgrade_request: Request to upgrade this trial group
     group_index: Your groups
     group_review_upgrade: Upgrade this group
