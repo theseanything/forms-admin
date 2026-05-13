@@ -1,5 +1,5 @@
 class GroupsController < WebController
-  before_action :set_group, except: %i[index new create]
+  before_action :set_group, except: %i[index new create confirm_new]
   after_action :verify_authorized, except: :index
   after_action :verify_policy_scoped, only: :index
 
@@ -26,6 +26,12 @@ class GroupsController < WebController
 
     forms = @group.forms
     @form_list_presenter = FormListPresenter.call(forms:, group: @group, can_admin: @current_user.can_administer_org?(@group.organisation)) unless forms.empty?
+  end
+
+  def confirm_new
+    authorize Group, :new?
+    @confirm_new_input = Groups::ConfirmNewInput.new
+    @organisation = @current_user.organisation
   end
 
   # GET /groups/new

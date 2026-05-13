@@ -968,4 +968,11 @@ RSpec.describe "/groups", type: :request do
       end
     end
   end
+
+  describe "GET /confirm_new" do
+    it "renders a successful response" do
+      get confirm_new_groups_url
+      expect(response).to be_successful
+    end
+  end
 end
