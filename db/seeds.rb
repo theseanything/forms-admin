@@ -128,6 +128,7 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
   # create some test groups
   end_to_end_group = Group.create! name: "End to end tests", organisation: gds, status: :active
   test_group = Group.create! name: "Test Group", organisation: gds, creator: default_user, status: :active
+  multiple_branches_test_group = Group.create! name: "Test Group with multiple branches", organisation: gds, creator: default_user, status: :active, multiple_branches_enabled: true
   Group.create! name: "Ministry of Tests forms", organisation: mot_org
   Group.create! name: "Ministry of Tests forms - secret!", organisation: mot_org, creator: mot_user
 
@@ -583,5 +584,5 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
   GroupForm.create! group: test_group, form_id: branch_route_form.id # Branch routing form
   GroupForm.create! group: test_group, form_id: none_of_the_above_form.id # None of the above form
   GroupForm.create! group: test_group, form_id: welsh_form.id # Welsh form
-  GroupForm.create! group: test_group, form_id: multiple_branch_form.id
+  GroupForm.create! group: multiple_branches_test_group, form_id: multiple_branch_form.id
 end
