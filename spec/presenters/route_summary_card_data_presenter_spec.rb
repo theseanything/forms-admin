@@ -65,9 +65,9 @@ describe RouteSummaryCardDataPresenter do
         pages.each(&:reload)
       end
 
-      it 'shows "End of form" as destination' do
+      it 'shows "End of the form" as destination' do
         result = service.summary_card_data
-        expect(result[0][:rows][1][:value][:text]).to eq("End of form")
+        expect(result[0][:rows][1][:value][:text]).to eq("End of the form")
       end
     end
 
