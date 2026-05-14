@@ -1,6 +1,7 @@
 module Forms
   class CopyOfAnswersController < FormsController
     before_action :check_user_has_permission
+    before_action :check_feature_flag
 
     def new
       @copy_of_answers_input = Forms::CopyOfAnswersInput.new(form: current_form).assign_form_values
@@ -20,6 +21,10 @@ module Forms
 
     def check_user_has_permission
       authorize current_form, :can_view_form?
+    end
+
+    def check_feature_flag
+      raise NotFoundError unless FeatureService.enabled?(:send_filler_answers)
     end
 
     def copy_of_answers_input_params

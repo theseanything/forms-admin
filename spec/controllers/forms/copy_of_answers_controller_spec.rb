@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Forms::CopyOfAnswersController, type: :request do
+RSpec.describe Forms::CopyOfAnswersController, :feature_send_filler_answers, type: :request do
   let(:form) { create(:form, :live, send_copy_of_answers: send_copy_of_answers_original_value) }
   let(:send_copy_of_answers_original_value) { "disabled" }
   let(:current_user) { standard_user }
@@ -31,6 +31,12 @@ RSpec.describe Forms::CopyOfAnswersController, type: :request do
 
       it "returns 403" do
         expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when the feature flag is disabled", feature_send_filler_answers: false do
+      it "returns 404" do
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
@@ -102,6 +108,13 @@ RSpec.describe Forms::CopyOfAnswersController, type: :request do
       it "returns 403" do
         post(copy_of_answers_create_path(form_id: form.id), params:)
         expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when the feature flag is disabled", feature_send_filler_answers: false do
+      it "returns 404" do
+        post(copy_of_answers_create_path(form_id: form.id), params:)
+        expect(response).to have_http_status(:not_found)
       end
     end
   end

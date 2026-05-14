@@ -155,9 +155,17 @@ describe FormTaskListService do
         expect(section_rows.first[:path]).to eq "/forms/#{form.id}/payment-link"
       end
 
-      it "has link to copy of answers settings" do
-        expect(section_rows[1][:task_name]).to eq "Give people the option to ask for a copy of their answers"
-        expect(section_rows[1][:path]).to eq "/forms/#{form.id}/copy-of-answers"
+      context "when the send_filler_answers feature is enabled", :feature_send_filler_answers do
+        it "has link to copy of answers settings" do
+          expect(section_rows[1][:task_name]).to eq "Give people the option to ask for a copy of their answers"
+          expect(section_rows[1][:path]).to eq "/forms/#{form.id}/copy-of-answers"
+        end
+      end
+
+      context "when the send_filler_answers feature is disabled", feature_send_filler_answers: false do
+        it "does not have link to copy of answers settings" do
+          expect(section_rows.count).to eq 1
+        end
       end
     end
 
