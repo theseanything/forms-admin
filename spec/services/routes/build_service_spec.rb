@@ -199,7 +199,7 @@ RSpec.describe Routes::BuildService do
 
       expected_other_options = [
         ["3. question 3", pages.third.id],
-        ["End of form", "end_of_form"],
+        ["End of the form", "end_of_form"],
       ]
       all_other_options = options.reject { |opt| opt[1] == Forms::RouteInput::DEFAULT_VALUE }
 
