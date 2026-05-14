@@ -578,6 +578,32 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
   multiple_branch_form.set_task_status_service(TaskStatusService.new(form: multiple_branch_form, current_user: craig))
   multiple_branch_form.make_live!
 
+  copy_of_answers_form = Form.create!(
+    name: "Copy of answers form",
+    pages: [
+      Page.create(
+        question_text: "What is your full name?",
+        answer_type: "name",
+        answer_settings: {
+          input_type: "full_name",
+          title_needed: false,
+        },
+        is_optional: false,
+      ),
+    ],
+    question_section_completed: true,
+    declaration_markdown: "",
+    declaration_section_completed: true,
+    privacy_policy_url: "https://www.gov.uk/help/privacy-notice",
+    submission_email:,
+    support_email: "your.email+fakedata84701@gmail.com.gov.uk",
+    support_phone: "08000800",
+    what_happens_next_markdown: "Test",
+    share_preview_completed: true,
+    send_copy_of_answers: "enabled",
+  )
+  copy_of_answers_form.make_live!
+
   # add forms to groups
   GroupForm.create! group: end_to_end_group, form_id: all_question_types_form.id # All question types form
   GroupForm.create! group: end_to_end_group, form_id: e2e_s3_forms.id # s3 submission test form
@@ -585,4 +611,5 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
   GroupForm.create! group: test_group, form_id: none_of_the_above_form.id # None of the above form
   GroupForm.create! group: test_group, form_id: welsh_form.id # Welsh form
   GroupForm.create! group: multiple_branches_test_group, form_id: multiple_branch_form.id
+  GroupForm.create! group: test_group, form_id: copy_of_answers_form.id
 end
