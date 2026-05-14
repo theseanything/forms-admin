@@ -82,6 +82,8 @@ Rails.application.routes.draw do
     post "/submission-attachments" => "forms/submission_attachments#create", as: :submission_attachments_create
     get "/batch-submissions" => "forms/batch_submissions#new", as: :batch_submissions
     post "/batch-submissions" => "forms/batch_submissions#create", as: :batch_submissions_create
+    get "/copy-of-answers" => "forms/copy_of_answers#new", as: :copy_of_answers
+    post "/copy-of-answers" => "forms/copy_of_answers#create", as: :copy_of_answers_create
     get "/metrics" => "forms/metrics#metrics_csv", as: :metrics_csv
 
     resource :routes, only: %i[show create]
