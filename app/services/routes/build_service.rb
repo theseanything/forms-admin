@@ -30,15 +30,26 @@ class Routes::BuildService
 
     return [] unless next_page
 
-    # Don't include the current page in the options
-    options_without_page = all_goto_options.reject { |_, value| value == page.id }
+    # Don't include the current page or pages before in the options,
+    # unless the goto page for the existing condition is before the current page,
+    # in which case do include that one. Also, change the option for the next page
+    # to a different default option.
+    next_page_id = next_page.id
+    drop = true
 
-    # Replace the next page with the default option
-    options_without_page.map do |name, value|
-      if value == next_page.id
-        ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+    all_goto_options.filter_map do |option|
+      _, value = option
+
+      if drop
+        if selected && value == selected
+          option
+        elsif value == next_page_id
+          drop = false
+          ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+        end
+        # return nil
       else
-        [name, value]
+        option
       end
     end
   end

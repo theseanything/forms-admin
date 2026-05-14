@@ -88,7 +88,7 @@ describe "routes/show.html.erb" do
       end
 
       expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
-        expect(select_options(field)).to end_with [
+        expect(select_options(field)).to eq [
           ["default", "Go to question 3"],
           ["end_of_form", "End of the form"],
         ]
@@ -107,6 +107,37 @@ describe "routes/show.html.erb" do
       expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
         expect(field).to have_selector("option[selected]") do |option|
           expect(option["value"]).to eq "default"
+        end
+      end
+    end
+
+    context "when the route goes to a page before the routing page" do
+      let(:pages) do
+        [
+          build_stubbed(:page, id: 101),
+          build_stubbed(
+            :page,
+            id: 102,
+            routing_conditions: [
+              build_stubbed(
+                :condition,
+                routing_page_id: 102,
+                goto_page_id: 101,
+                answer_value: nil,
+              ),
+            ],
+          ),
+          build_stubbed(:page, id: 103),
+        ]
+      end
+
+      it "shows the selected goto page for the route" do
+        render_page
+
+        expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
+          expect(field).to have_selector("option[selected]") do |option|
+            expect(option["value"]).to eq "101"
+          end
         end
       end
     end

@@ -219,5 +219,26 @@ RSpec.describe Routes::BuildService do
 
       expect(page_ids).not_to include(pages.first.id)
     end
+
+    it "does not include pages before the current page in the options" do
+      options = service.options_for_goto_page(pages.second)
+
+      expect(options).to eq [
+        ["Go to question 3", Forms::RouteInput::DEFAULT_VALUE],
+        ["End of the form", "end_of_form"],
+      ]
+    end
+
+    context "when there is a selected goto page and the goto page is before the current page" do
+      it "includes the goto page in the options" do
+        options = service.options_for_goto_page(pages.second, pages.first.id)
+
+        expect(options).to eq [
+          ["1. #{pages.first.question_text}", pages.first.id],
+          ["Go to question 3", Forms::RouteInput::DEFAULT_VALUE],
+          ["End of the form", "end_of_form"],
+        ]
+      end
+    end
   end
 end
