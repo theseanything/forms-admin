@@ -1,0 +1,27 @@
+<% set_page_title(title_with_error_prefix(t('page_titles.copy_of_answers'), @copy_of_answers_input.errors.any?)) %>
+
+<% content_for :back_link, govuk_back_link_to(form_path(@copy_of_answers_input.form.id), t("back_link.form_create")) %>
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <%= form_with(model: @copy_of_answers_input, url: copy_of_answers_create_path(@copy_of_answers_input.form.id)) do |f| %>
+      <% if @copy_of_answers_input&.errors.any? %>
+        <%= f.govuk_error_summary %>
+      <% end %>
+
+      <h1 class="govuk-heading-l">
+        <span class="govuk-caption-l"><%= @copy_of_answers_input.form.name %></span>
+        <%= t("page_titles.copy_of_answers") %>
+      </h1>
+
+      <%= t(".body_html") %>
+
+      <%= f.govuk_check_boxes_fieldset :send_copy_of_answers, multiple: false, legend: { tag: 'h2', size: 'm'} do %>
+        <%= f.govuk_check_box :send_copy_of_answers, "enabled", "disabled", multiple: false, link_errors: true %>
+      <% end %>
+
+      <%= f.govuk_submit t("save_and_continue") %>
+    <% end %>
+  </div>
+</div>
+

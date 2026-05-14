@@ -20,6 +20,7 @@ FactoryBot.define do
     external_id { nil }
     send_daily_submission_batch { false }
     send_weekly_submission_batch { false }
+    send_copy_of_answers { "disabled" }
 
     trait :with_group do
       transient do
