@@ -6,7 +6,7 @@ describe "forms/_made_live_form.html.erb" do
   let(:what_happens_next_markdown) { "If you have not received a response within 5 working days, [contact our user support team](https://example.com)." }
   let(:form_metadata) do
     create(:form, :live, declaration_markdown:, what_happens_next_markdown:, submission_type:, submission_format:,
-                         send_daily_submission_batch:, send_weekly_submission_batch:)
+                         send_daily_submission_batch:, send_weekly_submission_batch:, send_copy_of_answers:)
   end
   let(:form_document) do
     form_document_content = FormDocument::Content.from_form_document(form_metadata.live_form_document)
@@ -22,6 +22,7 @@ describe "forms/_made_live_form.html.erb" do
   let(:submission_format) { [] }
   let(:send_daily_submission_batch) { false }
   let(:send_weekly_submission_batch) { false }
+  let(:send_copy_of_answers) { "disabled" }
   let(:cloudwatch_service) { instance_double(CloudWatchService, past_week_metrics_data:) }
 
   before do
@@ -400,6 +401,23 @@ describe "forms/_made_live_form.html.erb" do
     it "contains a link to the payment url" do
       expect(rendered).to have_css("h3", text: "GOV.UK Pay payment link")
       expect(rendered).to have_link(payment_url, href: payment_url)
+    end
+  end
+
+  context "when form fillers can get a copy of their answers" do
+    let(:send_copy_of_answers) { "enabled" }
+
+    it "tells the user people can ask for a copy of their answers" do
+      expect(rendered).to have_css("h3", text: I18n.t("forms.made_live_form.copy_of_answers.title"))
+      expect(rendered).to include(I18n.t("forms.made_live_form.copy_of_answers.enabled"))
+    end
+  end
+
+  context "when form fillers cannot get a copy of their answers" do
+    let(:send_copy_of_answers) { "disabled" }
+
+    it "does not include the copy of answers section" do
+      expect(rendered).not_to have_css("h3", text: I18n.t("forms.made_live_form.copy_of_answers.title"))
     end
   end
 

@@ -140,6 +140,11 @@
       <% end %>
     <% end %>
 
+    <% if form_document.send_copy_of_answers == "enabled" %>
+      <h3 class="govuk-heading-m"><%= t(".copy_of_answers.title") %></h3>
+      <p><%= t(".copy_of_answers.enabled") %></p>
+    <% end %>
+
     <h3 class="govuk-heading-m"><%= t(".how_you_get_completed_forms.title") %></h3>
 
     <h4 class="govuk-heading-s"><%= t('.how_you_get_completed_forms.submission_email') %></h4>

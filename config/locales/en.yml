@@ -439,6 +439,9 @@ en:
         cy: Previous Welsh form URL
         en: Previous English form URL
       contact_details: Your form’s contact details for support
+      copy_of_answers:
+        enabled: You’ve opted to let people ask to be sent a copy of their answers after they’ve filled in the form.
+        title: People can ask for a copy of their answers
       declaration: Declaration
       declaration_description: Your form’s declaration is shown to people when they have answered all the questions, just before they submit the form.
       draft_create: Create a draft to edit
