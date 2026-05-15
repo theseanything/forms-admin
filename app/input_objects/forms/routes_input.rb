@@ -1,6 +1,10 @@
 class Forms::RoutesInput < BaseInput
   attr_accessor :form, :routes
 
+  def self.too_many_selection_options?(page)
+    page.answer_settings["selection_options"].length > 10
+  end
+
   def initialize(attributes = {})
     @form = attributes.delete(:form)
     super

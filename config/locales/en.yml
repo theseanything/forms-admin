@@ -1915,6 +1915,12 @@ en:
         total_number_of_users: Total Number of Users
         user_count: User count
       title: Number of users per organisation
+  routes:
+    show:
+      too_many_options_html: |
+        <p>This question has a list with more than 10 options.</p>
+
+        <p>You cannot add routes from answers if the question has more than 10 options.</p>
   routing_page:
     body_html: |
       <p> You can add a route to a question so if someone selects one specific answer, they’ll be skipped to: </p>

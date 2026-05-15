@@ -175,6 +175,44 @@ describe "routes/show.html.erb" do
           expect(rows[2]).not_to have_selector(".govuk-select")
         end
       end
+
+      context "with more than 10 options" do
+        let(:selection_options) do
+          (1..11).map do |i|
+            { name: "Option #{i}", value: "Option #{i}" }
+          end
+        end
+
+        it "has one route input for that question" do
+          render_page
+
+          expect(rendered).to have_selector(".govuk-summary-list") do |summary_list|
+            rows = summary_list.find_all(".govuk-summary-list__row")
+
+            expect(rows[0]).to have_selector(".govuk-select", count: 1)
+            expect(rows[1]).to have_selector(".govuk-select", count: 1)
+            expect(rows[2]).not_to have_selector(".govuk-select")
+          end
+        end
+
+        it "has content explaining that routes cannot be added" do
+          render_page
+
+          expected_content = <<~TEXT
+            This question has a list with more than 10 options.
+
+            You cannot add routes from answers if the question has more than 10 options.
+          TEXT
+
+          expect(rendered).to have_selector(".govuk-summary-list") do |summary_list|
+            rows = summary_list.find_all(".govuk-summary-list__row")
+
+            expect(rows[0]).to have_text(expected_content)
+            expect(rows[1]).not_to have_text(expected_content)
+            expect(rows[2]).not_to have_text(expected_content)
+          end
+        end
+      end
     end
   end
 end

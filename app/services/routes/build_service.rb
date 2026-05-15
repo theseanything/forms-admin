@@ -17,7 +17,9 @@ class Routes::BuildService
     end
 
     form.pages.flat_map do |page|
-      if page.answer_type == "selection" && page.answer_settings.only_one_option == "true"
+      if page.answer_type == "selection" &&
+          page.answer_settings.only_one_option == "true" &&
+          !Forms::RoutesInput.too_many_selection_options?(page)
         build_routes_for_selection_page(page, conditions_by_key)
       else
         build_route_for_generic_page(page, conditions_by_key)

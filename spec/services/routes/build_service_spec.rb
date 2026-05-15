@@ -107,6 +107,22 @@ RSpec.describe Routes::BuildService do
           expect(route_for_no.label).to eq({ text: "Option 2: No" })
         end
 
+        context "when the selection page has more than 10 options" do
+          let(:selection_options) do
+            (1..11).map do |i|
+              { name: "Option #{i}", value: "Option #{i}" }
+            end
+          end
+
+          it "builds a single route input for the selection page" do
+            routes = service.build_routes
+
+            expect(routes.length).to eq(3)
+            expect(routes).to all be_a(Forms::RouteInput)
+            expect(routes.filter { it.page_id == pages.first.id }.length).to eq(1)
+          end
+        end
+
         context "when the selection page is optional" do
           let(:pages) do
             [
