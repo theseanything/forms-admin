@@ -49,7 +49,7 @@ describe FormTaskListService do
 
     before do
       allow(TaskStatusService).to receive(:new).and_return(task_status_service)
-      allow(task_status_service).to receive(:task_statuses).and_return(statuses)
+      allow(task_status_service).to receive(:all_task_statuses).and_return(statuses)
     end
 
     context "when the user can make the form live" do

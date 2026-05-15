@@ -6,10 +6,16 @@ class FakeForm < ApplicationRecord
   include FormStateMachine
 
   # stub the expected interface
-  def ready_for_live; end
+  def all_ready_for_live?; end
+  def can_make_english_version_live?; end
+  def can_make_welsh_version_live?; end
   def after_create_draft; end
   def before_make_live; end
+  def before_make_english_live; end
+  def before_make_welsh_live; end
   def after_make_live; end
+  def after_make_english_live; end
+  def after_make_welsh_live; end
   def after_archive; end
 end
 
@@ -38,7 +44,7 @@ RSpec.describe FormStateMachine do
   describe ".make_live" do
     shared_examples "transition to live state" do |form_state|
       before do
-        allow(form).to receive_messages(ready_for_live: true, before_make_live: nil, after_make_live: nil)
+        allow(form).to receive_messages(all_ready_for_live?: true, before_make_live: nil, after_make_live: nil)
       end
 
       it "transitions to live state" do
@@ -101,6 +107,194 @@ RSpec.describe FormStateMachine do
 
       context "when all sections are completed" do
         it_behaves_like "transition to live state", :archived_with_draft
+      end
+    end
+  end
+
+  describe ".make_english_version_live" do
+    shared_examples "transition to live state" do |form_state|
+      before do
+        allow(form).to receive_messages(can_make_english_version_live?: true, before_make_english_live: nil, after_make_english_live: nil)
+      end
+
+      it "transitions to live state" do
+        expect(form).to transition_from(form_state).to(:live).on_event(:make_english_version_live)
+      end
+
+      it "calls the before_make_english_live callback" do
+        form.make_english_version_live
+        expect(form).to have_received(:before_make_english_live)
+      end
+
+      it "calls the after_make_english_live callback" do
+        form.make_english_version_live
+        expect(form).to have_received(:after_make_english_live)
+      end
+    end
+
+    context "when form is draft" do
+      let(:form) { FakeForm.new(state: :draft) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:draft).to(:live).on_event(:make_english_version_live)
+      end
+
+      context "when all sections are completed" do
+        it_behaves_like "transition to live state", :draft
+      end
+    end
+
+    context "when form is live" do
+      let(:form) { FakeForm.new(state: :live) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:live).to(:live).on_event(:make_english_version_live)
+      end
+
+      context "when all sections are completed" do
+        it_behaves_like "transition to live state", :live
+      end
+    end
+
+    context "when form is live_with_draft" do
+      let(:form) { FakeForm.new(state: :live_with_draft) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:live_with_draft).to(:live).on_event(:make_english_version_live)
+      end
+
+      context "when all sections are completed" do
+        it_behaves_like "transition to live state", :live_with_draft
+      end
+    end
+
+    context "when form is archived" do
+      let(:form) { FakeForm.new(state: :archived) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:archived).to(:live).on_event(:make_english_version_live)
+      end
+
+      context "when all sections are completed" do
+        before do
+          allow(form).to receive_messages(can_make_english_version_live?: true, before_make_english_live: nil, after_make_english_live: nil)
+        end
+
+        it "does not transition to live state" do
+          expect(form).not_to transition_from(:archived).to(:live).on_event(:make_english_version_live)
+        end
+      end
+    end
+
+    context "when form is archived_with_draft" do
+      let(:form) { FakeForm.new(state: :archived_with_draft) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:archived_with_draft).to(:live).on_event(:make_english_version_live)
+      end
+
+      context "when all sections are completed" do
+        it_behaves_like "transition to live state", :archived_with_draft
+      end
+    end
+  end
+
+  describe ".make_welsh_version_live" do
+    shared_examples "transition to live state" do |form_state|
+      before do
+        allow(form).to receive_messages(can_make_welsh_version_live?: true, before_make_welsh_live: nil, after_make_welsh_live: nil)
+      end
+
+      it "transitions to live state" do
+        expect(form).to transition_from(form_state).to(:live).on_event(:make_welsh_version_live)
+      end
+
+      it "calls the before_make_welsh_live callback" do
+        form.make_welsh_version_live
+        expect(form).to have_received(:before_make_welsh_live)
+      end
+
+      it "calls the after_make_welsh_live callback" do
+        form.make_welsh_version_live
+        expect(form).to have_received(:after_make_welsh_live)
+      end
+    end
+
+    context "when form is draft" do
+      let(:form) { FakeForm.new(state: :draft) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:archived).to(:live).on_event(:make_welsh_version_live)
+      end
+
+      context "when all sections are completed" do
+        before do
+          allow(form).to receive_messages(can_make_welsh_version_live?: true, before_make_welsh_live: nil, after_make_welsh_live: nil)
+        end
+
+        it "does not transition to live state" do
+          expect(form).not_to transition_from(:archived).to(:live).on_event(:make_welsh_version_live)
+        end
+      end
+    end
+
+    context "when form is live_with_draft" do
+      let(:form) { FakeForm.new(state: :live_with_draft) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:live_with_draft).to(:live).on_event(:make_welsh_version_live)
+      end
+
+      context "when all sections are completed" do
+        it_behaves_like "transition to live state", :live_with_draft
+      end
+    end
+
+    context "when form is live" do
+      let(:form) { FakeForm.new(state: :live) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:live).to(:live).on_event(:make_welsh_version_live)
+      end
+
+      context "when all sections are completed" do
+        it_behaves_like "transition to live state", :live
+      end
+    end
+
+    context "when form is archived" do
+      let(:form) { FakeForm.new(state: :archived) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:archived).to(:live).on_event(:make_welsh_version_live)
+      end
+
+      context "when all sections are completed" do
+        before do
+          allow(form).to receive_messages(can_make_welsh_version_live?: true, before_make_welsh_live: nil, after_make_welsh_live: nil)
+        end
+
+        it "does not transition to live state" do
+          expect(form).not_to transition_from(:archived).to(:live).on_event(:make_welsh_version_live)
+        end
+      end
+    end
+
+    context "when form is archived_with_draft" do
+      let(:form) { FakeForm.new(state: :archived_with_draft) }
+
+      it "does not transition to live state by default" do
+        expect(form).not_to transition_from(:archived_with_draft).to(:live).on_event(:make_welsh_version_live)
+      end
+
+      context "when all sections are completed" do
+        before do
+          allow(form).to receive_messages(can_make_english_version_live?: true, before_make_english_live: nil, after_make_english_live: nil)
+        end
+
+        it "does not transition to live state" do
+          expect(form).not_to transition_from(:archived).to(:live).on_event(:make_welsh_version_live)
+        end
       end
     end
   end

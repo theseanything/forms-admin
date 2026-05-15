@@ -5,14 +5,12 @@ class TaskStatusService
   end
 
   def mandatory_tasks_completed?(ignore_missing_welsh: false)
-    if ignore_missing_welsh
-      incomplete_tasks.reject { |task| task == :missing_welsh_translations }.empty?
-    else
-      incomplete_tasks.empty?
-    end
+    all_incomplete_tasks(ignore_missing_welsh:).empty?
   end
 
-  def incomplete_tasks
+  def all_incomplete_tasks(ignore_missing_welsh: false)
+    keys_to_skip = [(:missing_welsh_translations if ignore_missing_welsh)]
+    values_to_skip = %i[completed optional]
     {
       missing_pages: pages_status,
       missing_what_happens_next: what_happens_next_status,
@@ -21,10 +19,10 @@ class TaskStatusService
       share_preview_not_completed: share_preview_status,
       missing_welsh_translations: welsh_language_status,
       missing_submission_email: submission_email_status,
-    }.reject { |_k, v| %i[completed optional].include?(v) }.keys
+    }.reject { |k, v| keys_to_skip.include?(k) || values_to_skip.include?(v) }.keys
   end
 
-  def task_statuses
+  def all_task_statuses
     {
       name_status:,
       pages_status:,

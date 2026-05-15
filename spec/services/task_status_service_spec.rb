@@ -14,7 +14,7 @@ describe TaskStatusService do
       let(:form) { build(:form, :new_form, :with_group, group:) }
 
       it "returns the correct default value" do
-        expect(task_status_service.task_statuses[:name_status]).to eq :completed
+        expect(task_status_service.all_task_statuses[:name_status]).to eq :completed
       end
     end
 
@@ -23,7 +23,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:pages_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:pages_status]).to eq :not_started
         end
       end
 
@@ -31,14 +31,14 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_pages, :with_group, question_section_completed: false, group:) }
 
         it "returns the in progress status" do
-          expect(task_status_service.task_statuses[:pages_status]).to eq :in_progress
+          expect(task_status_service.all_task_statuses[:pages_status]).to eq :in_progress
         end
 
         context "and questions marked completed" do
           let(:form) { build(:form, :new_form, :with_pages, :with_group, question_section_completed: true, group:) }
 
           it "returns the completed status" do
-            expect(task_status_service.task_statuses[:pages_status]).to eq :completed
+            expect(task_status_service.all_task_statuses[:pages_status]).to eq :completed
           end
         end
       end
@@ -49,7 +49,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:declaration_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:declaration_status]).to eq :not_started
         end
       end
 
@@ -57,7 +57,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :with_group, declaration_section_completed: false, group:) }
 
         it "returns the not started status" do
-          expect(task_status_service.task_statuses[:declaration_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:declaration_status]).to eq :not_started
         end
       end
 
@@ -65,7 +65,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :with_group, declaration_markdown: "I understand the implications", declaration_section_completed: false, group:) }
 
         it "returns the in progress status" do
-          expect(task_status_service.task_statuses[:declaration_status]).to eq :in_progress
+          expect(task_status_service.all_task_statuses[:declaration_status]).to eq :in_progress
         end
       end
 
@@ -73,7 +73,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :with_group, declaration_section_completed: true, group:) }
 
         it "returns the completed status" do
-          expect(task_status_service.task_statuses[:declaration_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:declaration_status]).to eq :completed
         end
       end
     end
@@ -83,7 +83,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:what_happens_next_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:what_happens_next_status]).to eq :not_started
         end
       end
 
@@ -91,7 +91,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, what_happens_next_markdown: "We usually respond to applications within 10 working days.", group:) }
 
         it "returns the completed status" do
-          expect(task_status_service.task_statuses[:what_happens_next_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:what_happens_next_status]).to eq :completed
         end
       end
     end
@@ -101,7 +101,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:payment_link_status]).to eq :optional
+          expect(task_status_service.all_task_statuses[:payment_link_status]).to eq :optional
         end
       end
 
@@ -109,7 +109,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, payment_url: Faker::Internet.url(host: "gov.uk"), group:) }
 
         it "returns the completed status" do
-          expect(task_status_service.task_statuses[:payment_link_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:payment_link_status]).to eq :completed
         end
       end
     end
@@ -119,7 +119,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:privacy_policy_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:privacy_policy_status]).to eq :not_started
         end
       end
 
@@ -127,7 +127,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, privacy_policy_url: Faker::Internet.url(host: "gov.uk"), group:) }
 
         it "returns the in progress status" do
-          expect(task_status_service.task_statuses[:privacy_policy_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:privacy_policy_status]).to eq :completed
         end
       end
     end
@@ -137,7 +137,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:support_contact_details_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:support_contact_details_status]).to eq :not_started
         end
       end
 
@@ -145,7 +145,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_support, :with_group, group:) }
 
         it "returns the in progress status" do
-          expect(task_status_service.task_statuses[:support_contact_details_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:support_contact_details_status]).to eq :completed
         end
       end
     end
@@ -155,7 +155,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns optional" do
-          expect(task_status_service.task_statuses[:submission_attachments_status]).to eq :optional
+          expect(task_status_service.all_task_statuses[:submission_attachments_status]).to eq :optional
         end
       end
 
@@ -166,7 +166,7 @@ describe TaskStatusService do
           let(:submission_format) { [] }
 
           it "returns optional" do
-            expect(task_status_service.task_statuses[:submission_attachments_status]).to eq :optional
+            expect(task_status_service.all_task_statuses[:submission_attachments_status]).to eq :optional
           end
         end
 
@@ -174,7 +174,7 @@ describe TaskStatusService do
           let(:submission_format) { %w[csv] }
 
           it "returns completed" do
-            expect(task_status_service.task_statuses[:submission_attachments_status]).to eq :completed
+            expect(task_status_service.all_task_statuses[:submission_attachments_status]).to eq :completed
           end
         end
 
@@ -182,7 +182,7 @@ describe TaskStatusService do
           let(:submission_format) { %w[csv json] }
 
           it "returns completed" do
-            expect(task_status_service.task_statuses[:submission_attachments_status]).to eq :completed
+            expect(task_status_service.all_task_statuses[:submission_attachments_status]).to eq :completed
           end
         end
       end
@@ -191,7 +191,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, submission_type: "s3", submission_format: "csv", group:) }
 
         it "returns optional" do
-          expect(task_status_service.task_statuses[:submission_attachments_status]).to eq :optional
+          expect(task_status_service.all_task_statuses[:submission_attachments_status]).to eq :optional
         end
       end
     end
@@ -204,7 +204,7 @@ describe TaskStatusService do
         let(:send_weekly_submission_batch) { false }
 
         it "returns completed" do
-          expect(task_status_service.task_statuses[:batch_submissions_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:batch_submissions_status]).to eq :completed
         end
       end
 
@@ -213,7 +213,7 @@ describe TaskStatusService do
         let(:send_weekly_submission_batch) { true }
 
         it "returns completed" do
-          expect(task_status_service.task_statuses[:batch_submissions_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:batch_submissions_status]).to eq :completed
         end
       end
 
@@ -222,7 +222,7 @@ describe TaskStatusService do
         let(:send_weekly_submission_batch) { false }
 
         it "returns optional" do
-          expect(task_status_service.task_statuses[:batch_submissions_status]).to eq :optional
+          expect(task_status_service.all_task_statuses[:batch_submissions_status]).to eq :optional
         end
       end
     end
@@ -233,7 +233,7 @@ describe TaskStatusService do
           let(:form) { build(:form, :new_form, :with_group, group:) }
 
           it "returns cannot_start" do
-            expect(task_status_service.task_statuses[:share_preview_status]).to eq :cannot_start
+            expect(task_status_service.all_task_statuses[:share_preview_status]).to eq :cannot_start
           end
         end
 
@@ -241,7 +241,7 @@ describe TaskStatusService do
           let(:form) { build(:form, :with_pages, :with_group, group:) }
 
           it "returns not_started" do
-            expect(task_status_service.task_statuses[:share_preview_status]).to eq :not_started
+            expect(task_status_service.all_task_statuses[:share_preview_status]).to eq :not_started
           end
         end
       end
@@ -251,7 +251,7 @@ describe TaskStatusService do
           let(:form) { build(:form, :new_form, :with_group, share_preview_completed: true, group:) }
 
           it "returns cannot_start" do
-            expect(task_status_service.task_statuses[:share_preview_status]).to eq :cannot_start
+            expect(task_status_service.all_task_statuses[:share_preview_status]).to eq :cannot_start
           end
         end
 
@@ -259,7 +259,7 @@ describe TaskStatusService do
           let(:form) { build(:form, :with_pages, :with_group, share_preview_completed: true, group:) }
 
           it "returns completed" do
-            expect(task_status_service.task_statuses[:share_preview_status]).to eq :completed
+            expect(task_status_service.all_task_statuses[:share_preview_status]).to eq :completed
           end
         end
       end
@@ -270,7 +270,7 @@ describe TaskStatusService do
         let(:form) { create(:form, :live, :with_group, available_languages: %w[en], welsh_completed: false, group:) }
 
         it "returns optional" do
-          expect(task_status_service.task_statuses[:welsh_language_status]).to eq :optional
+          expect(task_status_service.all_task_statuses[:welsh_language_status]).to eq :optional
         end
       end
 
@@ -278,7 +278,7 @@ describe TaskStatusService do
         let(:form) { create(:form, :live, :with_group, :with_welsh_translation, group:) }
 
         it "returns completed" do
-          expect(task_status_service.task_statuses[:welsh_language_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:welsh_language_status]).to eq :completed
         end
 
         context "and the support email contains a non-gov.uk email with the same domain as the user" do
@@ -286,7 +286,7 @@ describe TaskStatusService do
           let(:form) { create(:form, :ready_for_live, :with_group, :with_welsh_translation, welsh_completed: true, group:, support_email_cy: "support@example.com") }
 
           it "returns completed" do
-            expect(task_status_service.task_statuses[:welsh_language_status]).to eq :completed
+            expect(task_status_service.all_task_statuses[:welsh_language_status]).to eq :completed
           end
         end
       end
@@ -303,7 +303,7 @@ describe TaskStatusService do
         end
 
         it "returns in_progress" do
-          expect(task_status_service.task_statuses[:welsh_language_status]).to eq :in_progress
+          expect(task_status_service.all_task_statuses[:welsh_language_status]).to eq :in_progress
         end
       end
 
@@ -311,7 +311,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, available_languages: %w[en cy], welsh_completed: false, group:) }
 
         it "returns in_progress" do
-          expect(task_status_service.task_statuses[:welsh_language_status]).to eq :in_progress
+          expect(task_status_service.all_task_statuses[:welsh_language_status]).to eq :in_progress
         end
       end
     end
@@ -321,7 +321,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :new_form, :with_group, group:) }
 
         it "returns the correct default value" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :cannot_start
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :cannot_start
         end
       end
 
@@ -329,7 +329,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :ready_for_live, :with_group, group:) }
 
         it "returns the not started status" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :not_started
         end
       end
 
@@ -337,7 +337,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :ready_for_live, :with_group, state: :live_with_draft, group:) }
 
         it "returns the not started status" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :not_started
         end
       end
 
@@ -345,7 +345,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :with_group, state: :archived_with_draft, group:) }
 
         it "returns the not started status" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :cannot_start
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :cannot_start
         end
       end
 
@@ -353,7 +353,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :ready_for_live, :with_group, state: :archived_with_draft, group:) }
 
         it "returns the not started status" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :not_started
         end
       end
 
@@ -361,7 +361,7 @@ describe TaskStatusService do
         let(:form) { create(:form, :live, :with_group, group:) }
 
         it "returns the completed status" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :completed
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :completed
         end
       end
 
@@ -369,7 +369,7 @@ describe TaskStatusService do
         let(:form) { build(:form, :with_group, state: :archived, group:) }
 
         it "returns the completed status" do
-          expect(task_status_service.task_statuses[:make_live_status]).to eq :not_started
+          expect(task_status_service.all_task_statuses[:make_live_status]).to eq :not_started
         end
       end
     end
@@ -405,7 +405,7 @@ describe TaskStatusService do
     end
   end
 
-  describe "#incomplete_tasks" do
+  describe "#all_incomplete_tasks" do
     context "when mandatory tasks are complete" do
       let(:form) { build(:form, :live, :with_group, group:) }
 
@@ -413,7 +413,7 @@ describe TaskStatusService do
         let(:group) { create(:group) }
 
         it "returns no missing sections" do
-          expect(task_status_service.incomplete_tasks).to be_empty
+          expect(task_status_service.all_incomplete_tasks).to be_empty
         end
       end
 
@@ -422,7 +422,7 @@ describe TaskStatusService do
           let(:form) { create(:form, :live, :with_group, available_languages: %w[en], welsh_completed: false, group:) }
 
           it "returns no missing sections" do
-            expect(task_status_service.incomplete_tasks).to be_empty
+            expect(task_status_service.all_incomplete_tasks).to be_empty
           end
         end
 
@@ -436,7 +436,7 @@ describe TaskStatusService do
           end
 
           it "returns no missing sections" do
-            expect(task_status_service.incomplete_tasks).to be_empty
+            expect(task_status_service.all_incomplete_tasks).to be_empty
           end
         end
 
@@ -451,7 +451,7 @@ describe TaskStatusService do
           end
 
           it "flags the Welsh task as incomplete" do
-            expect(task_status_service.incomplete_tasks).to match_array(%i[missing_welsh_translations])
+            expect(task_status_service.all_incomplete_tasks).to match_array(%i[missing_welsh_translations])
           end
         end
 
@@ -459,7 +459,32 @@ describe TaskStatusService do
           let(:form) { build(:form, :live, :with_group, available_languages: %w[en cy], welsh_completed: false, group:) }
 
           it "flags the Welsh task as incomplete" do
-            expect(task_status_service.incomplete_tasks).to match_array(%i[missing_welsh_translations])
+            expect(task_status_service.all_incomplete_tasks).to match_array(%i[missing_welsh_translations])
+          end
+        end
+
+        context "when the ignore_missing_welsh argument is `true`" do
+          context "and the form has structural changes require Welsh updates" do
+            let(:form) { create(:form, :live, :with_group, available_languages: %w[en cy], welsh_completed: true, group:) }
+
+            before do
+              # Create initial Welsh FormDocument
+              FormDocumentSyncService.new(form).synchronize_live_form
+              # Add new content requiring Welsh translation
+              form.update!(declaration_markdown: "I declare this is correct", share_preview_completed: true)
+            end
+
+            it "returns no missing sections" do
+              expect(task_status_service.all_incomplete_tasks(ignore_missing_welsh: true)).to be_empty
+            end
+          end
+
+          context "when the optional Welsh task has been started but not completed" do
+            let(:form) { build(:form, :live, :with_group, available_languages: %w[en cy], welsh_completed: false, group:) }
+
+            it "returns no missing sections" do
+              expect(task_status_service.all_incomplete_tasks(ignore_missing_welsh: true)).to be_empty
+            end
           end
         end
       end
@@ -469,12 +494,12 @@ describe TaskStatusService do
       let(:form) { build(:form, :new_form, :with_group, group:) }
 
       it "returns a set of keys related to missing fields" do
-        expect(task_status_service.incomplete_tasks).to match_array(%i[missing_pages missing_privacy_policy_url missing_contact_details missing_what_happens_next share_preview_not_completed missing_submission_email])
+        expect(task_status_service.all_incomplete_tasks).to match_array(%i[missing_pages missing_privacy_policy_url missing_contact_details missing_what_happens_next share_preview_not_completed missing_submission_email])
       end
     end
   end
 
-  describe "#task_statuses" do
+  describe "#all_task_statuses" do
     let(:form) { create(:form, :live, :with_group, group:) }
 
     it "returns a hash with each of the task statuses" do
@@ -494,7 +519,7 @@ describe TaskStatusService do
         submission_email_status: :completed,
         confirm_submission_email_status: :completed,
       }
-      expect(task_status_service.task_statuses).to eq expected_hash
+      expect(task_status_service.all_task_statuses).to eq expected_hash
     end
 
     context "when the form has a live Welsh version" do
@@ -507,7 +532,7 @@ describe TaskStatusService do
         end
 
         it "make live_status is not_started" do
-          expect(task_status_service.task_statuses).to include(make_live_status: :not_started)
+          expect(task_status_service.all_task_statuses).to include(make_live_status: :not_started)
         end
       end
     end
@@ -522,7 +547,7 @@ describe TaskStatusService do
         end
 
         it "make live_status is cannot_start" do
-          expect(task_status_service.task_statuses).to include(make_live_status: :cannot_start)
+          expect(task_status_service.all_task_statuses).to include(make_live_status: :cannot_start)
         end
       end
     end

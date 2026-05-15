@@ -1,7 +1,8 @@
 require "rails_helper"
 
 describe MakeFormLiveService do
-  let(:make_form_live_service) { described_class.call(current_form:, current_user:) }
+  subject(:make_form_live_service) { described_class.call(current_form:, current_user:) }
+
   let(:current_form) { create :form, :ready_for_live }
   let(:live_form_document) { current_form.live_form_document }
   let(:current_user) { build :user }
@@ -48,6 +49,53 @@ describe MakeFormLiveService do
           ).and_call_original
 
           make_form_live_service.make_live
+        end
+      end
+    end
+  end
+
+  describe "#make_language_live" do
+    subject(:make_form_live_service) { described_class.call(current_form:, current_user:, language:) }
+
+    context "when the language being made live is English" do
+      let(:language) { "en" }
+
+      context "when the form is a draft" do
+        it "makes the English form live" do
+          expect {
+            make_form_live_service.make_language_live
+          }.to change(current_form, :state).to("live")
+          .and change(FormDocument.where(form: current_form, tag: "live", language: "en"), :count).by(1)
+          .and not_change(FormDocument.where(form: current_form, tag: "live", language: "cy"), :count)
+        end
+
+        it "does not call the SubmissionEmailMailer" do
+          expect(SubmissionEmailMailer).not_to receive(:alert_email_change)
+          make_form_live_service.make_language_live
+        end
+      end
+    end
+
+    context "when the language being made live is Welsh" do
+      let(:language) { "cy" }
+
+      context "when the form has a live English version" do
+        let(:current_form) { create :form, :ready_for_live, :with_welsh_translation, state: "live" }
+
+        before do
+          create :form_document, :live, form: current_form, language: "en", content: current_form.as_form_document
+        end
+
+        it "makes the Welsh form live" do
+          expect {
+            make_form_live_service.make_language_live
+          }.to change(FormDocument.where(form: current_form, tag: "live", language: "cy"), :count).by(1)
+          .and not_change(FormDocument.where(form: current_form, tag: "live", language: "en"), :count)
+        end
+
+        it "does not call the SubmissionEmailMailer" do
+          expect(SubmissionEmailMailer).not_to receive(:alert_email_change)
+          make_form_live_service.make_language_live
         end
       end
     end

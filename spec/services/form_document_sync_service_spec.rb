@@ -78,7 +78,7 @@ RSpec.describe FormDocumentSyncService do
         expect(FormDocument.where(form:, tag: "draft", language: "cy")).to exist
       end
 
-      context "and the English form fails to save" do
+      context "and the Welsh form fails to save" do
         before do
           allow(service).to receive(:update_or_create_form_document).and_call_original
           # saving welsh form fails
@@ -293,6 +293,194 @@ RSpec.describe FormDocumentSyncService do
             service.update_draft_form_document
           }.to(change { FormDocument.exists?(form:, tag: "draft", language: "cy") }.from(true).to(false))
         end
+      end
+    end
+  end
+
+  describe "#synchronize_only_live_english_form" do
+    let!(:form) { create(:form, state: "live") }
+    let(:expected_live_at) { form.reload.updated_at.as_json }
+
+    context "when there is no existing form document" do
+      it "creates a live form document" do
+        expect {
+          service.synchronize_only_live_english_form
+        }.to change(FormDocument, :count).by(1)
+
+        expect(FormDocument.last).to have_attributes(form:, tag: "live", content: form.as_form_document(live_at: expected_live_at))
+      end
+    end
+
+    context "when there is an existing live form document" do
+      let!(:form_document) { create :form_document, :live, form:, content: form.as_form_document }
+
+      it "updates the live form document" do
+        new_name = "new name"
+        form.name = new_name
+        expect {
+          service.synchronize_only_live_english_form
+        }.to change { form_document.reload.content["name"] }.to(new_name)
+      end
+
+      it "updates the live_at date in the form document" do
+        service.synchronize_only_live_english_form
+        expect(FormDocument.last["content"]).to include("live_at" => form.reload.updated_at.as_json)
+      end
+    end
+
+    context "when there is an existing archived form document" do
+      before do
+        create :form_document, :archived, form:
+      end
+
+      it "destroys the archived form document" do
+        expect {
+          service.synchronize_only_live_english_form
+        }.to(change { FormDocument.exists?(form:, tag: "archived") }.from(true).to(false))
+      end
+
+      it "creates the live form document" do
+        expect {
+          service.synchronize_only_live_english_form
+        }.to(change { FormDocument.exists?(form:, tag: "live") }.from(false).to(true))
+      end
+
+      context "and deleting the archived FormDocument fails" do
+        before do
+          allow(service).to receive(:delete_form_documents_by_tag).with(FormDocumentSyncService::ARCHIVED_TAG)
+            .and_raise(ActiveRecord::StatementInvalid)
+        end
+
+        it "does not create the live FormDocument" do
+          expect {
+            service.synchronize_only_live_english_form
+          }.to raise_error(ActiveRecord::StatementInvalid).and not_change(FormDocument, :count)
+        end
+      end
+    end
+
+    context "when the form has welsh translations" do
+      let(:form) { create(:form, state: "live", available_languages: %w[en cy]) }
+
+      it "only creates a live English form document" do
+        expect {
+          service.synchronize_only_live_english_form
+        }.to change { FormDocument.where(form:, tag: "live", language: "en").count }.by(1)
+
+        expect(FormDocument.where(form:, tag: "live", language: "en")).to exist
+        expect(FormDocument.where(form:, tag: "live", language: "en").first.content["available_languages"]).to eq %w[en]
+        expect(FormDocument.where(form:, tag: "live", language: "cy")).not_to exist
+      end
+
+      context "and the English form fails to save" do
+        before do
+          allow(service).to receive(:update_or_create_form_document)
+            .with("live", anything, "en")
+            .and_raise(ActiveRecord::RecordInvalid.new(form), "simulated FormDocument saving error")
+        end
+
+        it "does not create any FormDocuments" do
+          expect {
+            service.synchronize_only_live_english_form
+          }.to raise_error(ActiveRecord::RecordInvalid).and not_change(FormDocument, :count)
+        end
+      end
+    end
+
+    context "when there is already a live Welsh form document" do
+      before do
+        create :form_document, :live, form:, language: "cy", content: { "available_languages" => %w[en cy] }
+      end
+
+      it "does not create any FormDocuments" do
+        expect {
+          service.synchronize_only_live_english_form
+        }.to raise_error(ActiveRecord::RecordNotFound).and not_change(FormDocument, :count)
+      end
+    end
+  end
+
+  describe "#synchronize_only_live_welsh_form" do
+    let!(:form) { create(:form, :with_welsh_translation, :ready_for_live, state: "live") }
+    let(:expected_live_at) { form.reload.updated_at.as_json }
+    let(:welsh_form_content) do
+      Mobility.with_locale(:cy) do
+        form.as_form_document(live_at: expected_live_at, language: :cy)
+      end
+    end
+
+    context "when there is a live English form document" do
+      before do
+        create :form_document, :live, form:, language: "en", content: { "available_languages" => %w[en] }
+      end
+
+      context "when there is no existing Welsh form document" do
+        it "only creates a live Welsh form document" do
+          expect {
+            service.synchronize_only_live_welsh_form
+          }.to change { FormDocument.where(form:, tag: "live", language: "cy").count }.by(1)
+          .and(not_change { FormDocument.where(form:, tag: "live", language: "en").count })
+
+          welsh_form_document = FormDocument.where(form:, tag: "live", language: "cy").first
+          expect(welsh_form_document.content["available_languages"]).to eq %w[en cy]
+          expect(welsh_form_document).to have_attributes(form:, tag: "live", content: welsh_form_content)
+        end
+      end
+
+      context "when there is an existing live Welsh form document" do
+        let!(:form_document) { create :form_document, :live, form:, language: "cy", content: welsh_form_content }
+
+        it "updates the live form document" do
+          new_name = "new name"
+          form.name_cy = new_name
+          expect {
+            service.synchronize_only_live_welsh_form
+          }.to change { form_document.reload.content["name"] }.to(new_name)
+        end
+
+        it "updates the live_at date in the form document" do
+          service.synchronize_only_live_welsh_form
+          expect(FormDocument.last["content"]).to include("live_at" => form.reload.updated_at.as_json)
+        end
+      end
+
+      context "when there is an existing archived form document" do
+        before do
+          create :form_document, :archived, form:, language: "cy"
+        end
+
+        it "destroys the archived form document" do
+          expect {
+            service.synchronize_only_live_welsh_form
+          }.to(change { FormDocument.exists?(form:, tag: "archived", language: "cy") }.from(true).to(false))
+        end
+
+        it "creates the live form document" do
+          expect {
+            service.synchronize_only_live_welsh_form
+          }.to(change { FormDocument.exists?(form:, tag: "live", language: "cy") }.from(false).to(true))
+        end
+
+        context "and deleting the archived FormDocument fails" do
+          before do
+            allow(service).to receive(:delete_form_documents_by_tag).with(FormDocumentSyncService::ARCHIVED_TAG)
+              .and_raise(ActiveRecord::StatementInvalid)
+          end
+
+          it "does not create the live FormDocument" do
+            expect {
+              service.synchronize_only_live_welsh_form
+            }.to raise_error(ActiveRecord::StatementInvalid).and not_change(FormDocument, :count)
+          end
+        end
+      end
+    end
+
+    context "when there is no live English form document" do
+      it "does not create any FormDocuments" do
+        expect {
+          service.synchronize_only_live_welsh_form
+        }.to raise_error(ActiveRecord::RecordNotFound).and not_change(FormDocument, :count)
       end
     end
   end

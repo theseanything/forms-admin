@@ -115,17 +115,13 @@ class Form < ApplicationRecord
     errors.add(:base, :has_validation_errors, message: "Form has routing validation errors") if question_section_completed && has_routing_errors
   end
 
-  def ready_for_live
-    task_status_service.mandatory_tasks_completed?
+  def all_ready_for_live?(ignore_missing_welsh: false)
+    task_status_service.mandatory_tasks_completed?(ignore_missing_welsh:)
   end
 
-  def all_ready_for_live?
-    ready_for_live
-  end
+  delegate :all_incomplete_tasks, to: :task_status_service
 
-  delegate :incomplete_tasks, to: :task_status_service
-
-  delegate :task_statuses, to: :task_status_service
+  delegate :all_task_statuses, to: :task_status_service
 
   def group
     group_form&.group
@@ -147,14 +143,6 @@ class Form < ApplicationRecord
 
   def has_no_remaining_routes_available?
     qualifying_route_pages.none? && has_routing_conditions
-  end
-
-  def all_incomplete_tasks
-    incomplete_tasks
-  end
-
-  def all_task_statuses
-    task_statuses
   end
 
   def page_number(page)
@@ -238,6 +226,12 @@ class Form < ApplicationRecord
     pair&.last
   end
 
+  def can_make_language_live?(language:)
+    return can_make_english_version_live? if language == "en"
+
+    can_make_welsh_version_live? if language == "cy"
+  end
+
 private
 
   def set_external_id
@@ -279,6 +273,30 @@ private
 
   def after_make_live
     FormDocumentSyncService.new(self).synchronize_live_form
+  end
+
+  def before_make_english_live
+    before_make_live
+  end
+
+  def after_make_english_live
+    FormDocumentSyncService.new(self).synchronize_only_live_english_form
+  end
+
+  def before_make_welsh_live
+    before_make_live
+  end
+
+  def after_make_welsh_live
+    FormDocumentSyncService.new(self).synchronize_only_live_welsh_form
+  end
+
+  def can_make_english_version_live?
+    has_draft_version && all_ready_for_live?(ignore_missing_welsh: true) && live_welsh_form_document.blank?
+  end
+
+  def can_make_welsh_version_live?
+    has_live_version && all_ready_for_live? && welsh_completed? && live_form_document.present? && live_welsh_form_document.blank?
   end
 
   def after_archive
