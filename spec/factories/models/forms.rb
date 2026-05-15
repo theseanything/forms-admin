@@ -63,6 +63,12 @@ FactoryBot.define do
         add_welsh_translations_to_pages(form.pages) if form.available_languages.include?("cy")
       end
 
+      after(:stub) do |form|
+        link_pages_list(form.pages) if form.pages.present?
+        stub_conditions(form) if form.pages.present?
+        add_welsh_translations_to_pages(form.pages) if form.available_languages.include?("cy")
+      end
+
       question_section_completed { true }
     end
 
@@ -167,6 +173,14 @@ def link_pages_list(pages)
   end
 
   pages
+end
+
+def stub_conditions(form)
+  form.instance_eval do
+    def conditions
+      pages.flat_map(&:routing_conditions)
+    end
+  end
 end
 
 def add_welsh_translations_to_pages(pages)

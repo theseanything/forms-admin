@@ -60,7 +60,7 @@ RSpec.describe Forms::RoutesInput do
 
   describe "#routes_attributes=" do
     let(:goto_options) { [["Go to page 2", pages.second.id]] }
-    let(:route_build_service) { instance_double(Routes::BuildService, options_for_page: goto_options) }
+    let(:route_build_service) { instance_double(Routes::BuildService, options_for_goto_page: goto_options) }
     let(:pages) { create_list(:page, 2) }
     let(:form) { create(:form, id: 1, pages:) }
 

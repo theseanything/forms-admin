@@ -25,20 +25,31 @@ class Routes::BuildService
     end
   end
 
-  def options_for_page(page)
+  def options_for_goto_page(page, selected = nil)
     next_page = form.next_page_after(page)
 
     return [] unless next_page
 
-    # Don't include the current page in the options
-    options_without_page = all_goto_options.reject { |_, value| value == page.id }
+    # Don't include the current page or pages before in the options,
+    # unless the goto page for the existing condition is before the current page,
+    # in which case do include that one. Also, change the option for the next page
+    # to a different default option.
+    next_page_id = next_page.id
+    drop = true
 
-    # Replace the next page with the default option
-    options_without_page.map do |name, value|
-      if value == next_page.id
-        ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+    all_goto_options.filter_map do |option|
+      _, value = option
+
+      if drop
+        if selected && value == selected
+          option
+        elsif value == next_page_id
+          drop = false
+          ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+        end
+        # return nil
       else
-        [name, value]
+        option
       end
     end
   end
@@ -62,7 +73,7 @@ private
         page:,
         answer_value:,
         goto: goto_value_for(condition),
-        goto_options: options_for_page(page),
+        goto_options: options_for_goto_page(page, condition&.goto_page_id),
         label: { text: "Option #{index}: #{answer_value_label}" },
       )
     end
@@ -78,15 +89,19 @@ private
         page_id: page.id,
         page:,
         goto: goto_value_for(condition),
-        goto_options: options_for_page(page),
+        goto_options: options_for_goto_page(page, condition&.goto_page_id),
         label: { text: "Go to", hidden: true },
       ),
     ]
   end
 
+  def option_for_select(page)
+    ["#{page.position}. #{page.question_text}", page.id]
+  end
+
   def all_goto_options
     @all_goto_options ||= begin
-      page_opts = form.pages.map { |p| ["#{p.position}. #{p.question_text}", p.id] }
+      page_opts = form.pages.map { |p| option_for_select(p) }
       page_opts + [END_OF_FORM_OPTION]
     end
   end

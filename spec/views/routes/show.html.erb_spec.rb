@@ -1,10 +1,9 @@
 require "rails_helper"
 
 describe "routes/show.html.erb" do
-  let(:form) { build_stubbed :form, pages: }
+  let(:form) { build_stubbed :form, :with_pages, pages: }
   let(:pages) { [] }
-  let(:routes) { [] }
-  let(:routes_input) { build :routes_input, form:, routes: }
+  let(:routes_input) { build(:routes_input, form:).assign_form_values }
 
   def render_page
     assign(:current_form, form)
@@ -29,13 +28,30 @@ describe "routes/show.html.erb" do
   end
 
   context "when the form has pages and routes" do
-    let(:pages) { build_stubbed_list(:page, 3) }
-    let(:routes) do
+    let(:pages) do
       [
-        build(:route_input, page: pages.first, goto: pages.third.id, goto_options: []),
-        build(:route_input, :default, page: pages.second, goto_options: []),
-        build(:route_input, :default, page: pages.third, goto_options: []),
+        build_stubbed(
+          :page,
+          id: 101,
+          routing_conditions: [
+            build_stubbed(
+              :condition,
+              routing_page_id: 101,
+              goto_page_id: 103,
+              answer_value: nil,
+            ),
+          ],
+        ),
+        build_stubbed(:page, id: 102),
+        build_stubbed(:page, id: 103),
       ]
+    end
+
+    it "has a summary list with a row for each page" do
+      render_page
+      expect(rendered).to have_selector(".govuk-summary-list") do |summary_list|
+        expect(summary_list).to have_selector(".govuk-summary-list__row", count: pages.length)
+      end
     end
 
     it "displays the page's position and question text" do
@@ -47,6 +63,83 @@ describe "routes/show.html.erb" do
     it "includes the page's position in the id of the key" do
       render_page
       expect(rendered).to have_selector("#page-#{pages.first.position}")
+    end
+
+    it "has a select field for each page except the last one" do
+      render_page
+      expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]')
+      expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]')
+      expect(rendered).not_to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][2][goto]"]')
+    end
+
+    it "has options for where the route should go to for each select field" do
+      render_page
+
+      def select_options(select_field)
+        select_field.find_all("option").map { [it["value"], it.text] }
+      end
+
+      expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]') do |field|
+        expect(select_options(field)).to eq [
+          ["default", "Go to question 2"],
+          ["103", "3. #{pages.third.question_text}"],
+          ["end_of_form", "End of the form"],
+        ]
+      end
+
+      expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
+        expect(select_options(field)).to eq [
+          ["default", "Go to question 3"],
+          ["end_of_form", "End of the form"],
+        ]
+      end
+    end
+
+    it "shows the selected goto page for the route" do
+      render_page
+
+      expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]') do |field|
+        expect(field).to have_selector("option[selected]") do |option|
+          expect(option["value"]).to eq "103"
+        end
+      end
+
+      expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
+        expect(field).to have_selector("option[selected]") do |option|
+          expect(option["value"]).to eq "default"
+        end
+      end
+    end
+
+    context "when the route goes to a page before the routing page" do
+      let(:pages) do
+        [
+          build_stubbed(:page, id: 101),
+          build_stubbed(
+            :page,
+            id: 102,
+            routing_conditions: [
+              build_stubbed(
+                :condition,
+                routing_page_id: 102,
+                goto_page_id: 101,
+                answer_value: nil,
+              ),
+            ],
+          ),
+          build_stubbed(:page, id: 103),
+        ]
+      end
+
+      it "shows the selected goto page for the route" do
+        render_page
+
+        expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
+          expect(field).to have_selector("option[selected]") do |option|
+            expect(option["value"]).to eq "101"
+          end
+        end
+      end
     end
   end
 end

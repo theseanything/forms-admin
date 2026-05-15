@@ -33,7 +33,10 @@ class Forms::RoutesInput < BaseInput
       next unless page # Skip if page not found or doesn't belong to form
 
       Forms::RouteInput.new(
-        route_attrs.symbolize_keys.merge(page:, goto_options: route_build_service.options_for_page(page)),
+        route_attrs.symbolize_keys.merge(
+          page:,
+          goto_options: route_build_service.options_for_goto_page(page, route_attrs["goto"]),
+        ),
       )
     }.compact
   end
