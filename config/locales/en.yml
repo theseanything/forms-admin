@@ -360,6 +360,12 @@ en:
     prefix: 'Error:'
   exit_page:
     no_content_added_html: "<p>No content added</p>"
+  feedback_link:
+    body_html: |
+      Tell us about your experience using this service.
+      You’ll help us make improvements by <a href="%{feedback_url}" class="govuk-link">giving us your feedback</a>.
+    feedback_survey_url: https://surveys.publishing.service.gov.uk/s/T7OW3C/
+    heading: Help us improve this service
   footer:
     accessibility_statement: Accessibility statement
     built_by_link: Government Digital Service
