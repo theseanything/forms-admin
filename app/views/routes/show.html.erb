@@ -23,11 +23,6 @@
               capture do %>
               <p> <%= page.question_text %> </p>
               <% if @routes_input.form.next_page_after(page).present? %>
-                <% if page.answer_type == "selection" &&
-                        page.answer_settings.only_one_option == "true" &&
-                          @routes_input.class.too_many_selection_options?(page) %>
-                  <%= t(".too_many_options_html") %>
-                <% end %>
                 <ul class="govuk-list">
                   <% routes.each do |route| %>
                     <li>
@@ -40,6 +35,11 @@
                     </li>
                   <% end %>
                 </ul>
+                <% if page.answer_type == "selection" &&
+                        page.answer_settings.only_one_option == "true" &&
+                          @routes_input.class.too_many_selection_options?(page) %>
+                  <%= t(".too_many_options_html") %>
+                <% end %>
               <% end %>
             <% end %>
           <% end %>
