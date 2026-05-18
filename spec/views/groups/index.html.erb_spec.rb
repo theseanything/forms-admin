@@ -36,7 +36,7 @@ RSpec.describe "groups/index", type: :view do
     end
 
     it "shows a create group button" do
-      expect(rendered).to have_link("Create a group", href: new_group_path)
+      expect(rendered).to have_link("Create a group", href: confirm_new_groups_path)
     end
 
     it "does not show an organisation selector" do

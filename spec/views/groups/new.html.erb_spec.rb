@@ -9,7 +9,7 @@ RSpec.describe "groups/new", type: :view do
   end
 
   it "contains the page heading" do
-    expect(rendered).to have_css("h1", text: I18n.t("groups.new.title"))
+    expect(rendered).to have_css("h1", text: I18n.t("page_titles.new_group"))
   end
 
   it "renders the new group form" do
@@ -24,5 +24,9 @@ RSpec.describe "groups/new", type: :view do
 
   it "includes the body text" do
     expect(rendered).to include(I18n.t("groups.new.body_html"))
+  end
+
+  it "has a back link" do
+    expect(view.content_for(:back_link)).to have_link(I18n.t("groups.new.back_link"), href: confirm_new_groups_path)
   end
 end

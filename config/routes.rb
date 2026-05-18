@@ -223,6 +223,12 @@ Rails.application.routes.draw do
   resources :groups do
     resources :forms, controller: :group_forms, only: %i[new create edit update]
     resources :members, controller: :group_members, only: %i[index new create]
+
+    collection do
+      get "confirm-new", to: "groups#confirm_new"
+      post "confirm-new", to: "groups#confirm_new_submit"
+    end
+
     member do
       get "delete", to: "groups#delete"
       get "move", to: "groups#move"

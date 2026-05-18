@@ -8,6 +8,7 @@ feature "Create a new group", type: :feature do
   scenario "Form creator creates a new group" do
     when_i_visit_the_groups_page
     and_i_click_create_a_group
+    and_i_click_yes
     and_i_fill_in_the_group_name
     then_i_should_see_the_new_group
     and_i_use_the_back_link
@@ -23,6 +24,11 @@ feature "Create a new group", type: :feature do
   def and_i_click_create_a_group
     click_link "Create a group"
     expect_page_to_have_no_axe_errors(page)
+  end
+
+  def and_i_click_yes
+    choose "Yes"
+    click_button "Continue"
   end
 
   def and_i_fill_in_the_group_name

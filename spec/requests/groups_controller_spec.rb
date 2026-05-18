@@ -968,4 +968,46 @@ RSpec.describe "/groups", type: :request do
       end
     end
   end
+
+  describe "GET /confirm_new" do
+    it "renders a successful response" do
+      get confirm_new_groups_url
+      expect(response).to be_successful
+    end
+  end
+
+  describe "POST /confirm_new" do
+    before do
+      post confirm_new_groups_url, params: { groups_confirm_new_input: { confirm: } }
+    end
+
+    context "when 'Yes' is selected" do
+      let(:confirm) { :yes }
+
+      it "redirects to the new group page" do
+        expect(response).to redirect_to(new_group_path)
+      end
+    end
+
+    context "when 'No' is selected" do
+      let(:confirm) { :no }
+
+      it "redirects to the groups page" do
+        expect(response).to redirect_to(groups_path)
+      end
+    end
+
+    context "when no option is selected" do
+      let(:confirm) { nil }
+
+      it "returns 422" do
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "re-renders the confirm new page with an error" do
+        expect(response).to render_template(:confirm_new)
+        expect(response.body).to include("Select yes if you want to create a new group")
+      end
+    end
+  end
 end

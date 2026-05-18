@@ -653,6 +653,20 @@ en:
       title: Add an editor to this group
       title_show_role_options: Add an editor or group admin to this group
   groups:
+    confirm_new:
+      radios_legend: Do you still want to create a new group?
+      with_org_admin:
+        body_html: |
+          <p>Each form needs to be created in a ‘group’. Once you have a group, you can add other people to create and edit forms in it.</p>
+          <p>When you first create a group, it will be a ‘trial’ group. That means you can test how the platform works, but you cannot make any forms in the group live.</p>
+          <p>You’ll only be able to make forms live if you get permission from your organisation’s GOV.UK Forms admin.</p>
+          <p>If you want to use this group to create live forms, or if you are not sure you should make a new group, contact your organisation’s GOV.UK Forms admin before you continue. They’ll be able to advise about how they’re managing the use of the platform and the creation of forms in your organisation.</p>
+        org_admin_list_title: 'Your organisation’s GOV.UK forms admins are:'
+      without_org_admin:
+        body_html: |
+          <p>Each form needs to be created in a ‘group’. Once you have a group, you can add other people to create and edit forms in it.</p>
+          <p>When you first create a group, it will be a ‘trial’ group. That means you can test how the platform works, but you cannot make any forms in the group live.</p>
+          <p>If you’re not sure if you should make a new group, or you want to use this group for live forms, contact your organisation’s GOV.UK publishing team.</p>
     confirm_upgrade:
       body_html: |
         <p>If you upgrade this group:</p>
@@ -728,21 +742,18 @@ en:
         label: Move this group to another organisation
         prompt: Select an organisation
     new:
+      back_link: Back to create a new group
       body_html: |
-        <p>Each form needs to be created in a ‘group’. Once you have a group, you can add other people to create and edit forms in it.</p>
-
-        <p class="govuk-inset-text">When a group is first created it will be a ‘trial’ group. That means you cannot make any forms in the group live. You’ll be able to request for a group to be upgraded to an ‘active’ group if you need to make forms live.</p>
-
-        <p>Give your group a meaningful name that will reflect the forms you’ll create in the group, and make sense to the people that will be added to it. For example:</p>
-
+        <p>Give your group a meaningful name that will reflect the forms you’ll
+        create in the group, and make sense to the people that will be added to
+        it. For example:</p>
         <ul class="govuk-list govuk-list--bullet">
           <li>Licensing forms</li>
           <li>GOV.UK content team</li>
           <li>Juggling service forms</li>
+          <li>Test forms</li>
         </ul>
-
         <p>You can change the name later if you need to.</p>
-      title: Create a new group for forms
     review_upgrade:
       body_html: |
         <p>%{upgrade_requester_name} has asked to upgrade this group to an ‘active’ group.</p>
@@ -1489,6 +1500,7 @@ en:
     error_prefix: 'Error: '
     exit_page_new: Add exit page
     forbidden: You cannot view this page
+    group_confirm_new: Create a new group for forms
     group_confirm_upgrade_request: Request to upgrade this trial group
     group_index: Your groups
     group_review_upgrade: Upgrade this group
@@ -1509,6 +1521,7 @@ en:
     mou_signatures: MOUs and agreements
     move_form: Move this form to a different group
     name_settings: Ask for a person’s name
+    new_group: Give your group a name
     new_page: Edit question
     new_secondary_skip: 'Route for any other answer: set questions to skip'
     non_crown_agreement_confirmation: You’ve agreed to the GOV.UK Forms agreement

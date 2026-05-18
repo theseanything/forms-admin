@@ -1,5 +1,5 @@
-<% set_page_title(title_with_error_prefix(t(".title"), @group.errors.any?)) %>
-<% content_for :back_link, govuk_back_link_to(groups_path,t("back_link.groups")) %>
+<% set_page_title(title_with_error_prefix(t("page_titles.new_group"), @group.errors.any?)) %>
+<% content_for :back_link, govuk_back_link_to(confirm_new_groups_path,t(".back_link")) %>
 
 <%= form_with(model: @group) do |f| %>
 <div class="govuk-grid-row">
@@ -8,7 +8,7 @@
       <%= f.govuk_error_summary %>
     <% end %>
 
-    <h1 class="govuk-heading-l"><%= t(".title") %></h1>
+    <h1 class="govuk-heading-l"><%= t("page_titles.new_group") %></h1>
 
     <%= t(".body_html") %>
 

@@ -1,0 +1,9 @@
+---
+en:
+  activemodel:
+    errors:
+      models:
+        groups/confirm_new_input:
+          attributes:
+            confirm:
+              blank: Select yes if you want to create a new group

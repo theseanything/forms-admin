@@ -1,5 +1,5 @@
 class GroupsController < WebController
-  before_action :set_group, except: %i[index new create]
+  before_action :set_group, except: %i[index new create confirm_new confirm_new_submit]
   after_action :verify_authorized, except: :index
   after_action :verify_policy_scoped, only: :index
 
@@ -26,6 +26,28 @@ class GroupsController < WebController
 
     forms = @group.forms
     @form_list_presenter = FormListPresenter.call(forms:, group: @group, can_admin: @current_user.can_administer_org?(@group.organisation)) unless forms.empty?
+  end
+
+  def confirm_new
+    authorize Group, :new?
+    @confirm_new_input = Groups::ConfirmNewInput.new
+    @organisation = @current_user.organisation
+  end
+
+  def confirm_new_submit
+    authorize Group, :new?
+    @confirm_new_input = Groups::ConfirmNewInput.new(confirm_new_input_params)
+    @organisation = @current_user.organisation
+
+    if @confirm_new_input.invalid?
+      return render :confirm_new, status: :unprocessable_content
+    end
+
+    if @confirm_new_input.confirmed?
+      redirect_to new_group_path
+    else
+      redirect_to groups_path
+    end
   end
 
   # GET /groups/new
@@ -187,5 +209,9 @@ private
 
   def search_params
     params[:search]&.permit(:organisation_id) || {}
+  end
+
+  def confirm_new_input_params
+    params.require(:groups_confirm_new_input).permit(:confirm)
   end
 end
