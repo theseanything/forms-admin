@@ -2,12 +2,13 @@ require "rails_helper"
 
 describe StepSummaryCardService do
   subject(:step_summary_card_service) do
-    described_class.new(step: form_document_step, steps: form_document_steps)
+    described_class.new(step: form_document_step, steps: form_document_steps, multiple_branches_enabled:)
   end
 
   let(:form_document_content) { FormDocument::Content.from_form_document(form.live_form_document) }
   let(:form_document_steps) { form_document_content.steps }
   let(:form_document_step) { FormDocument::Step.new(page.as_form_document_step(nil)) }
+  let(:multiple_branches_enabled) { false }
 
   let(:form) { create :form, :live }
 
@@ -303,6 +304,27 @@ describe StepSummaryCardService do
         end
       end
 
+      context "with a single condition with none of the above as the trigger" do
+        let(:goto_page) { form.pages.third }
+
+        before do
+          page.update!(is_optional: true)
+          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: "none_of_the_above"
+
+          page.reload
+          form.reload.make_live!
+        end
+
+        it "returns the correct options" do
+          expect(step_summary_card_service.all_options_for_answer_type).to include(
+            {
+              key: { text: I18n.t("page_conditions.route") },
+              value: { text: I18n.t("page_conditions.condition_compact_html", answer_value: "None of the above", goto_page_question_number: goto_page.position, goto_page_question_text: goto_page.question_text) },
+            },
+          )
+        end
+      end
+
       context "with multiple conditions" do
         let(:first_goto_page) { form.pages.third }
         let(:second_goto_page) { form.pages.fourth }
@@ -385,6 +407,178 @@ describe StepSummaryCardService do
               value: { text: I18n.t("page_conditions.condition_compact_html_secondary_skip", goto_page_question_number: pages.fourth.position, goto_page_question_text: pages.fourth.question_text) },
             },
           )
+        end
+      end
+
+      context "when the multiple_branches_enabled flag is true" do
+        let(:multiple_branches_enabled) { true }
+
+        context "when there is a single condition that routes to a page" do
+          before do
+            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+
+            page.reload
+            form.reload.make_live!
+          end
+
+          it "returns the correct options" do
+            caption_text = "<p class=\"govuk-body-s\">" \
+              "Go to #{pages.third.position}, ‘#{pages.third.question_text}’ if the answer is:" \
+              "</p>"
+
+            selection_text = "<ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\">" \
+              "<li>‘Option 1’</li>" \
+              "</ul>"
+
+            expected_text = caption_text + selection_text
+
+            expect(step_summary_card_service.all_options_for_answer_type).to include(
+              {
+                key: { text: "Route" },
+                value: { text: expected_text },
+              },
+            )
+          end
+        end
+
+        context "when there is a single condition that skips to the end of the form" do
+          before do
+            create :condition, routing_page_id: pages.first.id, skip_to_end: true, answer_value: "Option 1"
+
+            page.reload
+            form.reload.make_live!
+          end
+
+          it "returns the correct options" do
+            caption_text = "<p class=\"govuk-body-s\">" \
+              "Go to the end of the form if the answer is:" \
+              "</p>"
+
+            selection_text = "<ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\">" \
+              "<li>‘Option 1’</li>" \
+              "</ul>"
+
+            expected_text = caption_text + selection_text
+
+            expect(step_summary_card_service.all_options_for_answer_type).to include(
+              {
+                key: { text: "Route" },
+                value: { text: expected_text },
+              },
+            )
+          end
+        end
+
+        context "when there are multiple conditions routing to the same page" do
+          before do
+            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 2"
+
+            page.reload
+            form.reload.make_live!
+          end
+
+          it "returns the correct options" do
+            caption_text = "<p class=\"govuk-body-s\">" \
+              "Go to #{pages.third.position}, ‘#{pages.third.question_text}’ if the answer is:" \
+              "</p>"
+
+            selection_text = "<ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\">" \
+              "<li>‘Option 1’</li>" \
+              "<li>‘Option 2’</li>" \
+              "</ul>"
+
+            expected_text = caption_text + selection_text
+
+            expect(step_summary_card_service.all_options_for_answer_type).to include(
+              {
+                key: { text: "Route" },
+                value: { text: expected_text },
+              },
+            )
+          end
+        end
+
+        context "when there are multiple conditions routing to different places" do
+          before do
+            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.fourth.id, answer_value: "Option 2"
+            create :condition, routing_page_id: pages.first.id, answer_value: "Option 3", skip_to_end: true
+
+            page.reload
+            form.reload.make_live!
+          end
+
+          it "returns the correct options" do
+            caption_text1 = "<p class=\"govuk-body-s\">" \
+              "Go to #{pages.third.position}, ‘#{pages.third.question_text}’ if the answer is:" \
+              "</p>"
+
+            selection_text1 = "<ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\">" \
+              "<li>‘Option 1’</li>" \
+              "</ul>"
+
+            caption_text2 = "<p class=\"govuk-body-s\">" \
+              "Go to #{pages.fourth.position}, ‘#{pages.fourth.question_text}’ if the answer is:" \
+              "</p>"
+
+            selection_text2 = "<ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\">" \
+              "<li>‘Option 2’</li>" \
+              "</ul>"
+
+            caption_text3 = "<p class=\"govuk-body-s\">" \
+              "Go to the end of the form if the answer is:" \
+              "</p>"
+
+            selection_text3 = "<ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\">" \
+              "<li>‘Option 3’</li>" \
+              "</ul>"
+
+            expected_text = caption_text1 + selection_text1 + caption_text2 + selection_text2 + caption_text3 + selection_text3
+
+            expect(step_summary_card_service.all_options_for_answer_type).to include(
+              {
+                key: { text: "Routes" },
+                value: { text: expected_text },
+              },
+            )
+          end
+        end
+
+        context "when there is an unconditional route to a page" do
+          before do
+            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id
+
+            page.reload
+            form.reload.make_live!
+          end
+
+          it "returns the correct options" do
+            expect(step_summary_card_service.all_options_for_answer_type).to include(
+              {
+                key: { text: "Route" },
+                value: { text: "Go to #{pages.third.position}, ‘#{pages.third.question_text}’" },
+              },
+            )
+          end
+        end
+
+        context "when there is an unconditional route to the end of the form" do
+          before do
+            create :condition, routing_page_id: pages.first.id, skip_to_end: true
+
+            page.reload
+            form.reload.make_live!
+          end
+
+          it "returns the correct options" do
+            expect(step_summary_card_service.all_options_for_answer_type).to include(
+              {
+                key: { text: "Route" },
+                value: { text: "Go to the end of the form" },
+              },
+            )
+          end
         end
       end
 

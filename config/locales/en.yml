@@ -1451,11 +1451,18 @@ en:
     end_of_form: End of the form
     exit_page: Add an exit page
     exit_page_label: An ‘exit page’ to leave the form
+    go_to_page: 'Go to %{goto_page_question_number}, ‘%{goto_page_question_text}’ if the answer is:'
+    go_to_the_end: 'Go to the end of the form if the answer is:'
     none_of_the_above: None of the above
     route: Route
+    route2:
+      one: Route
+      other: Routes
     secondary_skip_description: After %{check_page_question_text} go to %{goto_page_question_text}
     skip_condition_route_page_text: "%{route_page_question_number}, “%{route_page_question_text}”"
+    unconditional_go_to_page: Go to %{goto_page_question_number}, ‘%{goto_page_question_text}’
     unconditional_goto_page_text: Go to %{goto_page_question_number}, ‘%{goto_page_question_text}’
+    unconditional_skip_to_end_of_form: Go to the end of the form
     unconditional_skip_to_end_text: Go to the end of the form
   page_route_card:
     any_other_answer: Route for any other answer
