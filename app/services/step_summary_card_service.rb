@@ -236,14 +236,14 @@ private
         caption = content_tag(:p, I18n.t("page_conditions.go_to_page", goto_page_question_number:, goto_page_question_text:), class: "govuk-body-s")
       end
 
-      answer_values = condition_group.map { |condition| "‘#{ActionController::Base.helpers.sanitize(condition.answer_value)}’" }
+      answer_values = condition_group.map { |condition| "‘#{format_answer_value(condition.answer_value)}’" }
       formatted_list = html_unordered_list2(answer_values)
       safe_join([caption, formatted_list])
     }.join.html_safe
   end
 
   def print_route(condition)
-    answer_value = ActionController::Base.helpers.sanitize(condition.answer_value)
+    answer_value = format_answer_value(condition.answer_value)
 
     if condition.skip_to_end && condition.secondary_skip?
       I18n.t("page_conditions.condition_compact_html_secondary_skip_to_end_of_form")
@@ -264,6 +264,11 @@ private
 
       I18n.t("page_conditions.condition_compact_html", answer_value:, goto_page_question_number:, goto_page_question_text:).html_safe
     end
+  end
+
+  def format_answer_value(answer_value)
+    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == "none_of_the_above"
+    ActionController::Base.helpers.sanitize(answer_value)
   end
 
   def html_ordered_list(list_items)
