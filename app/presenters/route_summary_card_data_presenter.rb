@@ -74,6 +74,12 @@ private
                        goto_question_name(routing_condition.goto_page_id)
                      end
 
+    answer_value_text = if routing_condition.answer_value == Condition::NONE_OF_THE_ABOVE
+                          I18n.t("page_route_card.none_of_the_above")
+                        else
+                          routing_condition.answer_value
+                        end
+
     check_value_error = format_error(I18n.t("page_route_card.errors.answer_value_doesnt_exist")) if routing_condition.validation_errors.any? { |error| error.name == "answer_value_doesnt_exist" }
     goto_page_next_error = format_error(I18n.t("page_route_card.errors.cannot_route_to_next_page")) if routing_condition.validation_errors.any? { |error| error.name == "cannot_route_to_next_page" }
     goto_page_before_error = format_error(I18n.t("page_route_card.errors.cannot_have_goto_page_before_routing_page", question_number: question_number(routing_condition.check_page_id))) if routing_condition.validation_errors.any? { |error| error.name == "cannot_have_goto_page_before_routing_page" }
@@ -91,7 +97,7 @@ private
         {
           key: { text: I18n.t("page_route_card.if_answer_is") },
           html_attributes: { id: check_id(routing_condition), class: check_value_error ? "govuk-summary-list__row--error" : "" },
-          value: { text: safe_join([check_value_error, routing_condition.answer_value]) },
+          value: { text: safe_join([check_value_error, answer_value_text]) },
         },
         {
           key: { text: I18n.t("page_route_card.take_the_person_to") },

@@ -16,7 +16,7 @@
   <%= govuk_summary_list(actions: false) do |summary_list|
     summary_list.with_row(classes: "govuk-summary-list__row--no-border") do |row|
       row.with_key { t("secondary_skip.new.primary_route_answer_key") }
-      row.with_value { secondary_skip_input.answer_value }
+      row.with_value { secondary_skip_input.answer_value == Condition::NONE_OF_THE_ABOVE ? t("secondary_skip.none_of_the_above") : secondary_skip_input.answer_value }
     end;
     summary_list.with_row do |row|
       row.with_key { t("secondary_skip.new.primary_route_continue_key") }
