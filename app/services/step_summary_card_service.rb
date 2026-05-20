@@ -267,7 +267,7 @@ private
   end
 
   def format_answer_value(answer_value)
-    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == "none_of_the_above"
+    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == Condition::NONE_OF_THE_ABOVE
     ActionController::Base.helpers.sanitize(answer_value)
   end
 

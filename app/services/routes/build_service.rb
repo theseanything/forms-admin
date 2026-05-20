@@ -3,7 +3,7 @@
 # based on the pages and conditions.
 class Routes::BuildService
   END_OF_FORM_OPTION = [I18n.t("page_conditions.end_of_form"), Forms::RouteInput::END_OF_FORM_VALUE].freeze
-  NONE_OF_THE_ABOVE_OPTION = DataStruct.new(value: :none_of_the_above.to_s, name: I18n.t("page_conditions.none_of_the_above"))
+  NONE_OF_THE_ABOVE_OPTION = DataStruct.new(value: Condition::NONE_OF_THE_ABOVE, name: I18n.t("page_conditions.none_of_the_above"))
 
   attr_reader :form
 

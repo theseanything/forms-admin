@@ -309,7 +309,7 @@ describe StepSummaryCardService do
 
         before do
           page.update!(is_optional: true)
-          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: "none_of_the_above"
+          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: Condition::NONE_OF_THE_ABOVE
 
           page.reload
           form.reload.make_live!
