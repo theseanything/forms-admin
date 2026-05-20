@@ -1466,7 +1466,6 @@ en:
     unconditional_skip_to_end_text: Go to the end of the form
   page_route_card:
     any_other_answer: Route for any other answer
-    conditional_answer_value: "%{answer_value}"
     continue_to: Continue to
     delete: Delete
     delete_route: Delete all routes

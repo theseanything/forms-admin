@@ -91,7 +91,7 @@ private
         {
           key: { text: I18n.t("page_route_card.if_answer_is") },
           html_attributes: { id: check_id(routing_condition), class: check_value_error ? "govuk-summary-list__row--error" : "" },
-          value: { text: safe_join([check_value_error, I18n.t("page_route_card.conditional_answer_value", answer_value: routing_condition.answer_value)]) },
+          value: { text: safe_join([check_value_error, routing_condition.answer_value]) },
         },
         {
           key: { text: I18n.t("page_route_card.take_the_person_to") },
