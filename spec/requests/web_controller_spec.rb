@@ -228,6 +228,11 @@ RSpec.describe WebController, type: :request do
       get root_path
     end
 
+    it "contains the feedback link component" do
+      expect(response.body).to include("Help us improve this service")
+      expect(response.body).to include("<a href=\"#{I18n.t('feedback_link.feedback_survey_url')}\" class=\"govuk-link\">giving us your feedback</a>")
+    end
+
     it "contains links related to the service" do
       expect(response.body).to include('<a class="govuk-footer__link" href="https://www.forms.service.gov.uk/accessibility">Accessibility statement</a>')
       expect(response.body).to include('<a class="govuk-footer__link" href="https://www.forms.service.gov.uk/cookies">Cookies</a>')

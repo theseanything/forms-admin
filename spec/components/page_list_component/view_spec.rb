@@ -520,21 +520,69 @@ RSpec.describe PageListComponent::View, type: :component do
   end
 
   describe "#answer_value_groups" do
-    let(:form) { create :form, :ready_for_routing }
-    let(:pages) { form.reload.pages }
-    let!(:first_condition) { create :condition, routing_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id }
-    let!(:second_condition) { create :condition, routing_page_id: pages.first.id, answer_value: "Option 2", goto_page_id: pages.third.id }
-    let!(:third_condition) { create :condition, routing_page_id: pages.first.id, answer_value: "Option 3", goto_page_id: pages.fourth.id }
-    let!(:fourth_condition) { create :condition, routing_page_id: pages.first.id, answer_value: "Option 3", goto_page_id: nil, skip_to_end: true }
+    let(:form) { build_stubbed :form, :ready_for_routing }
+
+    let(:pages) do
+      [
+        build_stubbed(
+          :page,
+          :with_selection_settings,
+          id: 101,
+          selection_options:,
+          routing_conditions: conditions,
+        ),
+        build_stubbed(:page, id: 102),
+        build_stubbed(:page, id: 103),
+        build_stubbed(:page, id: 104),
+      ]
+    end
+
+    let(:selection_options) do
+      [
+        { value: "Option 1" },
+        { value: "Option 2" },
+        { value: "Option 3" },
+      ]
+    end
+
+    let(:conditions) do
+      [
+        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 1", goto_page_id: 103),
+        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 2", goto_page_id: 103),
+        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 3", goto_page_id: 104),
+        build_stubbed(:condition, routing_page_id: 101, answer_value: nil, goto_page_id: nil, skip_to_end: true),
+      ]
+    end
 
     it "groups conditions by goto_page_id" do
-      expect(page_list_component.answer_value_groups(pages.first.reload)).to eq(
+      expected = [
+        [103, [conditions.first, conditions.second]],
+        [104, [conditions.third]],
+        [nil, [conditions.fourth]],
+      ]
+      result = page_list_component.answer_value_groups(pages.first)
+      expect(result).to eq expected
+    end
+
+    context "when given a different order of selection options" do
+      let(:selection_options) do
         [
-          [pages.third.id, [first_condition, second_condition]],
-          [pages.fourth.id, [third_condition]],
-          [nil, [fourth_condition]],
-        ],
-      )
+          { value: "Option 3" },
+          { value: "Option 2" },
+          { value: "Option 1" },
+        ]
+      end
+
+      it "returns the conditions in the same order" do
+        expected = [
+          [103, [conditions.second, conditions.first]],
+          [104, [conditions.third]],
+          [nil, [conditions.fourth]],
+        ]
+
+        result = page_list_component.answer_value_groups(pages.first)
+        expect(result).to eq expected
+      end
     end
   end
 end

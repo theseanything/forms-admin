@@ -6,7 +6,8 @@ describe StepSummaryCardPresenter do
   let(:steps) do
     [step, *build_list(:form_document_step, 5)]
   end
-  let(:presenter) { described_class.call(step:, steps:) }
+  let(:multiple_branches_enabled) { false }
+  let(:presenter) { described_class.call(step:, steps:, multiple_branches_enabled:) }
 
   describe "#build_card" do
     before do

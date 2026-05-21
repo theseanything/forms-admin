@@ -7,10 +7,11 @@ class StepSummaryCardService
     end
   end
 
-  def initialize(step:, steps:, read_only: true)
+  def initialize(step:, steps:, read_only: true, multiple_branches_enabled: false)
     @read_only = read_only
     @step = step
     @steps = steps
+    @multiple_branches_enabled = multiple_branches_enabled
   end
 
   def all_options_for_answer_type
@@ -179,7 +180,19 @@ private
   end
 
   def route_options
-    [{ key: { text: I18n.t("page_conditions.route") }, value: { text: route_value.html_safe } }]
+    if @multiple_branches_enabled
+      [{ key: { text: I18n.t("page_conditions.route2", count: number_of_routes) }, value: { text: route_value2 } }]
+    else
+      [{ key: { text: I18n.t("page_conditions.route") }, value: { text: route_value.html_safe } }]
+    end
+  end
+
+  def number_of_routes
+    if @step.routing_conditions.length == 1
+      1
+    else
+      answer_value_groups(@step.routing_conditions).length
+    end
   end
 
   def route_value
@@ -190,8 +203,47 @@ private
     end
   end
 
+  def route_value2
+    if @step.routing_conditions.first.answer_value.present?
+      print_routes(@step.routing_conditions)
+    else
+      print_unconditional_route(@step.routing_conditions.first)
+    end
+  end
+
+  def print_unconditional_route(condition)
+    if condition.skip_to_end
+      I18n.t("page_conditions.unconditional_skip_to_end_of_form").html_safe
+    else
+      goto_question = @steps.find { |page| page.id == condition.goto_page_id }
+      goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+      goto_page_question_number = @steps.find_index(goto_question) + 1
+
+      I18n.t("page_conditions.unconditional_go_to_page", goto_page_question_number:, goto_page_question_text:).html_safe
+    end
+  end
+
+  def print_routes(conditions)
+    answer_value_groups = answer_value_groups(conditions)
+    answer_value_groups.map { |goto_page_id, condition_group|
+      if goto_page_id.nil?
+        caption = content_tag(:p, I18n.t("page_conditions.go_to_the_end"), class: "govuk-body-s")
+      else
+        goto_question = @steps.find { |page| page.id == condition_group.first.goto_page_id }
+        goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+        goto_page_question_number = @steps.find_index(goto_question) + 1
+
+        caption = content_tag(:p, I18n.t("page_conditions.go_to_page", goto_page_question_number:, goto_page_question_text:), class: "govuk-body-s")
+      end
+
+      answer_values = condition_group.map { |condition| "‘#{format_answer_value(condition.answer_value)}’" }
+      formatted_list = html_unordered_list2(answer_values)
+      safe_join([caption, formatted_list])
+    }.join.html_safe
+  end
+
   def print_route(condition)
-    answer_value = ActionController::Base.helpers.sanitize(condition.answer_value)
+    answer_value = format_answer_value(condition.answer_value)
 
     if condition.skip_to_end && condition.secondary_skip?
       I18n.t("page_conditions.condition_compact_html_secondary_skip_to_end_of_form")
@@ -214,6 +266,11 @@ private
     end
   end
 
+  def format_answer_value(answer_value)
+    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == "none_of_the_above"
+    ActionController::Base.helpers.sanitize(answer_value)
+  end
+
   def html_ordered_list(list_items)
     content_tag(:ol, html_list_item(list_items), class: ["govuk-list", "govuk-list--number"])
   end
@@ -222,7 +279,21 @@ private
     content_tag(:ul, html_list_item(list_items), class: ["govuk-list", "govuk-list--bullet"])
   end
 
+  def html_unordered_list2(list_items)
+    content_tag(:ul, html_list_item(list_items), class: ["govuk-list", "govuk-list--bullet govuk-!-static-margin-bottom-4"])
+  end
+
   def html_list_item(item)
     item.map { |i| content_tag(:li, i) }.join.html_safe
+  end
+
+  def answer_value_groups(conditions)
+    answer_order = @step.answer_settings.selection_options.map(&:value) || []
+
+    conditions.group_by(&:goto_page_id).map { |goto_page_id, condition_group|
+      goto_page_position = @steps.find_index { |page| page.id == goto_page_id } + 1 unless goto_page_id.nil?
+      sorted_condition_group = condition_group.in_order_of(:answer_value, answer_order, filter: false)
+      [goto_page_position, sorted_condition_group]
+    }.sort_by { |goto_page_position, _| goto_page_position || Float::INFINITY }
   end
 end

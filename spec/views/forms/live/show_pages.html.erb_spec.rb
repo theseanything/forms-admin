@@ -4,9 +4,10 @@ describe "forms/live/show_pages.html.erb" do
   let(:form) { create :form, :live }
   let(:form_document) { FormDocument::Content.from_form_document(form.live_form_document) }
   let(:welsh_form_document) { nil }
+  let(:multiple_branches_enabled) { false }
 
   before do
-    render(template: "forms/live/show_pages", locals: { form_document:, welsh_form_document: })
+    render(template: "forms/live/show_pages", locals: { form_document:, welsh_form_document:, multiple_branches_enabled: })
   end
 
   it "renders the made_live_form_pages partial" do

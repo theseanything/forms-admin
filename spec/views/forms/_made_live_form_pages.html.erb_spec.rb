@@ -6,6 +6,7 @@ describe "forms/_made_live_form_pages.html.erb" do
   let(:welsh_form_document) { nil }
   let(:status) { :live }
   let(:show_form_path) { Faker::Internet.url }
+  let(:multiple_branches_enabled) { false }
 
   before do
     render(partial: "forms/made_live_form_pages", locals: {
@@ -13,6 +14,7 @@ describe "forms/_made_live_form_pages.html.erb" do
       welsh_form_document:,
       status:,
       show_form_path:,
+      multiple_branches_enabled:,
     })
   end
 

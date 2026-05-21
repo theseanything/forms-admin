@@ -15,7 +15,7 @@ module Forms
       return redirect_to live_form_pages_path if current_form.is_live?
       raise NotFoundError unless current_form.is_archived?
 
-      render :show_pages, locals: { form_document: current_archived_form, welsh_form_document: }
+      render :show_pages, locals: { form_document: current_archived_form, welsh_form_document:, multiple_branches_enabled: FeatureService.new(group: current_form.group).enabled?(:multiple_branches) }
     end
 
   private

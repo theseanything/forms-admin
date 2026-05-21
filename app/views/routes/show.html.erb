@@ -9,46 +9,50 @@
       <%= t("page_titles.routes") %>
     </h1>
 
-    <%= form_with(model: @routes_input, url: routes_path(@routes_input.form)) do |f| %>
-      <% if @routes_input&.errors&.present? %>
-        <%= f.govuk_error_summary(presenter: ErrorSummaryPresenter.new(@routes_input.errors)) %>
-      <% end %>
+    <%if @routes_input.form.pages.length < 2 %>
+      <%= t(".not_enough_pages_html", pages_link: form_pages_path(@current_form)) %>
+    <% else %>
+      <%= form_with(model: @routes_input, url: routes_path(@routes_input.form)) do |f| %>
+        <% if @routes_input&.errors&.present? %>
+          <%= f.govuk_error_summary(presenter: ErrorSummaryPresenter.new(@routes_input.errors)) %>
+        <% end %>
 
-      <%= govuk_summary_list(actions: false) do |summary_list|
+        <%= govuk_summary_list(actions: false) do |summary_list|
 
-        @routes_input.routes.group_by(&:page).each do |page, routes|
-          summary_list.with_row do |row|
-            row.with_key(classes: "app-routes-list__key", html_attributes: { id: page.page_position_id}) { page.position.to_s }
-            row.with_value do
-              capture do %>
-              <p> <%= page.question_text %> </p>
-              <% if @routes_input.form.next_page_after(page).present? %>
-                <ul class="govuk-list">
-                  <% routes.each do |route| %>
-                    <li>
-                      <%= f.fields_for :routes, route do |route_form|
-                        route_form.hidden_field(:id) +
-                          route_form.hidden_field(:page_id) +
-                          route_form.hidden_field(:answer_value) +
-                          route_form.govuk_select(:goto, options_for_select(route_form.object.goto_options, route_form.object.goto), label: route_form.object.label)
-                      end %>
-                    </li>
+          @routes_input.routes.group_by(&:page).each do |page, routes|
+            summary_list.with_row do |row|
+              row.with_key(classes: "app-routes-list__key", html_attributes: { id: page.page_position_id}) { page.position.to_s }
+              row.with_value do
+                capture do %>
+                <p> <%= page.question_text %> </p>
+                <% if @routes_input.form.next_page_after(page).present? %>
+                  <ul class="govuk-list">
+                    <% routes.each do |route| %>
+                      <li>
+                        <%= f.fields_for :routes, route do |route_form|
+                          route_form.hidden_field(:id) +
+                            route_form.hidden_field(:page_id) +
+                            route_form.hidden_field(:answer_value) +
+                            route_form.govuk_select(:goto, options_for_select(route_form.object.goto_options, route_form.object.goto), label: route_form.object.label)
+                        end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                  <% if page.answer_type == "selection" &&
+                          page.answer_settings.only_one_option == "true" &&
+                            @routes_input.class.too_many_selection_options?(page) %>
+                    <%= t(".too_many_options_html") %>
                   <% end %>
-                </ul>
-                <% if page.answer_type == "selection" &&
-                        page.answer_settings.only_one_option == "true" &&
-                          @routes_input.class.too_many_selection_options?(page) %>
-                  <%= t(".too_many_options_html") %>
                 <% end %>
               <% end %>
             <% end %>
           <% end %>
         <% end %>
       <% end %>
+
+      <%= f.govuk_submit t("save_and_continue") %>
+
     <% end %>
-
-    <%= f.govuk_submit t("save_and_continue") %>
-
   <% end %>
   </div>
 </div>

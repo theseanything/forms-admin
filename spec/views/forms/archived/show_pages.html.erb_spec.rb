@@ -1,12 +1,13 @@
 require "rails_helper"
 
 describe "forms/archived/show_pages.html.erb" do
-  let(:form_metadata) { create :form, :archived }
-  let(:form_document) { FormDocument::Content.from_form_document(form_metadata.archived_form_document) }
+  let(:form) { create :form, :archived }
+  let(:form_document) { FormDocument::Content.from_form_document(form.archived_form_document) }
   let(:welsh_form_document) { nil }
+  let(:multiple_branches_enabled) { false }
 
   before do
-    render(template: "forms/archived/show_pages", locals: { form_document:, welsh_form_document: })
+    render(template: "forms/archived/show_pages", locals: { form_document:, welsh_form_document:, multiple_branches_enabled: })
   end
 
   it "renders the made_live_form_pages partial" do

@@ -367,6 +367,12 @@ en:
     prefix: 'Error:'
   exit_page:
     no_content_added_html: "<p>No content added</p>"
+  feedback_link:
+    body_html: |
+      Tell us about your experience using this service.
+      You’ll help us make improvements by <a href="%{feedback_url}" class="govuk-link">giving us your feedback</a>.
+    feedback_survey_url: https://surveys.publishing.service.gov.uk/s/T7OW3C/
+    heading: Help us improve this service
   footer:
     accessibility_statement: Accessibility statement
     built_by_link: Government Digital Service
@@ -1445,11 +1451,18 @@ en:
     end_of_form: End of the form
     exit_page: Add an exit page
     exit_page_label: An ‘exit page’ to leave the form
+    go_to_page: 'Go to %{goto_page_question_number}, ‘%{goto_page_question_text}’ if the answer is:'
+    go_to_the_end: 'Go to the end of the form if the answer is:'
     none_of_the_above: None of the above
     route: Route
+    route2:
+      one: Route
+      other: Routes
     secondary_skip_description: After %{check_page_question_text} go to %{goto_page_question_text}
     skip_condition_route_page_text: "%{route_page_question_number}, “%{route_page_question_text}”"
+    unconditional_go_to_page: Go to %{goto_page_question_number}, ‘%{goto_page_question_text}’
     unconditional_goto_page_text: Go to %{goto_page_question_number}, ‘%{goto_page_question_text}’
+    unconditional_skip_to_end_of_form: Go to the end of the form
     unconditional_skip_to_end_text: Go to the end of the form
   page_route_card:
     any_other_answer: Route for any other answer
@@ -1734,10 +1747,7 @@ en:
       heading: Setting up GOV.UK Pay
     submit_button: Save and continue
   phase_banner:
-    after_link: will help us improve it.
-    before_link: This is a new service, your
-    feedback_survey_url: https://surveys.publishing.service.gov.uk/s/T7OW3C/
-    link: feedback
+    text: This is a new service.
   privacy_policy_input:
     body_html: |
       <p>
@@ -1957,6 +1967,9 @@ en:
       title: Number of users per organisation
   routes:
     show:
+      not_enough_pages_html: |
+        <p>You need more than one question in your form before you can add any routes.</p>
+        <p><a href="%{pages_link}">Back to your questions</a></p>
       too_many_options_html: |
         <p>This question has a list with more than 10 options.</p>
 

@@ -31,7 +31,7 @@
             <%= StepSummaryCardPresenter.call(step:, steps: form_document.steps, welsh_steps: welsh_form_document.steps).build_untranslated_content[:text] %>
           <% end %>
         <% else %>
-          <%= govuk_summary_list(**StepSummaryCardPresenter.call(step:, steps: form_document.steps).build_summary_list)%>
+          <%= govuk_summary_list(**StepSummaryCardPresenter.call(step:, steps: form_document.steps, multiple_branches_enabled:).build_summary_list)%>
         <% end %>
       <% end %>
     <% end %>

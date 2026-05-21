@@ -5,10 +5,11 @@ class StepSummaryCardPresenter
     end
   end
 
-  def initialize(step:, steps:, welsh_steps: nil)
+  def initialize(step:, steps:, welsh_steps: nil, multiple_branches_enabled: false)
     @step = step
     @steps = steps
     @welsh_steps = welsh_steps
+    @multiple_branches_enabled = multiple_branches_enabled
   end
 
   def build_card
@@ -20,7 +21,7 @@ class StepSummaryCardPresenter
 
   def build_summary_list
     {
-      rows: StepSummaryCardService.call(step: @step, steps: @steps).all_options_for_answer_type,
+      rows: StepSummaryCardService.call(step: @step, steps: @steps, multiple_branches_enabled: @multiple_branches_enabled).all_options_for_answer_type,
     }
   end
 

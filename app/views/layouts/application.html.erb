@@ -12,9 +12,7 @@
 
 <% content_for :before_content do %>
   <%= govuk_phase_banner(tag: { text: "Beta" }) do %>
-    <%= t("phase_banner.before_link") %>
-    <%= govuk_link_to t("phase_banner.link"), t("phase_banner.feedback_survey_url") %>
-    <%= t("phase_banner.after_link") %>
+    <%= t("phase_banner.text") %>
   <% end %>
   <%= yield :back_link %>
   <%= render ActAsUserBannerComponent::View.new(acting_as_user, actual_user) %>
@@ -22,6 +20,8 @@
 
 <% content_for :footer do %>
   <% meta_items = {t("footer.accessibility_statement") => accessibility_statement_url, t("footer.cookies") => cookies_url, t("footer.privacy") => privacy_url, t("footer.terms_of_use") => terms_of_use_url, t("footer.sitemap") => sitemap_url} %>
+
+  <%= render FeedbackLinkComponent::View.new(feedback_url: t("feedback_link.feedback_survey_url")) %>
 
   <%= govuk_footer meta_items_title: t("footer.helpful_links"), meta_items: do |footer| %>
     <%= footer.with_meta_html do %>

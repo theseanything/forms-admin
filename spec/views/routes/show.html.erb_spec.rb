@@ -215,4 +215,22 @@ describe "routes/show.html.erb" do
       end
     end
   end
+
+  context "when there are not enoough pages" do
+    let(:pages) do
+      [
+        build_stubbed(:page, id: 101),
+      ]
+    end
+
+    it "shows a warning" do
+      render_page
+      expect(rendered).to have_content("You need more than one question in your form before you can add any routes.")
+    end
+
+    it "shows a link to the question pages" do
+      render_page
+      expect(rendered).to have_link("Back to your questions", href: form_pages_path(form.id))
+    end
+  end
 end
