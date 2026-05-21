@@ -196,7 +196,7 @@ RSpec.describe PageListComponent::View, type: :component do
       end
 
       it "renders the route summary list key as a singular route" do
-        expect(page).to have_css("dt.govuk-summary-list__key", text: /Question #{first_page.position}’s route$/, exact: true)
+        expect(page).to have_css("dt.govuk-summary-list__key", text: /Question #{first_page.position}’s route$/)
       end
 
       it "renders the condition description" do
@@ -221,7 +221,7 @@ RSpec.describe PageListComponent::View, type: :component do
       end
 
       it "renders the route summary list key as plural routes" do
-        expect(page).to have_css("dt.govuk-summary-list__key", text: /Question #{first_page.position}’s routes$/, exact: true)
+        expect(page).to have_css("dt.govuk-summary-list__key", text: /Question #{first_page.position}’s routes$/)
       end
 
       it "renders the condition description" do
