@@ -114,6 +114,30 @@ class FormCondition
     answer_value.blank? && check_page_id != routing_page_id
   end
 
+  def routing_page
+    form.pages.find { |page| page.id.to_s == routing_page_id.to_s }
+  end
+
+  def exit_page_heading_cy
+    exit_page_heading(locale: :cy)
+  end
+
+  def exit_page_heading_cy=(value)
+    @exit_page_heading = TranslatableString.set_for_locale(@exit_page_heading, locale: :cy, string: value)
+  end
+
+  def exit_page_markdown_cy
+    exit_page_markdown(locale: :cy)
+  end
+
+  def exit_page_markdown_cy=(value)
+    @exit_page_markdown = TranslatableString.set_for_locale(@exit_page_markdown, locale: :cy, string: value)
+  end
+
+  def save!
+    save_and_update_form
+  end
+
 private
 
   def assign_from_hash

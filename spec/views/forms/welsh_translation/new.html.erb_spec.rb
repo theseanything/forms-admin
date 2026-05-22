@@ -4,8 +4,6 @@ describe "forms/welsh_translation/new.html.erb" do
   let(:form) { build_form }
   let(:page) { form.pages.first }
   let(:another_page) { form.pages.second }
-  let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id) }
-  let(:welsh_condition_translation_input) { Forms::WelshConditionTranslationInput.new(condition:).assign_condition_values }
   let(:welsh_page_translation_input) { Forms::WelshPageTranslationInput.new(page:).assign_page_values }
   let(:another_welsh_page_translation_input) { Forms::WelshPageTranslationInput.new(page: another_page).assign_page_values }
   let(:welsh_translation_input) { Forms::WelshTranslationInput.new(form:, page_translations: [welsh_page_translation_input, another_welsh_page_translation_input]).assign_form_values }
@@ -15,9 +13,18 @@ describe "forms/welsh_translation/new.html.erb" do
   let(:welsh_translation_download_path) { "/welsh-translation/download" }
   let(:has_welsh_translation?) { false }
 
+  def build_welsh_translation_input
+    page_translations = form.pages.map { |p| Forms::WelshPageTranslationInput.new(page: p).assign_page_values }
+    Forms::WelshTranslationInput.new(form:, page_translations:).assign_form_values
+  end
+
+  def render_welsh_translation_form
+    assign(:welsh_translation_input, build_welsh_translation_input.tap { |input| input.mark_complete = mark_complete })
+    render
+  end
+
   def build_form(attributes = {})
     default_attributes = {
-      id: 1,
       name: "My form",
       name_cy: "My Welsh form",
       what_happens_next_markdown: "English what happens next",
@@ -30,10 +37,25 @@ describe "forms/welsh_translation/new.html.erb" do
       support_phone: "English support phone",
       support_url: "https://www.gov.uk/support",
       support_url_text: "Support URL text",
-      declaration_markdown: "Declaration markdown", # no welsh version to test nil
+      declaration_markdown: "Declaration markdown",
       pages_count: 2,
     }
-    create(:form, default_attributes.merge(attributes))
+    attrs = default_attributes.merge(attributes)
+    cy_fields = attrs.extract!(*Form::TRANSLATABLE_CY_FIELDS.map { |field| :"#{field}_cy" })
+    support_phone = attrs.delete(:support_phone)
+    support_url = attrs.delete(:support_url)
+    support_url_text = attrs.delete(:support_url_text)
+
+    create(:form, attrs).tap do |form|
+      hash = form.draft_content_service.content_hash
+      hash["support_phone"] = { "en" => support_phone } if support_phone.present?
+      hash["support_url"] = { "en" => support_url } if support_url.present?
+      hash["support_url_text"] = { "en" => support_url_text } if support_url_text.present?
+      FormDocumentOperationsService.new(form).save_draft_content!(hash) if support_phone.present? || support_url.present? || support_url_text.present?
+      cy_fields.each do |attr, value|
+        form.public_send("#{attr}=", value) if value.present?
+      end
+    end
   end
 
   before do
@@ -44,10 +66,7 @@ describe "forms/welsh_translation/new.html.erb" do
   end
 
   context "when the form has no errors" do
-    before do
-      assign(:welsh_translation_input, welsh_translation_input)
-      render
-    end
+    before { render_welsh_translation_form }
 
     it "contains page heading and sub-heading" do
       expect(rendered).to have_css("h1 .govuk-caption-l", text: form.name)
@@ -229,10 +248,12 @@ describe "forms/welsh_translation/new.html.erb" do
 
     context "when the form does not have any pages" do
       let(:form) { build_form(pages_count: 0) }
-      let(:welsh_translation_input) { Forms::WelshTranslationInput.new(form:, page_translations: []).assign_form_values }
+      let(:welsh_translation_input) { build_welsh_translation_input }
+
+      before { render_welsh_translation_form }
 
       it "does not render any page translation content" do
-        expect(rendered).not_to have_field(id: "forms_welsh_page_translation_input_#{page.id}_page_translations_question_text_cy", type: "text")
+        expect(rendered).not_to have_field(id: /forms_welsh_page_translation_input_.*_page_translations_question_text_cy/, type: "text")
       end
 
       it "renders message for no pages" do
@@ -247,8 +268,14 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has hint text" do
-        let(:page) { create(:page, form:, hint_text: "Choose 'Yes' if you already have a valid licence.") }
-        let(:another_page) { create(:page, form:, hint_text: nil) }
+        before do
+          hash = form.draft_content_service.content_hash
+          hash["steps"][0]["hint_text"] = { "en" => "Choose 'Yes' if you already have a valid licence." }
+          hash["steps"][1]["hint_text"] = { "en" => "" }
+          FormDocumentOperationsService.new(form).save_draft_content!(hash)
+          form.reload
+          render_welsh_translation_form
+        end
 
         it "shows the English text and Welsh field for pages with English hint text" do
           expect(rendered).to have_css("td", text: page.hint_text)
@@ -261,8 +288,16 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has a page heading and guidance markdown" do
-        let(:page) { create(:page, form:, guidance_markdown: nil, page_heading: nil) }
-        let(:another_page) { create(:page, form:, guidance_markdown: "This part of the form concerns licencing.", page_heading: "Licencing") }
+        before do
+          hash = form.draft_content_service.content_hash
+          hash["steps"][0]["page_heading"] = { "en" => "" }
+          hash["steps"][0]["guidance_markdown"] = { "en" => "" }
+          hash["steps"][1]["page_heading"] = { "en" => "Licencing" }
+          hash["steps"][1]["guidance_markdown"] = { "en" => "This part of the form concerns licencing." }
+          FormDocumentOperationsService.new(form).save_draft_content!(hash)
+          form.reload
+          render_welsh_translation_form
+        end
 
         it "shows the English text and Welsh fields for pages with English page heading and guidance markdown" do
           expect(rendered).to have_css("td", text: another_page.page_heading)
@@ -278,38 +313,77 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has a selection question" do
-        let(:page) { create(:page, :with_selection_settings, form:) }
+        before do
+          hash = form.draft_content_service.content_hash
+          hash["steps"][0]["answer_type"] = "selection"
+          hash["steps"][0]["data"] = {
+            "answer_settings" => {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Option 1", "value" => "Option 1" }, { "name" => "Option 2", "value" => "Option 2" }],
+            },
+          }
+          FormDocumentOperationsService.new(form).save_draft_content!(hash)
+          form.reload
+          render_welsh_translation_form
+        end
 
         it "shows the selection heading" do
           expect(rendered).to have_css("caption", text: t("forms.welsh_translation.new.section_headings.selection_options", question_number: page.position))
         end
 
         it "shows the English text and Welsh field for pages with English selection options" do
-          expect(rendered).to have_css("td", text: page.answer_settings.selection_options.first["name"])
+          selection_page = form.reload.pages.first
+          expect(rendered).to have_css("td", text: selection_page.answer_settings.selection_options.first.name)
           expect(rendered).to have_field("Enter Welsh option 1")
 
-          expect(rendered).to have_css("td", text: page.answer_settings.selection_options.second["name"])
+          expect(rendered).to have_css("td", text: selection_page.answer_settings.selection_options.second.name)
           expect(rendered).to have_field("Enter Welsh option 2")
         end
       end
 
       context "when a page has a selection question with none of the above" do
-        let(:page) { create(:page, :selection_with_none_of_the_above_question, form:) }
+        before do
+          hash = form.draft_content_service.content_hash
+          hash["steps"] = [hash["steps"].first]
+          hash["steps"][0]["answer_type"] = "selection"
+          hash["steps"][0]["data"] = {
+            "is_optional" => true,
+            "answer_settings" => {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Option 1", "value" => "Option 1" }, { "name" => "Option 2", "value" => "Option 2" }],
+              "none_of_the_above_question" => {
+                "question_text" => { "en" => "None of the above question?" },
+                "is_optional" => "true",
+              },
+            },
+          }
+          FormDocumentOperationsService.new(form).save_draft_content!(hash)
+          form.reload
+          render_welsh_translation_form
+        end
+
+        let(:another_welsh_page_translation_input) { nil }
 
         it "has row for the none of the above question text" do
           expect(rendered).to have_css("th", text: t("forms.welsh_translation.new.none_of_the_above_question"))
         end
 
         it "shows the English text and Welsh field for none of the above question" do
-          expect(rendered).to have_css("td", text: page.answer_settings.none_of_the_above_question.question_text)
+          selection_page = form.reload.pages.first
+          expect(rendered).to have_css("td", text: selection_page.answer_settings.none_of_the_above_question.question_text)
           expect(rendered).to have_field("Enter Welsh question or label if ‘None of the above’ is selected")
         end
       end
 
       context "when at least one page has routing conditions" do
         context "when the condition has an exit page" do
-          let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id) }
-          let(:page) { form.pages.first.tap(&:reload) }
+          let!(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id) }
+          let(:welsh_condition_translation_input) { Forms::WelshConditionTranslationInput.new(condition:).assign_condition_values }
+
+          before do
+            form.reload
+            render_welsh_translation_form
+          end
 
           it "shows a caption with the page the condition applies to" do
             expect(rendered).to have_css("caption", text: t("forms.welsh_translation.new.condition.heading", question_number: condition.routing_page.position))
@@ -378,14 +452,22 @@ describe "forms/welsh_translation/new.html.erb" do
   end
 
   context "when a condition translation has validation errors" do
-    let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Yes") }
-    let(:page) { form.pages.first.tap(&:reload) }
+    let(:form) do
+      build_form(
+        payment_url: "https://www.gov.uk/payments/your-payment-link",
+        payment_url_cy: "https://www.gov.uk/payments/your-payment-link",
+      )
+    end
+    let!(:exit_page_condition) { create(:condition, :with_exit_page, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Yes") }
+    let(:condition) { exit_page_condition }
 
     before do
-      welsh_condition_translation_input.exit_page_heading_cy = nil
-      welsh_translation_input.validate(mark_complete ? :mark_complete : nil)
-
-      assign(:welsh_translation_input, welsh_translation_input)
+      form.reload
+      input = build_welsh_translation_input.tap { |translation_input| translation_input.mark_complete = mark_complete }
+      condition_translation = input.page_translations.flat_map(&:condition_translations).first
+      condition_translation.exit_page_heading_cy = nil
+      input.validate(mark_complete ? :mark_complete : nil)
+      assign(:welsh_translation_input, input)
       render
     end
 
@@ -395,12 +477,12 @@ describe "forms/welsh_translation/new.html.erb" do
     end
 
     it "links the error summary to the invalid field" do
-      error_message = I18n.t("activemodel.errors.models.forms/welsh_condition_translation_input.attributes.exit_page_heading_cy.blank", question_number: page.position)
+      error_message = I18n.t("activemodel.errors.models.forms/welsh_condition_translation_input.attributes.exit_page_heading_cy.blank", question_number: condition.routing_page.position)
       expect(rendered).to have_link(error_message, href: "#forms_welsh_condition_translation_input_#{condition.id}_condition_translations_exit_page_heading_cy")
     end
 
     it "adds an inline error message to the invalid field" do
-      error_message = "Error: #{I18n.t('activemodel.errors.models.forms/welsh_condition_translation_input.attributes.exit_page_heading_cy.blank', question_number: page.position)}"
+      error_message = "Error: #{I18n.t('activemodel.errors.models.forms/welsh_condition_translation_input.attributes.exit_page_heading_cy.blank', question_number: condition.routing_page.position)}"
       expect(rendered).to have_css(".govuk-error-message", text: error_message)
     end
   end

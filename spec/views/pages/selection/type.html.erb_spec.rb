@@ -81,9 +81,13 @@ describe "pages/selection/type.html.erb", type: :view do
         end
 
         context "when a routing condition is set" do
+          let!(:routing_condition) do
+            create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.last.id)
+          end
+
           before do
-            create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: form.pages.last.id)
-            page.reload
+            assign(:page, form.reload.pages.first)
+            render(template: "pages/selection/type")
           end
 
           context "when the options will not need to be reduced" do

@@ -65,12 +65,16 @@ class FormStep
   end
 
   def answer_settings_cy
-    @step_data.dig("data", "answer_settings")
+    settings = @step_data.dig("data", "answer_settings_cy")
+    return nil if settings.nil?
+
+    settings.is_a?(DataStruct) ? settings : DataStructType.new.cast_value(settings)
   end
 
   def answer_settings_cy=(value)
     @step_data["data"] ||= {}
-    @step_data["data"]["answer_settings"] = value
+    settings = value.is_a?(DataStruct) ? value.to_h : value
+    @step_data["data"]["answer_settings_cy"] = settings
     draft_service.update_step!(id, @step_data)
     @step_data = draft_service.find_step(id).step_data
   end
@@ -119,7 +123,9 @@ class FormStep
 
   def answer_settings
     settings = data["answer_settings"]
-    settings.is_a?(DataStruct) ? settings : DataStruct.new(settings || {})
+    return DataStruct.new({}) if settings.nil?
+
+    settings.is_a?(DataStruct) ? settings : DataStructType.new.cast_value(settings)
   end
 
   def routing_conditions

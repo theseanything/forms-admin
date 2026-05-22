@@ -116,6 +116,11 @@ describe "pages/routes/show.html.erb" do
   end
 
   context "when the page has a route that leads to an exit page" do
+    let(:exit_page_route) { instance_double(FormCondition, secondary_skip?: false, exit_page?: true) }
+    let(:route_summary_card_data_service) do
+      instance_double(RouteSummaryCardDataPresenter, summary_card_data: route_cards, errors:, routes: [exit_page_route], next_page: pages.second, pages:, page:, form:)
+    end
+
     before do
       create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1")
       pages.each(&:reload)
@@ -133,14 +138,13 @@ describe "pages/routes/show.html.erb" do
   end
 
   context "when the page has a skip and a secondary skip" do
-    let(:route_summary_card_data_service) { RouteSummaryCardDataPresenter.new form:, page: }
+    let(:route_summary_card_data_service) { RouteSummaryCardDataPresenter.new(form:, page: form.reload.pages.first) }
 
     before do
       create(:condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id)
-      create(:condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, goto_page_id: pages.fourth.id)
-      pages.each(&:reload)
+      create(:condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: "", goto_page_id: pages.fourth.id)
 
-      render template: "pages/routes/show", locals: { current_form: form, page:, back_link_url: "/back", route_summary_card_data_presenter: route_summary_card_data_service }
+      render template: "pages/routes/show", locals: { current_form: form, page: form.reload.pages.first, back_link_url: "/back", route_summary_card_data_presenter: route_summary_card_data_service }
     end
 
     it "has a link to delete all routes" do

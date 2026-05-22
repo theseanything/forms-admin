@@ -81,6 +81,10 @@ class FormDocument::Condition
     goto_page_id.nil? && skip_to_end
   end
 
+  def skip_to_end?
+    skip_to_end == true
+  end
+
   def has_routing_errors
     validation_errors.any?
   end

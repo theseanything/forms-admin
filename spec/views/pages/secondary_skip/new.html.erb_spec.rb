@@ -2,12 +2,13 @@ require "rails_helper"
 
 describe "pages/secondary_skip/new.html.erb" do
   let(:form) { create(:form, :ready_for_routing) }
-  let(:page) { form.pages.first }
+  let!(:primary_route) do
+    create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
+  end
+  let(:page) { form.reload.pages.first }
   let(:secondary_skip_input) { Pages::SecondarySkipInput.new(form:, page:) }
 
   before do
-    create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
-    page.reload
     render template: "pages/secondary_skip/new", locals: { back_link_url: "/back", secondary_skip_input: }
   end
 

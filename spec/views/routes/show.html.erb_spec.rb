@@ -1,7 +1,7 @@
 require "rails_helper"
 
 describe "routes/show.html.erb" do
-  let(:form) { create(:form, :ready_for_routing) }
+  let(:form) { create(:form, pages_count: 3) }
   let(:pages) { form.pages }
   let(:routes_input) { build(:routes_input, form:).assign_form_values }
 
@@ -29,7 +29,7 @@ describe "routes/show.html.erb" do
 
   context "when the form has pages and routes" do
     before do
-      create(:condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id)
+      create(:condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.third.id)
       form.reload
     end
 
@@ -99,7 +99,7 @@ describe "routes/show.html.erb" do
 
     context "when the route goes to a page before the routing page" do
       before do
-        create(:condition, form:, routing_page_id: pages.second.id, check_page_id: pages.second.id, answer_value: "Option 1", goto_page_id: pages.first.id)
+        create(:condition, form:, routing_page_id: pages.second.id, check_page_id: pages.second.id, answer_value: nil, goto_page_id: pages.first.id)
         form.reload
       end
 
@@ -122,13 +122,15 @@ describe "routes/show.html.erb" do
       let(:form) do
         create(:form).tap do |f|
           hash = f.draft_content_service.content_hash
-          hash["steps"] = (1..3).map do |i|
+          hash["steps"] = [
             FormDocumentFactoryHelpers.build_step_attrs(
-              position: i,
+              position: 1,
               answer_type: "selection",
               answer_settings: { "only_one_option" => "true", "selection_options" => selection_options },
-            )
-          end
+            ),
+            FormDocumentFactoryHelpers.build_step_attrs(position: 2),
+            FormDocumentFactoryHelpers.build_step_attrs(position: 3),
+          ]
           hash["steps"].each_with_index { |s, i| s["next_step_id"] = hash["steps"][i + 1]&.dig("id") }
           hash["start_page"] = hash["steps"].first["id"]
           FormDocumentOperationsService.new(f).save_draft_content!(hash)

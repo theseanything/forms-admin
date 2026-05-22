@@ -115,6 +115,37 @@ class FormDocument::Content
     hash
   end
 
+  def as_welsh
+    WelshView.new(self)
+  end
+
+  class WelshView
+    TRANSLATABLE_METHODS = %i[
+      name declaration_markdown what_happens_next_markdown payment_url
+      privacy_policy_url support_email support_phone support_url support_url_text
+    ].freeze
+
+    def initialize(content)
+      @content = content
+    end
+
+    def steps
+      @content.steps
+    end
+
+    def method_missing(name, *args, **kwargs, &block)
+      if TRANSLATABLE_METHODS.include?(name) && args.empty? && kwargs.empty?
+        @content.public_send(name, :cy)
+      else
+        @content.public_send(name, *args, **kwargs, &block)
+      end
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      TRANSLATABLE_METHODS.include?(name) || @content.respond_to?(name, include_private)
+    end
+  end
+
 private
 
   def translatable_string_for(attribute, locale:)
