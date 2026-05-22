@@ -69,6 +69,7 @@ class Forms::WelshPageTranslationInput < BaseInput
     page.save!
 
     condition_translations.presence&.each(&:submit)
+    true
   end
 
   def assign_page_values

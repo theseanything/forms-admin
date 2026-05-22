@@ -64,15 +64,18 @@ RSpec.describe Pages::Routes::DeleteConfirmationInput, type: :model do
         end
 
         it "deletes the primary route" do
-          expect(Condition.exists?(primary_condition.id)).to be false
+          form.reload
+          expect(form.draft_content_service.conditions.map(&:id)).not_to include(primary_condition.id)
         end
 
         it "deletes the secondary skip route" do
-          expect(Condition.exists?(secondary_skip_condition.id)).to be false
+          form.reload
+          expect(form.draft_content_service.conditions.map(&:id)).not_to include(secondary_skip_condition.id)
         end
 
         it "does not delete an unrelated route" do
-          expect(Condition.exists?(other_condition.id)).to be true
+          form.reload
+          expect(form.draft_content_service.conditions.map(&:id)).to include(other_condition.id)
         end
       end
     end
