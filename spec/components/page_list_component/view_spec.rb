@@ -327,6 +327,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: pages.first.id,
             answer_value: "Option 1",
@@ -344,6 +345,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: pages.first.id,
             answer_value: "none_of_the_above",
@@ -361,6 +363,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: pages.first.id,
             answer_value: nil,
@@ -378,6 +381,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: pages.first.id,
             answer_value: "Option 1",
@@ -396,6 +400,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: pages.first.id,
             answer_value: "Option 1",
@@ -414,6 +419,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.second.id,
             check_page_id: pages.first.id,
             answer_value: nil,
@@ -433,6 +439,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: nil,
             answer_value: nil,
@@ -450,6 +457,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:condition) do
           create(
             :condition,
+            form:,
             routing_page_id: pages.first.id,
             check_page_id: nil,
             answer_value: nil,
@@ -468,7 +476,7 @@ RSpec.describe PageListComponent::View, type: :component do
     describe "#condition_group_description" do
       context "when skip_to_end is false" do
         let(:group) do
-          [build(:condition, skip_to_end: false, goto_page_id: pages.third.id, answer_value: "Option 1")]
+          [OpenStruct.new(skip_to_end: false, goto_page_id: pages.third.id, answer_value: "Option 1")]
         end
 
         it "returns the correct description" do
@@ -479,7 +487,7 @@ RSpec.describe PageListComponent::View, type: :component do
 
       context "when skip_to_end is true" do
         let(:group) do
-          [build(:condition, skip_to_end: true, goto_page_id: nil)]
+          [OpenStruct.new(skip_to_end: true, goto_page_id: nil)]
         end
 
         it "returns the correct description" do
@@ -520,38 +528,26 @@ RSpec.describe PageListComponent::View, type: :component do
   end
 
   describe "#answer_value_groups" do
-    let(:form) { build_stubbed :form, :ready_for_routing }
-
-    let(:pages) do
-      [
-        build_stubbed(
-          :page,
-          :with_selection_settings,
-          id: 101,
-          selection_options:,
-          routing_conditions: conditions,
-        ),
-        build_stubbed(:page, id: 102),
-        build_stubbed(:page, id: 103),
-        build_stubbed(:page, id: 104),
-      ]
-    end
-
     let(:selection_options) do
       [
-        { value: "Option 1" },
-        { value: "Option 2" },
-        { value: "Option 3" },
+        double(value: "Option 1"),
+        double(value: "Option 2"),
+        double(value: "Option 3"),
       ]
     end
-
     let(:conditions) do
       [
-        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 1", goto_page_id: 103),
-        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 2", goto_page_id: 103),
-        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 3", goto_page_id: 104),
-        build_stubbed(:condition, routing_page_id: 101, answer_value: nil, goto_page_id: nil, skip_to_end: true),
+        OpenStruct.new(answer_value: "Option 1", goto_page_id: 103),
+        OpenStruct.new(answer_value: "Option 2", goto_page_id: 103),
+        OpenStruct.new(answer_value: "Option 3", goto_page_id: 104),
+        OpenStruct.new(answer_value: nil, goto_page_id: nil),
       ]
+    end
+    let(:page) do
+      double(
+        answer_settings: double(selection_options: selection_options),
+        routing_conditions: conditions,
+      )
     end
 
     it "groups conditions by goto_page_id" do
@@ -560,16 +556,16 @@ RSpec.describe PageListComponent::View, type: :component do
         [104, [conditions.third]],
         [nil, [conditions.fourth]],
       ]
-      result = page_list_component.answer_value_groups(pages.first)
+      result = page_list_component.answer_value_groups(page)
       expect(result).to eq expected
     end
 
     context "when given a different order of selection options" do
       let(:selection_options) do
         [
-          { value: "Option 3" },
-          { value: "Option 2" },
-          { value: "Option 1" },
+          double(value: "Option 3"),
+          double(value: "Option 2"),
+          double(value: "Option 1"),
         ]
       end
 
@@ -580,7 +576,7 @@ RSpec.describe PageListComponent::View, type: :component do
           [nil, [conditions.fourth]],
         ]
 
-        result = page_list_component.answer_value_groups(pages.first)
+        result = page_list_component.answer_value_groups(page)
         expect(result).to eq expected
       end
     end

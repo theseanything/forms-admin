@@ -32,7 +32,7 @@ class FormDraftContentService
   def conditions
     steps.flat_map do |step|
       Array(step["routing_conditions"]).map do |c|
-        FormDocument::Condition.new(**c.stringify_keys)
+        FormCondition.new(form: @form, condition: c, step_id: step["id"])
       end
     end
   end

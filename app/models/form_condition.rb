@@ -118,6 +118,10 @@ class FormCondition
     form.pages.find { |page| page.id.to_s == routing_page_id.to_s }
   end
 
+  def check_page
+    form.pages.find { |page| page.id.to_s == check_page_id.to_s }
+  end
+
   def exit_page_heading_cy
     exit_page_heading(locale: :cy)
   end
