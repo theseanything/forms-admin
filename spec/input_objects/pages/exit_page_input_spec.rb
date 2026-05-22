@@ -64,7 +64,7 @@ RSpec.describe Pages::ExitPageInput, type: :model do
       it "creates a condition" do
         expect {
           exit_page_input.submit
-        }.to change(Condition, :count).by(1)
+        }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(1)
       end
     end
 

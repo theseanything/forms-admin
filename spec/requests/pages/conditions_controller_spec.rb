@@ -201,7 +201,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
       it "does not create the condition and redirects the user to the question routes page" do
         expect {
           post create_condition_path(form_id: form.id, page_id: page.id, params:)
-        }.not_to change(Condition, :count)
+        }.not_to(change { form.draft_content_service.conditions.count })
       end
 
       it "redirects to the question routes page" do

@@ -60,7 +60,7 @@ RSpec.describe RoutesController, type: :request do
 
     context "with valid parameters" do
       it "creates a new routing condition" do
-        expect { post routes_path(form.id), params: valid_params }.to change(Condition, :count).by(1)
+        expect { post routes_path(form.id), params: valid_params }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(1)
 
         condition = Condition.last
         expect(condition.routing_page_id).to eq(pages.first.id)

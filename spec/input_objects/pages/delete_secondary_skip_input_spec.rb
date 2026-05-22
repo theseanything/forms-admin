@@ -34,7 +34,7 @@ RSpec.describe Pages::DeleteSecondarySkipInput, type: :model do
         delete_secondary_skip_input.confirm = "yes"
         expect {
           delete_secondary_skip_input.submit
-        }.to change(Condition, :count).by(-1)
+        }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(-1)
       end
     end
   end

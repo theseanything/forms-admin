@@ -29,7 +29,7 @@ RSpec.describe FormDocument::Step, type: :model do
     expect(form_document_step.is_optional?).to eq(page.is_optional?)
     expect(form_document_step.is_repeatable?).to eq(page.is_repeatable?)
     if page.answer_settings.present?
-      expect(form_document_step.data.answer_settings).to eq(page.answer_settings)
+      expect(form_document_step.data.answer_settings.to_h).to eq(page.answer_settings.to_h)
     end
   end
 

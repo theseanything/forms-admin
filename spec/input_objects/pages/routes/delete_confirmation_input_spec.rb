@@ -53,7 +53,7 @@ RSpec.describe Pages::Routes::DeleteConfirmationInput, type: :model do
 
           expect {
             delete_confirmation_input.submit
-          }.not_to change(Condition, :count)
+          }.not_to(change { Form.find(form.id).draft_content_service.conditions.count })
         end
       end
 

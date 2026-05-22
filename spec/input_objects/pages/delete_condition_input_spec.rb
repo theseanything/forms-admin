@@ -28,7 +28,7 @@ RSpec.describe Pages::DeleteConditionInput, type: :model do
       it "destroys the condition" do
         expect {
           delete_condition_input.submit
-        }.to change(Condition, :count).by(-1)
+        }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(-1)
       end
 
       it "returns true" do

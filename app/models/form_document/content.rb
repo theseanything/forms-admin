@@ -56,8 +56,12 @@ class FormDocument::Content
     available_languages.present? && available_languages.include?("cy")
   end
 
+  def name(locale = :en)
+    TranslatableString.for_locale(self[:name], locale:)
+  end
+
   def name_for(locale = :en)
-    TranslatableString.for_locale(name, locale:)
+    name(locale)
   end
 
   def declaration_markdown_for(locale = :en)

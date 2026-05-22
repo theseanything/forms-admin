@@ -13,7 +13,7 @@ RSpec.describe Routes::SyncService do
       let(:routes) { [] }
 
       it "does nothing" do
-        expect { service.sync_conditions_from_routes }.not_to change(Condition, :count)
+        expect { service.sync_conditions_from_routes }.not_to(change { Form.find(form.id).draft_content_service.conditions.count })
         expect(form.conditions.reload).to be_empty
       end
     end
@@ -26,7 +26,7 @@ RSpec.describe Routes::SyncService do
       end
 
       it "creates a new condition for a non-default route" do
-        expect { service.sync_conditions_from_routes }.to change(Condition, :count).by(1)
+        expect { service.sync_conditions_from_routes }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(1)
 
         condition = form.conditions.reload.first
         expect(condition.routing_page_id).to eq(pages.first.id)
@@ -37,7 +37,7 @@ RSpec.describe Routes::SyncService do
       it "does not create a condition for a default route" do
         routes.first.goto = Forms::RouteInput::DEFAULT_VALUE
 
-        expect { service.sync_conditions_from_routes }.not_to change(Condition, :count)
+        expect { service.sync_conditions_from_routes }.not_to(change { Form.find(form.id).draft_content_service.conditions.count })
         expect(form.conditions.reload).to be_empty
       end
     end
@@ -57,7 +57,7 @@ RSpec.describe Routes::SyncService do
 
       it "updates the goto_page_id of the existing condition" do
         # No new conditions should be created or destroyed.
-        expect { service.sync_conditions_from_routes }.not_to change(Condition, :count)
+        expect { service.sync_conditions_from_routes }.not_to(change { Form.find(form.id).draft_content_service.conditions.count })
 
         # The existing condition should be updated.
         existing_condition.reload
@@ -79,7 +79,7 @@ RSpec.describe Routes::SyncService do
       end
 
       it "destroys the condition that is now a default route" do
-        expect { service.sync_conditions_from_routes }.to change(Condition, :count).by(-1)
+        expect { service.sync_conditions_from_routes }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(-1)
         expect(Condition.exists?(stale_condition.id)).to be false
       end
     end
@@ -102,7 +102,7 @@ RSpec.describe Routes::SyncService do
         # This confirms that `.presence` logic is mirrored in both create and destroy paths.
         existing_condition.update!(answer_value: nil) # Simulate how it's stored in the DB.
 
-        expect { service.sync_conditions_from_routes }.to change(Condition, :count).by(-1)
+        expect { service.sync_conditions_from_routes }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(-1)
         expect(Condition.exists?(existing_condition.id)).to be false
       end
     end
@@ -134,7 +134,7 @@ RSpec.describe Routes::SyncService do
 
       it "correctly synchronizes all conditions" do
         # We start with 3 conditions. We expect 1 create and 1 delete. Net change is 0.
-        expect { service.sync_conditions_from_routes }.not_to change(Condition, :count)
+        expect { service.sync_conditions_from_routes }.not_to(change { Form.find(form.id).draft_content_service.conditions.count })
 
         # Assertions
         # 1. Update was successful

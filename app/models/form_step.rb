@@ -68,6 +68,13 @@ class FormStep
     @step_data.dig("data", "answer_settings")
   end
 
+  def answer_settings_cy=(value)
+    @step_data["data"] ||= {}
+    @step_data["data"]["answer_settings"] = value
+    draft_service.update_step!(id, @step_data)
+    @step_data = draft_service.find_step(id).step_data
+  end
+
   def hint_text(locale: :en)
     TranslatableString.for_locale(@step_data["hint_text"], locale:)
   end
@@ -90,6 +97,17 @@ class FormStep
   end
 
   alias_method :optional?, :is_optional?
+  alias_method :is_optional, :is_optional?
+
+  def reload
+    fresh = draft_service.find_step(id)
+    @step_data = fresh.step_data.deep_stringify_keys if fresh
+    self
+  end
+
+  def attributes
+    as_json.stringify_keys
+  end
 
   def is_repeatable?
     ActiveRecord::Type::Boolean.new.cast(data["is_repeatable"]) || false
