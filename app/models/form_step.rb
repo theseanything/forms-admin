@@ -221,6 +221,8 @@ class FormStep
     true
   end
 
+  alias_method :save!, :save_and_update_form
+
   def destroy_and_update_form!
     draft_service.destroy_step!(id)
     true

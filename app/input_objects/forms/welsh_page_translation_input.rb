@@ -85,17 +85,15 @@ class Forms::WelshPageTranslationInput < BaseInput
   def condition_translations_attributes=(attributes)
     submitted_condition_ids = attributes.values.map { |attrs| attrs["id"] }.compact
 
-    conditions_by_id = page.routing_conditions.where(id: submitted_condition_ids).index_by(&:id)
+    conditions_by_id = page.routing_conditions.select { |c| submitted_condition_ids.map(&:to_s).include?(c.id.to_s) }.index_by { |c| c.id.to_s }
 
-    self.condition_translations = attributes.values.map { |condition_attrs|
-      condition_id = condition_attrs["id"].to_i
-      condition_object = conditions_by_id[condition_id]
+    self.condition_translations = attributes.values.filter_map { |condition_attrs|
+      condition_object = conditions_by_id[condition_attrs["id"].to_s]
 
-      # skip the condition if it doesn't belong to the page
       next unless condition_object
 
       Forms::WelshConditionTranslationInput.new(condition_attrs.symbolize_keys.merge(condition: condition_object))
-    }.compact
+    }
   end
 
   def selection_options_cy_attributes=(attributes)
@@ -126,7 +124,10 @@ class Forms::WelshPageTranslationInput < BaseInput
   def page_has_none_of_the_above_question?
     return false unless page.answer_type == "selection"
 
-    page.answer_settings&.none_of_the_above_question&.question_text.present?
+    question_text = page.answer_settings&.none_of_the_above_question&.question_text
+    return false if question_text.blank?
+
+    question_text.is_a?(String) ? question_text.present? : TranslatableString.for_locale(question_text, locale: :en).present?
   end
 
   def question_text_cy_present?

@@ -23,9 +23,8 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
     }
   end
 
-  def create_page(attributes = {})
+  def create_page(*traits, **attributes)
     default_attributes = {
-      id: 1,
       question_text: "Are you renewing a licence?",
       hint_text: "Choose 'Yes' if you already have a valid licence.",
       page_heading: "Licencing",
@@ -35,7 +34,7 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
       page_heading_cy: "",
       guidance_markdown_cy: "",
     }
-    create(:page, default_attributes.merge(attributes))
+    create(:page, *traits, **default_attributes.merge(attributes))
   end
 
   describe "validations" do
@@ -178,7 +177,7 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
 
       context "when it's a none of the above question" do
         let(:page) do
-          create_page(attributes_for(:page, :selection_with_none_of_the_above_question))
+          create_page(:selection_with_none_of_the_above_question)
         end
         let(:new_input_data) do
           super().merge({
@@ -332,7 +331,7 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
 
       context "when it's a none of the above question" do
         let(:page) do
-          create_page(attributes_for(:page, :selection_with_none_of_the_above_question))
+          create_page(:selection_with_none_of_the_above_question)
         end
         let(:new_input_data) do
           super().merge({
@@ -464,7 +463,7 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
 
     context "when the page has a selection question with none of the above" do
       let(:page) do
-        create_page(attributes_for(:page, :selection_with_none_of_the_above_question))
+        create_page(:selection_with_none_of_the_above_question)
       end
 
       let(:new_input_data) do
@@ -549,7 +548,7 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
 
     context "when the page has a selection question with none of the above" do
       let(:page) do
-        create_page(attributes_for(:page, :selection_with_none_of_the_above_question))
+        create_page(:selection_with_none_of_the_above_question)
       end
 
       it "none_of_the_above_question_cy is nil" do
@@ -559,18 +558,17 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
 
       context "when the welsh none of the above question is present" do
         let(:page) do
-          create_page(attributes_for(:page,
-                                     :selection_with_none_of_the_above_question,
-                                     answer_settings_cy: {
-                                       selection_options: [
-                                         { name: "Welsh option 1", value: "Option 1" },
-                                         { name: "Welsh option 2", value: "Option 2" },
-                                       ],
-                                       none_of_the_above_question: {
-                                         question_text: "Welsh none of the above question?",
-                                         is_optional: "true",
-                                       },
-                                     }))
+          create_page(:selection_with_none_of_the_above_question,
+                      answer_settings_cy: {
+                        selection_options: [
+                          { name: "Welsh option 1", value: "Option 1" },
+                          { name: "Welsh option 2", value: "Option 2" },
+                        ],
+                        none_of_the_above_question: {
+                          question_text: "Welsh none of the above question?",
+                          is_optional: "true",
+                        },
+                      })
         end
 
         it "none_of_the_above_question_cy is the welsh text" do
@@ -624,7 +622,7 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
 
     context "when the page has a selection question with none of the above" do
       let(:page) do
-        create_page(attributes_for(:page, :selection_with_none_of_the_above_question))
+        create_page(:selection_with_none_of_the_above_question)
       end
 
       it "is true" do
