@@ -53,14 +53,17 @@ class Forms::WelshTranslationInput < Forms::MarkCompleteInput
   end
 
   def page_translations_attributes=(attributes)
+    normalized_attributes = attributes.respond_to?(:to_unsafe_h) ? attributes.to_unsafe_h : attributes
     # Get all submitted page IDs from the params hash.
-    submitted_page_ids = attributes.values.map { |attrs| attrs["id"] }.compact
+    submitted_page_ids = normalized_attributes.values.map { |attrs| attrs["id"] || attrs[:id] }.compact
 
     # lookup hash for efficiency
     pages_by_id = submitted_page_ids.index_with { |id| form.draft_content_service.find_step(id) }.compact
 
-    self.page_translations = attributes.values.filter_map { |page_attrs|
-      page_object = pages_by_id[page_attrs["id"].to_s]
+    self.page_translations = normalized_attributes.values.filter_map { |page_attrs|
+      page_attrs = page_attrs.to_unsafe_h if page_attrs.respond_to?(:to_unsafe_h)
+      page_id = (page_attrs["id"] || page_attrs[:id]).to_s
+      page_object = pages_by_id[page_id]
 
       next unless page_object
 

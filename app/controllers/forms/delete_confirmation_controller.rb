@@ -15,12 +15,13 @@ module Forms
       return render :delete unless @delete_confirmation_input.valid?
       return redirect_to @back_url unless @delete_confirmation_input.confirmed?
 
+      form_name = current_form.name
       result = delete_form_or_draft
 
       if result[:success]
         redirect_to result[:redirect_url],
                     status: :see_other,
-                    success: t(".success", form_name: current_form.name)
+                    success: t(".success", form_name:)
       # if not in a state we can delete in, redirect back with a failure message
       else
         flash[:message] = t(".failure")

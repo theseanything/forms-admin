@@ -34,9 +34,9 @@ RSpec.describe Pages::Routes::DeleteConfirmationInput, type: :model do
       let(:form) { create :form, :ready_for_routing }
       let(:pages) { form.pages }
       let(:page) { pages.first }
-      let!(:primary_condition) { create :condition, routing_page: pages.first, check_page: pages.first, goto_page: pages.last }
-      let!(:secondary_skip_condition) { create :condition, routing_page: pages.fourth, check_page: pages.first, goto_page: pages.last }
-      let!(:other_condition) { create :condition, routing_page: pages.third, check_page: pages.third, skip_to_end: true }
+      let!(:primary_condition) { create :condition, form:, routing_page: pages.first, check_page: pages.first, goto_page: pages.last }
+      let!(:secondary_skip_condition) { create :condition, form:, routing_page: pages.fourth, check_page: pages.first, goto_page: pages.last }
+      let!(:other_condition) { create :condition, form:, routing_page: pages.third, check_page: pages.third, skip_to_end: true }
 
       before do
         pages.each(&:reload)

@@ -287,14 +287,11 @@ RSpec.describe Pages::ConditionsInput, type: :model do
   describe "#secondary_skip?" do
     let(:page_routes_service) { instance_double(PageRoutesService) }
 
-    before do
-      page.reload
-    end
-
     context "when the page has a secondary skip condition" do
-      let(:condition) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: nil }
+      let!(:condition) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: nil }
 
       it "is true" do
+        page.reload
         expect(conditions_input.secondary_skip?).to be true
       end
     end

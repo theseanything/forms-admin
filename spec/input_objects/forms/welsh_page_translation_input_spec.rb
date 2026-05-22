@@ -6,12 +6,12 @@ RSpec.describe Forms::WelshPageTranslationInput, type: :model do
   let(:page) { create_page }
 
   let(:condition) do
-    create :condition, routing_page: page, answer_value: "Yes",
+    create :condition, form: page.form, routing_page: page, answer_value: "Yes",
                        exit_page_heading: "You are ineligible",
                        exit_page_markdown: "Sorry, you are ineligible for this service."
   end
 
-  let(:another_condition) { create :condition, routing_page: page, answer_value: "Yes", exit_page_heading: "Exit page heading", exit_page_markdown: "Exit page markdown" }
+  let(:another_condition) { create :condition, form: page.form, routing_page: page, answer_value: "Yes", exit_page_heading: "Exit page heading", exit_page_markdown: "Exit page markdown" }
 
   let(:new_input_data) do
     {

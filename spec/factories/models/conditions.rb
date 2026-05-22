@@ -19,7 +19,13 @@ FactoryBot.define do
     end
 
     initialize_with do
-      target_form = form || create(:form, :ready_for_live, routing_steps: true)
+      target_form = form
+      if target_form.nil? && routing_page.present?
+        target_form = routing_page.form if routing_page.respond_to?(:form)
+        target_form ||= FormDocumentFactoryHelpers.find_form_by_step_id(routing_page.id)
+      end
+      target_form ||= FormDocumentFactoryHelpers.find_form_by_step_id(routing_page_id) if routing_page_id.present?
+      target_form ||= create(:form, :ready_for_live, routing_steps: true)
       resolved_routing_page = routing_page || target_form.pages.find { |p| p.id == routing_page_id } || target_form.pages.first
       resolved_check_page = check_page || (check_page_id && target_form.pages.find { |p| p.id == check_page_id }) || resolved_routing_page
       resolved_goto_page = goto_page || (goto_page_id && target_form.pages.find { |p| p.id == goto_page_id })

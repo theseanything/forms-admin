@@ -382,7 +382,7 @@ describe TaskStatusService do
       end
 
       context "with an archived form" do
-        let(:form) { create(:form, :with_group, lifecycle: :archived, group:) }
+        let(:form) { create(:form, :archived, :with_group, group:) }
 
         it "returns the completed status" do
           expect(task_status_service.all_task_statuses[:make_live_status]).to eq :not_started
@@ -462,7 +462,7 @@ describe TaskStatusService do
           before do
             FormDocumentOperationsService.new(form).ensure_draft!
             form.update!(declaration_markdown: "I declare this is correct", share_preview_completed: true)
-            form.save_question_changes!
+            form.save_draft!
           end
 
           it "flags the Welsh task as incomplete" do
@@ -485,7 +485,7 @@ describe TaskStatusService do
             before do
               FormDocumentOperationsService.new(form).ensure_draft!
               form.update!(declaration_markdown: "I declare this is correct", share_preview_completed: true)
-              form.save_question_changes!
+              form.save_draft!
             end
 
             it "returns no missing sections" do

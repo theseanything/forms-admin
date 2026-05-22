@@ -21,6 +21,8 @@ class ArchiveFormService
   def archive_welsh_only
     return unless form.live_form_document&.content&.dig("available_languages")&.include?("cy")
 
-    FormDocumentOperationsService.new(form).remove_welsh!
+    operations = FormDocumentOperationsService.new(form)
+    operations.remove_welsh!
+    operations.publish! if form.is_live? && form.draft_form_document.present?
   end
 end

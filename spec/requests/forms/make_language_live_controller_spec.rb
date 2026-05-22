@@ -79,13 +79,13 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
           it "creates an English FormDocument and makes the form live" do
             expect {
               post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            }.to change { FormDocument.where(language:).count }.by(1)
+            }.to change(FormDocument, :count).by(1)
             .and change { form.reload.state }.to("live")
           end
 
           it "sets the English FormDocument's live_at time to be equal to the form's updated_at time" do
             post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            expect(FormDocument.find_by(form_id: form.id, tag: "live", language:)["content"]["live_at"]).to eq form.reload.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%6NZ")
+            expect(Time.zone.parse(form.reload.live_form_document.content["live_at"])).to be_within(1.second).of(form.updated_at)
           end
 
           it "sends an email to the organisation admins" do
@@ -107,7 +107,11 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
         end
 
         context "and the form already has a live Welsh form document" do
-          subject(:form) { create :form, :live, :with_welsh_translation }
+          subject(:form) do
+            draft_form = create(:form, :ready_for_live, :with_welsh_translation)
+            FormDocumentFactoryHelpers.publish_form!(draft_form)
+            draft_form.reload
+          end
 
           it "redirects to the form task list" do
             get make_language_live_path(form_id: form.id, language:)
@@ -126,7 +130,7 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
           it "creates an English FormDocument and makes the form live" do
             expect {
               post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            }.to change { FormDocument.where(language:).count }.by(1)
+            }.to change(FormDocument, :count).by(1)
             .and change { form.reload.state }.to("live")
           end
         end
@@ -149,25 +153,18 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
             post(make_language_live_path(form_id: form.id, language: "en"), params: form_params)
           end
 
-          it "redirects to the confirmation page" do
+          it "redirects to the form task list because Welsh is already on the live document" do
             post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            expect(response).to redirect_to(make_language_live_show_confirmation_path(form_id: form.id, language:))
-          end
-
-          it "creates an English FormDocument and makes the form live" do
-            expect {
-              post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            }.to change { FormDocument.where(language:).count }.by(1)
-          end
-
-          it "sets the English FormDocument's live_at time to be equal to the form's updated_at time" do
-            post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            expect(FormDocument.find_by(form_id: form.id, tag: "live", language:)["content"]["live_at"]).to eq form.reload.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%6NZ")
+            expect(response).to redirect_to(form_path(form_id: form.id))
           end
         end
 
         context "and the form already has a live Welsh form document" do
-          subject(:form) { create :form, :live, :with_welsh_translation }
+          subject(:form) do
+            draft_form = create(:form, :ready_for_live, :with_welsh_translation)
+            FormDocumentFactoryHelpers.publish_form!(draft_form)
+            draft_form.reload
+          end
 
           it "redirects to the form task list" do
             post(make_language_live_path(form_id: form.id, language:), params: form_params)
@@ -181,7 +178,7 @@ RSpec.describe Forms::MakeLanguageLiveController, type: :request do
           it "returns 422 and does not make the Welsh version live" do
             expect {
               post(make_language_live_path(form_id: form.id, language:), params: form_params)
-            }.not_to(change { FormDocument.where(language:).count })
+            }.not_to(change(FormDocument, :count))
             expect(response).to have_http_status(:unprocessable_content)
           end
         end

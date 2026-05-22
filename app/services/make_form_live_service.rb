@@ -15,7 +15,15 @@ class MakeFormLiveService
   end
 
   def make_live
-    FormDocumentOperationsService.new(@current_form).publish!
+    operations = FormDocumentOperationsService.new(@current_form)
+    if @current_form_was_archived
+      operations.unarchive_and_publish!
+    else
+      if @current_form.live_form_document.present? && @current_form.draft_form_document.blank?
+        operations.ensure_draft!
+      end
+      operations.publish!
+    end
 
     if live_form_submission_email_has_changed
       SubmissionEmailMailer.alert_email_change(

@@ -9,7 +9,7 @@ RSpec.describe Pages::DeleteConditionInput, type: :model do
   let(:answer_value) { "Option 1" }
   let(:goto_page_id) { goto_page.id }
   let(:skip_to_end) { false }
-  let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, answer_value:, goto_page_id:, skip_to_end: }
+  let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value:, goto_page_id:, skip_to_end: }
 
   describe "validations" do
     it "is invalid if confirm is nil" do
@@ -86,7 +86,7 @@ RSpec.describe Pages::DeleteConditionInput, type: :model do
       subject(:has_secondary_skip?) { delete_condition_input.has_secondary_skip? }
 
       let(:condition) do
-        create :condition, routing_page_id: start_of_branches.id, check_page_id: start_of_branches.id, answer_value: "Wales", goto_page_id: start_of_second_branch.id
+        create :condition, form:, routing_page_id: start_of_branches.id, check_page_id: start_of_branches.id, answer_value: "Wales", goto_page_id: start_of_second_branch.id
       end
 
       let(:start_of_branches) { pages.first }
@@ -95,7 +95,7 @@ RSpec.describe Pages::DeleteConditionInput, type: :model do
       let(:end_of_branches) { pages.last }
 
       before do
-        create :condition, routing_page_id: end_of_first_branch.id, check_page_id: start_of_branches.id, answer_value: nil, goto_page_id: end_of_branches.id
+        create :condition, form:, routing_page_id: end_of_first_branch.id, check_page_id: start_of_branches.id, answer_value: nil, goto_page_id: end_of_branches.id
         pages.each(&:reload)
       end
 

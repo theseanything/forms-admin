@@ -88,10 +88,20 @@ class Form < ApplicationRecord
 
   def pages
     list = draft_content_service.steps_for_list
+    list.define_singleton_method(:find_by!) do |**conditions|
+      page = list.find { |candidate| conditions.all? { |attr, value| candidate.public_send(attr) == value } }
+      raise ActiveRecord::RecordNotFound unless page
+
+      page
+    end
     list.define_singleton_method(:reorder) { |*_args| self }
     list.define_singleton_method(:in_order_of) do |field, values|
       field = field.to_s
-      sort_by { |page| values.index(page.public_send(field == "id" ? :id : field)) || values.length }
+      normalized_values = values.map(&:to_s)
+      sort_by do |page|
+        value = page.public_send(field == "id" ? :id : field).to_s
+        normalized_values.index(value) || normalized_values.length
+      end
     end
     list
   end
@@ -179,13 +189,20 @@ class Form < ApplicationRecord
     update_draft_field!("form_slug", value)
   end
 
-  %i[
-    submission_format_previously_changed?
-    send_daily_submission_batch_previously_changed?
-    send_weekly_submission_batch_previously_changed?
-    send_copy_of_answers_previously_changed?
-  ].each do |method_name|
-    define_method(method_name) { false }
+  def submission_format_previously_changed?
+    draft_field_previously_changed?("submission_format")
+  end
+
+  def send_daily_submission_batch_previously_changed?
+    draft_field_previously_changed?("send_daily_submission_batch")
+  end
+
+  def send_weekly_submission_batch_previously_changed?
+    draft_field_previously_changed?("send_weekly_submission_batch")
+  end
+
+  def send_copy_of_answers_previously_changed?
+    draft_field_previously_changed?("send_copy_of_answers")
   end
 
   def submission_type
@@ -459,7 +476,7 @@ class Form < ApplicationRecord
   end
 
   def can_make_welsh_version_live?
-    has_live_version && all_ready_for_live? && welsh_completed?
+    has_draft_version && has_live_version && all_ready_for_live? && welsh_completed?
   end
 
   def destroy_form!
@@ -513,8 +530,20 @@ private
 
   def update_draft_field!(key, value)
     hash = draft_content_service.content_hash
+    record_draft_field_change!(key, hash[key], value)
     hash[key] = value
     draft_content_service.save_content!(hash)
+  end
+
+  def draft_field_previously_changed?(key)
+    @draft_field_changes&.key?(key.to_s) || false
+  end
+
+  def record_draft_field_change!(key, old_value, new_value)
+    @draft_field_changes ||= {}
+    return if @draft_field_changes.key?(key.to_s)
+
+    @draft_field_changes[key.to_s] = true if old_value != new_value
   end
 
   def update_draft_translatable!(key, value, locale: :en)

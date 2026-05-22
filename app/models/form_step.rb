@@ -135,6 +135,8 @@ class FormStep
     ActiveRecord::Type::Boolean.new.cast(data["is_repeatable"]) || false
   end
 
+  alias_method :is_repeatable, :is_repeatable?
+
   def data
     @step_data["data"] || {}
   end
@@ -203,6 +205,10 @@ class FormStep
     id
   end
 
+  def ==(other)
+    other.is_a?(self.class) && form_id == other.form_id && id.to_s == other.id.to_s
+  end
+
   def form_id
     form.id
   end
@@ -216,6 +222,10 @@ class FormStep
   end
 
   def save_and_update_form
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == id.to_s }
+    @step_data["routing_conditions"] = step_data["routing_conditions"] if step_data&.key?("routing_conditions")
+
     draft_service.update_step!(id, @step_data)
     draft_service.save_question_changes!
     true
@@ -227,6 +237,8 @@ class FormStep
     draft_service.destroy_step!(id)
     true
   end
+
+  alias_method :delete, :destroy_and_update_form!
 
   def move_page(direction)
     draft_service.move_step!(id, direction)
@@ -241,6 +253,7 @@ class FormStep
       "is_optional" => attrs.delete("is_optional"),
       "is_repeatable" => attrs.delete("is_repeatable"),
       "answer_settings" => attrs.delete("answer_settings"),
+      "answer_settings_cy" => attrs.delete("answer_settings_cy"),
     }.compact
     attrs["data"] = (@step_data["data"] || {}).merge(data_attrs) if data_attrs.present?
     draft_service.update_step!(id, @step_data.merge(attrs))

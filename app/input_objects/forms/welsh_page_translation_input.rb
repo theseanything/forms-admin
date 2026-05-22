@@ -33,10 +33,17 @@ class Forms::WelshPageTranslationInput < BaseInput
 
   def initialize(attributes = {})
     @page = attributes.delete(:page) if attributes.key?(:page)
+    condition_translations_attrs = attributes.delete(:condition_translations_attributes)
+    selection_options_cy_attrs = attributes.delete(:selection_options_cy_attributes)
     super
     self.id ||= @page&.id
     @condition_translations ||= []
     @selection_options_cy ||= []
+    if condition_translations_attrs
+      normalized = condition_translations_attrs.respond_to?(:to_unsafe_h) ? condition_translations_attrs.to_unsafe_h : condition_translations_attrs
+      self.condition_translations_attributes = normalized
+    end
+    self.selection_options_cy_attributes = selection_options_cy_attrs if selection_options_cy_attrs
   end
 
   def submit
@@ -49,17 +56,19 @@ class Forms::WelshPageTranslationInput < BaseInput
 
     condition_translations.presence&.each(&:submit)
 
-    page.answer_settings_cy = welsh_answer_settings
-
+    welsh_settings = welsh_answer_settings
     if page_has_none_of_the_above_question?
-      page.answer_settings_cy.none_of_the_above_question.question_text = none_of_the_above_question_cy
+      welsh_settings.none_of_the_above_question.question_text = none_of_the_above_question_cy
     end
 
     if page_has_selection_options?
-      page.answer_settings_cy.selection_options = DataStructType.new.cast_value(selection_options_cy.map(&:as_selection_option))
+      welsh_settings.selection_options = DataStructType.new.cast_value(selection_options_cy.map(&:as_selection_option))
     end
 
+    page.answer_settings_cy = welsh_settings
     page.save!
+
+    condition_translations.presence&.each(&:submit)
   end
 
   def assign_page_values
@@ -83,12 +92,17 @@ class Forms::WelshPageTranslationInput < BaseInput
   end
 
   def condition_translations_attributes=(attributes)
-    submitted_condition_ids = attributes.values.map { |attrs| attrs["id"] }.compact
+    normalized_attributes = attributes.respond_to?(:to_unsafe_h) ? attributes.to_unsafe_h : attributes
+    submitted_condition_ids = normalized_attributes.values.map { |attrs| attrs["id"] || attrs[:id] }.compact.map(&:to_s)
 
-    conditions_by_id = page.routing_conditions.select { |c| submitted_condition_ids.map(&:to_s).include?(c.id.to_s) }.index_by { |c| c.id.to_s }
+    conditions_by_id = page.form.draft_content_service.conditions
+      .select { |c| submitted_condition_ids.include?(c.id.to_s) }
+      .index_by { |c| c.id.to_s }
 
-    self.condition_translations = attributes.values.filter_map { |condition_attrs|
-      condition_object = conditions_by_id[condition_attrs["id"].to_s]
+    self.condition_translations = normalized_attributes.values.filter_map { |condition_attrs|
+      condition_attrs = condition_attrs.to_unsafe_h if condition_attrs.respond_to?(:to_unsafe_h)
+      condition_id = (condition_attrs["id"] || condition_attrs[:id]).to_s
+      condition_object = conditions_by_id[condition_id]
 
       next unless condition_object
 
@@ -127,7 +141,9 @@ class Forms::WelshPageTranslationInput < BaseInput
     question_text = page.answer_settings&.none_of_the_above_question&.question_text
     return false if question_text.blank?
 
-    question_text.is_a?(String) ? question_text.present? : TranslatableString.for_locale(question_text, locale: :en).present?
+    text_value = question_text.is_a?(DataStruct) ? question_text.to_h : question_text
+    english_text = text_value.is_a?(String) ? text_value : TranslatableString.for_locale(text_value, locale: :en)
+    english_text.present?
   end
 
   def question_text_cy_present?

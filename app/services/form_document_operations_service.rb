@@ -110,6 +110,15 @@ class FormDocumentOperationsService
   end
 
   def unarchive_and_publish!
+    was_ready = form.question_section_completed && form.declaration_section_completed && form.share_preview_completed
+    ensure_draft! if form.draft_form_document.blank? && form.live_form_document.present?
+    if was_ready
+      form.update!(
+        share_preview_completed: true,
+        question_section_completed: true,
+        declaration_section_completed: true,
+      )
+    end
     form.update!(archived: false)
     publish!
   end

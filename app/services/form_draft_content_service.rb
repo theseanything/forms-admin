@@ -179,7 +179,7 @@ private
         "is_optional" => attrs.dig("data", "is_optional") || attrs["is_optional"],
         "is_repeatable" => attrs.dig("data", "is_repeatable") || attrs["is_repeatable"],
         "answer_settings" => attrs.dig("data", "answer_settings") || attrs["answer_settings"],
-        "answer_settings_cy" => attrs.dig("data", "answer_settings_cy"),
+        "answer_settings_cy" => attrs.dig("data", "answer_settings_cy") || attrs["answer_settings_cy"],
       }.compact,
       "routing_conditions" => attrs["routing_conditions"] || [],
     }.compact

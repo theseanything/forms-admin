@@ -91,8 +91,24 @@ module FormDocumentFactoryHelpers
 
   def create_live_with_draft!(form)
     create_live_form!(form) unless form.live_form_document_id.present?
+    was_ready = form.all_ready_for_live?(ignore_missing_welsh: true)
     FormDocumentOperationsService.new(form).ensure_draft!
+    if was_ready
+      form.update!(
+        share_preview_completed: true,
+        question_section_completed: true,
+        declaration_section_completed: true,
+      )
+    end
     form.reload
+  end
+
+  def find_form_by_step_id(step_id)
+    step_id = step_id.to_s
+    Form.order(created_at: :desc).find do |f|
+      steps = f.draft_content_service.content_hash["steps"] || f.live_form_document&.content&.dig("steps")
+      Array(steps).any? { |s| s["id"].to_s == step_id }
+    end
   end
 
   def archive_form!(form)
@@ -130,7 +146,15 @@ module FormDocumentFactoryHelpers
     when :archived_with_draft
       create_live_form!(form) unless form.live_form_document_id.present?
       archive_form!(form) unless form.archived?
+      was_ready = form.question_section_completed && form.declaration_section_completed && form.share_preview_completed
       FormDocumentOperationsService.new(form).ensure_draft!
+      if was_ready
+        form.update!(
+          share_preview_completed: true,
+          question_section_completed: true,
+          declaration_section_completed: true,
+        )
+      end
     end
     form.reload
   end
