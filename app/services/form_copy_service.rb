@@ -20,6 +20,7 @@ class FormCopyService
     end
     content.delete("live_at")
     content["form_id"] = nil
+    remap_step_ids!(content)
 
     ActiveRecord::Base.transaction do
       @copied_form = Form.create!(
@@ -48,5 +49,22 @@ private
     when "archived"
       @form.archived? ? @form.live_form_document : nil
     end
+  end
+
+  def remap_step_ids!(content)
+    steps = Array(content["steps"])
+    return if steps.empty?
+
+    id_map = steps.to_h { |step| [step["id"], ExternalIdProvider.generate_unique_id_for(FormStepId)] }
+    steps.each do |step|
+      step["id"] = id_map[step["id"]]
+      step["next_step_id"] = id_map[step["next_step_id"]] if step["next_step_id"]
+      Array(step["routing_conditions"]).each do |condition|
+        %w[routing_page_id check_page_id goto_page_id].each do |key|
+          condition[key] = id_map[condition[key]] if condition[key].present?
+        end
+      end
+    end
+    content["start_page"] = id_map[content["start_page"]] if content["start_page"]
   end
 end

@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe "pages/selection/type.html.erb", type: :view do
-  let(:form) { create :form }
-  let(:page) { build :page, routing_conditions: }
+  let(:form) { create :form, pages_count: 1 }
+  let(:page) { form.pages.first }
   let(:page_number) { 1 }
   let(:back_link_url) { "/a-back-link-url" }
   let(:selection_type_path) { "/a-path" }
@@ -70,7 +70,8 @@ describe "pages/selection/type.html.erb", type: :view do
       end
 
       context "when editing an existing question" do
-        let(:form) { create :form, pages: [page] }
+        let(:form) { create(:form, pages_count: 1) }
+        let(:page) { form.pages.first }
 
         context "when no routing conditions set" do
           it "does not display a warning about routes being deleted" do
@@ -80,7 +81,14 @@ describe "pages/selection/type.html.erb", type: :view do
         end
 
         context "when a routing condition is set" do
-          let(:routing_conditions) { [build(:condition)] }
+          let!(:routing_condition) do
+            create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.last.id)
+          end
+
+          before do
+            assign(:page, form.reload.pages.first)
+            render(template: "pages/selection/type")
+          end
 
           context "when the options will not need to be reduced" do
             before do

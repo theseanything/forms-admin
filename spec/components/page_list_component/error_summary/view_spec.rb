@@ -18,7 +18,7 @@ RSpec.describe PageListComponent::ErrorSummary::View, type: :component do
       let(:form) { create :form, :ready_for_routing }
 
       before do
-        create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.last.id
+        create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.last.id
         pages.first.reload
       end
 
@@ -31,7 +31,7 @@ RSpec.describe PageListComponent::ErrorSummary::View, type: :component do
 
     context "when the form has a route with an error" do
       let(:form) { create :form, :ready_for_routing }
-      let!(:condition) { create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.last.id }
+      let!(:condition) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.last.id }
 
       before do
         pages.first.reload
@@ -53,8 +53,8 @@ RSpec.describe PageListComponent::ErrorSummary::View, type: :component do
 
     context "when the form has multiple routes with errors" do
       let(:form) { create :form, :ready_for_routing }
-      let!(:condition_with_answer_value_missing) { create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: nil }
-      let!(:condition_with_goto_page_missing) { create :condition, routing_page_id: pages.second.id, check_page_id: pages.second.id, goto_page_id: nil, answer_value: "Option 1" }
+      let!(:condition_with_answer_value_missing) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: nil }
+      let!(:condition_with_goto_page_missing) { create :condition, form:, routing_page_id: pages.second.id, check_page_id: pages.second.id, goto_page_id: nil, answer_value: "Option 1" }
 
       before do
         pages.each(&:reload)
@@ -78,12 +78,12 @@ RSpec.describe PageListComponent::ErrorSummary::View, type: :component do
       let(:form) { create :form, :ready_for_routing }
 
       before do
-        create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.last.id
+        create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.last.id
         pages.each(&:reload)
       end
 
       context "and there is an error with the any other answer route" do
-        let!(:secondary_skip_condition) { create :condition, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.third.id }
+        let!(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.third.id }
 
         before do
           pages.each(&:reload)
@@ -99,7 +99,7 @@ RSpec.describe PageListComponent::ErrorSummary::View, type: :component do
       end
 
       context "and the any other answer route skip to question has been moved to before the skip from question" do
-        let!(:secondary_skip_condition) { create :condition, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.first.id }
+        let!(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.first.id }
 
         before do
           pages.each(&:reload)
@@ -118,8 +118,8 @@ RSpec.describe PageListComponent::ErrorSummary::View, type: :component do
 
   describe "class methods" do
     let(:form) { create :form, :ready_for_routing }
-    let!(:condition_with_answer_value_missing) { create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: nil }
-    let!(:condition_with_goto_page_missing) { create :condition, routing_page_id: pages.second.id, check_page_id: pages.second.id, goto_page_id: nil, answer_value: "Option 1" }
+    let!(:condition_with_answer_value_missing) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: nil }
+    let!(:condition_with_goto_page_missing) { create :condition, form:, routing_page_id: pages.second.id, check_page_id: pages.second.id, goto_page_id: nil, answer_value: "Option 1" }
 
     before do
       pages.each(&:reload)

@@ -18,17 +18,17 @@ class StepSummaryCardService
     options = []
 
     # Prioritize guidance markdown for file uploads
-    options.concat(guidance_markdown_options) if @step.respond_to?(:guidance_markdown) && @step.guidance_markdown.present?
+    options.concat(guidance_markdown_options) if @step.respond_to?(:guidance_markdown) && localized_present?(@step.guidance_markdown)
 
     # Page heading for non-file types
-    options.concat(page_heading_options) if @step.respond_to?(:page_heading) && @step.page_heading.present? && @step.answer_type != "file"
+    options.concat(page_heading_options) if @step.respond_to?(:page_heading) && localized_present?(@step.page_heading) && @step.answer_type != "file"
 
     # File upload: If a page heading/guidance is present, show the question text in the body of the summary card
     # as we're using the heading in the title rather than the question text.
-    options.concat(question_text_options) if @step.answer_type == "file" && @step.page_heading.present?
+    options.concat(question_text_options) if @step.answer_type == "file" && localized_present?(@step.page_heading)
 
     # Other answer types
-    options.concat(hint_options) if @step.hint_text.present?
+    options.concat(hint_options) if localized_present?(@step.hint_text)
     options.concat(generic_options) if @read_only && %w[address date text selection name].exclude?(@step.answer_type)
 
     options.concat(selection_options) if @step.answer_type == "selection"
@@ -45,19 +45,19 @@ private
   def page_heading_options
     [{
       key: { text: I18n.t("step_summary_card.page_heading") },
-      value: { text: @step.page_heading },
+      value: { text: localized_text(@step.page_heading) },
     }]
   end
 
   def question_text_options
     [{
       key: { text: I18n.t("reports.form_or_questions_list_table.headings.question_text") },
-      value: { text: @step.question_text },
+      value: { text: localized_text(@step.question_text) },
     }]
   end
 
   def markdown_content
-    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, @step.guidance_markdown, "</pre>".html_safe])
+    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, localized_text(@step.guidance_markdown), "</pre>".html_safe])
   end
 
   def guidance_markdown_options
@@ -70,7 +70,7 @@ private
   def hint_options
     [{
       key: { text: I18n.t("step_summary_card.hint_text") },
-      value: { text: @step.hint_text },
+      value: { text: localized_text(@step.hint_text) },
     }]
   end
 
@@ -216,7 +216,7 @@ private
       I18n.t("page_conditions.unconditional_skip_to_end_of_form").html_safe
     else
       goto_question = @steps.find { |page| page.id == condition.goto_page_id }
-      goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+      goto_page_question_text = ActionController::Base.helpers.sanitize(localized_text(goto_question.question_text))
       goto_page_question_number = @steps.find_index(goto_question) + 1
 
       I18n.t("page_conditions.unconditional_go_to_page", goto_page_question_number:, goto_page_question_text:).html_safe
@@ -230,7 +230,7 @@ private
         caption = content_tag(:p, I18n.t("page_conditions.go_to_the_end"), class: "govuk-body-s")
       else
         goto_question = @steps.find { |page| page.id == condition_group.first.goto_page_id }
-        goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+        goto_page_question_text = ActionController::Base.helpers.sanitize(localized_text(goto_question.question_text))
         goto_page_question_number = @steps.find_index(goto_question) + 1
 
         caption = content_tag(:p, I18n.t("page_conditions.go_to_page", goto_page_question_number:, goto_page_question_text:), class: "govuk-body-s")
@@ -251,15 +251,15 @@ private
       I18n.t("page_conditions.condition_compact_html_end_of_form", answer_value:).html_safe
     elsif condition.secondary_skip?
       goto_question = @steps.find { |page| page.id == condition.goto_page_id }
-      goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+      goto_page_question_text = ActionController::Base.helpers.sanitize(localized_text(goto_question.question_text))
       goto_page_question_number = @steps.find_index(goto_question) + 1
 
       I18n.t("page_conditions.condition_compact_html_secondary_skip", goto_page_question_number:, goto_page_question_text:).html_safe
     elsif condition.exit_page?
-      I18n.t("page_conditions.condition_compact_html_exit_page", answer_value:, exit_page_heading: condition.exit_page_heading).html_safe
+      I18n.t("page_conditions.condition_compact_html_exit_page", answer_value:, exit_page_heading: localized_text(condition.exit_page_heading)).html_safe
     else
       goto_question = @steps.find { |page| page.id == condition.goto_page_id }
-      goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+      goto_page_question_text = ActionController::Base.helpers.sanitize(localized_text(goto_question.question_text))
       goto_page_question_number = @steps.find_index(goto_question) + 1
 
       I18n.t("page_conditions.condition_compact_html", answer_value:, goto_page_question_number:, goto_page_question_text:).html_safe
@@ -285,6 +285,16 @@ private
 
   def html_list_item(item)
     item.map { |i| content_tag(:li, i) }.join.html_safe
+  end
+
+  def localized_text(value, locale: :en)
+    return value if value.is_a?(String)
+
+    TranslatableString.for_locale(value, locale:)
+  end
+
+  def localized_present?(value, locale: :en)
+    localized_text(value, locale:).present?
   end
 
   def answer_value_groups(conditions)

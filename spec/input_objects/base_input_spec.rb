@@ -176,7 +176,7 @@ RSpec.describe BaseInput do
         context "when the page is present" do
           let(:form_name) { "Apply for a juggling licence" }
           let(:form) { create :form, name: form_name }
-          let(:page) { build :page, form_id: form.id }
+          let(:page) { create :page, form: }
           let(:input) { TestInputWithPage.new(page:) }
 
           it "includes the form name in the validation errors" do

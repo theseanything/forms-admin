@@ -9,8 +9,6 @@ class Form < ApplicationRecord
   has_one :group_form, dependent: :destroy
   has_many :form_documents, dependent: :destroy
 
-  validates :send_copy_of_answers, inclusion: { in: %w[disabled enabled] }, allow_nil: true
-
   after_create :set_external_id
   after_create :create_initial_draft_document
 
@@ -89,11 +87,33 @@ class Form < ApplicationRecord
   alias_method :is_archived?, :has_been_archived
 
   def pages
-    draft_content_service.steps_for_list
+    list = draft_content_service.steps_for_list
+    list.define_singleton_method(:find_by!) do |**conditions|
+      page = list.find { |candidate| conditions.all? { |attr, value| candidate.public_send(attr) == value } }
+      raise ActiveRecord::RecordNotFound unless page
+
+      page
+    end
+    list.define_singleton_method(:reorder) { |*_args| self }
+    list.define_singleton_method(:in_order_of) do |field, values|
+      field = field.to_s
+      normalized_values = values.map(&:to_s)
+      sort_by do |page|
+        value = page.public_send(field == "id" ? :id : field).to_s
+        normalized_values.index(value) || normalized_values.length
+      end
+    end
+    list
   end
 
   def pages=(page_list)
-    return if page_list.blank?
+    if page_list.blank?
+      hash = draft_content_service.content_hash
+      hash["steps"] = []
+      hash.delete("start_page")
+      FormDocumentOperationsService.new(self).save_draft_content!(hash)
+      return
+    end
 
     page_list.each do |page|
       attrs = if page.is_a?(FormStep)
@@ -111,7 +131,19 @@ class Form < ApplicationRecord
   end
 
   def conditions
-    draft_content_service.conditions
+    draft_content_service.conditions.tap do |list|
+      form_ref = self
+      list.define_singleton_method(:reload) do
+        form_ref.draft_content_service.instance_variable_set(:@content_hash, nil)
+        form_ref.draft_content_service.conditions
+      end
+      list.define_singleton_method(:find_by) do |attrs|
+        attrs = attrs.stringify_keys
+        find do |condition|
+          attrs.all? { |key, value| condition.public_send(key).to_s == value.to_s }
+        end
+      end
+    end
   end
 
   def draft_document_content
@@ -137,7 +169,7 @@ class Form < ApplicationRecord
     end
 
     define_method("#{field}_cy=") do |value|
-      update_draft_translatable!(field, value, :cy)
+      update_draft_translatable!(field, value, locale: :cy)
     end
   end
 
@@ -157,6 +189,26 @@ class Form < ApplicationRecord
 
   def form_slug
     draft_content_service.content_hash["form_slug"]
+  end
+
+  def form_slug=(value)
+    update_draft_field!("form_slug", value)
+  end
+
+  def submission_format_previously_changed?
+    draft_field_previously_changed?("submission_format")
+  end
+
+  def send_daily_submission_batch_previously_changed?
+    draft_field_previously_changed?("send_daily_submission_batch")
+  end
+
+  def send_weekly_submission_batch_previously_changed?
+    draft_field_previously_changed?("send_weekly_submission_batch")
+  end
+
+  def send_copy_of_answers_previously_changed?
+    draft_field_previously_changed?("send_copy_of_answers")
   end
 
   def submission_type
@@ -194,6 +246,10 @@ class Form < ApplicationRecord
   def declaration_markdown=(value, locale: :en)
     update_draft_translatable!("declaration_markdown", value, locale:)
   end
+
+  alias_method :declaration_text, :declaration_markdown
+  alias_method :declaration_text_cy, :declaration_markdown_cy
+  alias_method :declaration_text_cy=, :declaration_markdown_cy=
 
   def what_happens_next_markdown(locale: :en)
     TranslatableString.for_locale(draft_content_service.content_hash["what_happens_next_markdown"], locale:)
@@ -358,6 +414,8 @@ class Form < ApplicationRecord
     pages.count { |p| p.answer_type.to_sym == :file }
   end
 
+  before_destroy :clear_document_pointers, prepend: true
+
   after_destroy do
     group_form&.destroy
   end
@@ -378,6 +436,7 @@ class Form < ApplicationRecord
   end
 
   def make_live!
+    self.previous_lifecycle_status = lifecycle_status
     FormDocumentOperationsService.new(self).publish!
   end
 
@@ -387,6 +446,12 @@ class Form < ApplicationRecord
 
   def make_welsh_version_live!
     make_live!
+  end
+
+  def reload(*)
+    draft_content_service.instance_variable_set(:@content_hash, nil)
+    draft_content_service.instance_variable_set(:@content, nil)
+    super
   end
 
   def create_draft_from_live_form!
@@ -418,11 +483,17 @@ class Form < ApplicationRecord
   end
 
   def can_make_welsh_version_live?
-    has_live_version && all_ready_for_live? && welsh_completed?
+    has_draft_version && has_live_version && all_ready_for_live? && welsh_completed?
   end
 
   def destroy_form!
     destroy!
+  end
+
+  def clear_document_pointers
+    Form.where(id: id).update_all(draft_form_document_id: nil, live_form_document_id: nil)
+    self.draft_form_document_id = nil
+    self.live_form_document_id = nil
   end
 
   def live_welsh_form_document
@@ -466,11 +537,23 @@ private
 
   def update_draft_field!(key, value)
     hash = draft_content_service.content_hash
+    record_draft_field_change!(key, hash[key], value)
     hash[key] = value
     draft_content_service.save_content!(hash)
   end
 
-  def update_draft_translatable!(key, value, locale)
+  def draft_field_previously_changed?(key)
+    @draft_field_changes&.key?(key.to_s) || false
+  end
+
+  def record_draft_field_change!(key, old_value, new_value)
+    @draft_field_changes ||= {}
+    return if @draft_field_changes.key?(key.to_s)
+
+    @draft_field_changes[key.to_s] = true if old_value != new_value
+  end
+
+  def update_draft_translatable!(key, value, locale: :en)
     hash = draft_content_service.content_hash
     hash[key] = TranslatableString.set_for_locale(hash[key], locale:, string: value)
     draft_content_service.save_content!(hash)

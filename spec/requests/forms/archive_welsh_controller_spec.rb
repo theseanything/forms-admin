@@ -45,9 +45,7 @@ RSpec.describe Forms::ArchiveWelshController, type: :request do
     end
 
     context "when form does not have a live Welsh translation" do
-      before do
-        FormDocument.find_by(form_id: id, language: "cy", tag: "live").destroy!
-      end
+      let(:form) { create(:form, :live) }
 
       it "redirects to live form page" do
         get archive_welsh_path(id)
@@ -63,7 +61,7 @@ RSpec.describe Forms::ArchiveWelshController, type: :request do
       it "archives the Welsh form" do
         expect {
           post archive_welsh_update_path(id), params: { forms_confirm_archive_welsh_input: { confirm:, form: } }
-        }.to change { FormDocument.find_by(form_id: id, language: "cy", tag: "live").present? }.from(true).to(false)
+        }.to change { form.reload.live_welsh_form_document.present? }.from(true).to(false)
       end
 
       it "redirects to the live form page" do

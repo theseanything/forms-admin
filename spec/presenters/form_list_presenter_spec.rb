@@ -78,10 +78,10 @@ describe FormListPresenter do
       context "when forms with names are random" do
         let(:forms) do
           [
-            build(:form, id: 1, name: "z", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 3, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 4, name: "C", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 1, name: "z", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 3, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 4, name: "C", created_at: "2024-10-08T07:31:15.762Z"),
           ]
         end
         let(:presenter) { described_class.call(forms:, group:, can_admin:) }
@@ -98,10 +98,10 @@ describe FormListPresenter do
       context "when multiple forms have the same name" do
         let(:forms) do
           [
-            build(:form, id: 1, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 3, name: "a", created_at: "2024-10-08T08:31:15.762Z"),
-            build(:form, id: 4, name: "a", created_at: "2024-10-08T09:31:15.762Z"),
+            create(:form, id: 1, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 3, name: "a", created_at: "2024-10-08T08:31:15.762Z"),
+            create(:form, id: 4, name: "a", created_at: "2024-10-08T09:31:15.762Z"),
           ]
         end
         let(:presenter) { described_class.call(forms:, group:, can_admin:) }
@@ -119,16 +119,16 @@ describe FormListPresenter do
         let(:forms) do
           [
             create(:form, :live, :with_welsh_translation, id: 1, name: "form with a live Welsh version"),
-            create(:form, :archived, :with_welsh_translation, id: 2, name: "form with an archived and a draft Welsh version"),
-            create(:form, :draft, :with_welsh_translation, id: 3, name: "form with Welsh draft"),
+            create(:form, :archived_with_draft, :with_welsh_translation, id: 2, name: "form with an archived and a draft Welsh version"),
+            create(:form, :with_welsh_translation, id: 3, name: "form with Welsh draft"),
             create(:form, id: 4, name: "form with no Welsh version"),
             create(:form, :archived, :with_welsh_translation, id: 5, name: "form with only an archived Welsh version"),
           ]
         end
 
         before do
-          # remove the draft version of the welsh translation for the form with only archived version.
-          FormDocument.find_by(form: forms[4], tag: "draft", language: "cy").destroy!
+          # Ensure the archived-only Welsh form has no draft Welsh content.
+          forms[4].update!(draft_form_document_id: nil)
         end
 
         it "appends the correct text" do

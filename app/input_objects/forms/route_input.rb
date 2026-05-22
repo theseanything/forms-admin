@@ -20,12 +20,14 @@ class Forms::RouteInput < BaseInput
   end
 
   def condition_attributes
-    if goes_to_end_of_form?
-      { goto_page_id: nil, skip_to_end: true, check_page_id: page.id }
-    elsif goes_to_default_next_page?
-      nil
-    else
-      { goto_page_id: goto, skip_to_end: false, check_page_id: page.id }
-    end
+    return nil if goes_to_default_next_page?
+
+    attrs = if goes_to_end_of_form?
+              { goto_page_id: nil, skip_to_end: true, check_page_id: page.id }
+            else
+              { goto_page_id: goto, skip_to_end: false, check_page_id: page.id }
+            end
+    attrs[:answer_value] = answer_value
+    attrs
   end
 end

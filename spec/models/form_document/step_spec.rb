@@ -3,8 +3,9 @@ require "rails_helper"
 RSpec.describe FormDocument::Step, type: :model do
   subject(:form_document_step) { described_class.new(page_as_form_document_step) }
 
-  let(:page) { create :page }
-  let(:next_page) { create :page }
+  let(:form) { create(:form, pages_count: 2) }
+  let(:page) { create(:page, form:, answer_type: "selection", answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Yes" }] }) }
+  let(:next_page) { form.pages.second }
   let(:page_as_form_document_step) { page.as_form_document_step(next_page) }
 
   it "ignores any attributes that are not defined" do
@@ -20,16 +21,16 @@ RSpec.describe FormDocument::Step, type: :model do
   end
 
   it "has all question attributes the original page has" do
-    expect(form_document_step.data).to have_attributes(
-      answer_type: page.answer_type,
-      answer_settings: page.answer_settings,
-      question_text: page.question_text,
-      hint_text: page.hint_text,
-      page_heading: page.page_heading,
-      guidance_markdown: page.guidance_markdown,
-      is_optional: page.is_optional,
-      is_repeatable: page.is_repeatable,
-    )
+    expect(form_document_step).to have_attributes(answer_type: page.answer_type)
+    expect(form_document_step.question_text).to eq({ "en" => page.question_text })
+    expect(form_document_step.hint_text).to eq({ "en" => page.hint_text })
+    expect(form_document_step.page_heading).to eq({ "en" => page.page_heading })
+    expect(form_document_step.guidance_markdown).to eq({ "en" => page.guidance_markdown })
+    expect(form_document_step.is_optional?).to eq(page.is_optional?)
+    expect(form_document_step.is_repeatable?).to eq(page.is_repeatable?)
+    if page.answer_settings.present?
+      expect(form_document_step.data.answer_settings.to_h).to eq(page.answer_settings.to_h)
+    end
   end
 
   describe "#is_optional?" do

@@ -5,8 +5,8 @@ RSpec.shared_examples "implements condition methods" do
       expect(subject.is_exit_page?).to be false
     end
 
-    it "returns true when exit_page_markdown is not nil" do
-      subject.exit_page_markdown = ""
+    it "returns true when exit_page_markdown has content" do
+      subject.exit_page_markdown = { "en" => "Exit page body" }
       expect(subject.is_exit_page?).to be true
     end
   end

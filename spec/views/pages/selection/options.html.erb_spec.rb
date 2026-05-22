@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe "pages/selection/options.html.erb", type: :view do
-  let(:form) { create :form }
-  let(:page) { build :page }
+  let(:form) { create :form, pages_count: 1 }
+  let(:page) { form.pages.first }
   let(:page_number) { 1 }
   let(:back_link_url) { "/a-back-link-url" }
   let(:bulk_options_url) { "/a-link-to-bulk-options-page" }

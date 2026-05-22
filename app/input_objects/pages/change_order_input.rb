@@ -57,6 +57,6 @@ private
   end
 
   def page_id_from_input_name(input_name)
-    input_name[/#{Pages::ChangeOrderInput::INPUT_PREFIX}(\d+)/, 1].to_i
+    input_name.to_s.delete_prefix(INPUT_PREFIX)
   end
 end

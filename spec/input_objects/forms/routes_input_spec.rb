@@ -61,8 +61,8 @@ RSpec.describe Forms::RoutesInput do
   describe "#routes_attributes=" do
     let(:goto_options) { [["Go to page 2", pages.second.id]] }
     let(:route_build_service) { instance_double(Routes::BuildService, options_for_goto_page: goto_options) }
-    let(:pages) { create_list(:page, 2) }
-    let(:form) { create(:form, id: 1, pages:) }
+    let(:form) { create(:form, pages_count: 0) }
+    let!(:pages) { create_list(:page, 2, form:) }
 
     before do
       allow(Routes::BuildService).to receive(:new).with(form:).and_return(route_build_service)
@@ -90,13 +90,13 @@ RSpec.describe Forms::RoutesInput do
         expect(Forms::RouteInput).to have_received(:new).with(
           page_id: pages.first.id.to_s,
           goto: pages.second.id.to_s,
-          page: pages.first,
+          page: satisfy { |p| p.id == pages.first.id },
           goto_options:,
         )
         expect(Forms::RouteInput).to have_received(:new).with(
           page_id: pages.second.id.to_s,
           goto: "1",
-          page: pages.second,
+          page: satisfy { |p| p.id == pages.second.id },
           goto_options:,
         )
       end
@@ -104,8 +104,8 @@ RSpec.describe Forms::RoutesInput do
       it "assigns the created RouteInput objects to routes" do
         routes_input.routes_attributes = attributes
         expect(routes_input.routes.length).to eq(2)
-        expect(routes_input.routes.first.page).to eq(pages.first)
-        expect(routes_input.routes.second.page).to eq(pages.second)
+        expect(routes_input.routes.first.page.id).to eq(pages.first.id)
+        expect(routes_input.routes.second.page.id).to eq(pages.second.id)
       end
     end
 
@@ -123,7 +123,7 @@ RSpec.describe Forms::RoutesInput do
         expect(Forms::RouteInput).to have_received(:new).once
         expect(Forms::RouteInput).to have_received(:new).with(
           page_id: pages.first.id.to_s,
-          page: pages.first,
+          page: satisfy { |p| p.id == pages.first.id },
           goto_options:,
         )
       end
@@ -131,7 +131,7 @@ RSpec.describe Forms::RoutesInput do
       it "assigns only the valid RouteInput object to routes" do
         routes_input.routes_attributes = attributes
         expect(routes_input.routes.length).to eq(1)
-        expect(routes_input.routes.first.page).to eq(pages.first)
+        expect(routes_input.routes.first.page.id).to eq(pages.first.id)
       end
     end
 
@@ -147,7 +147,7 @@ RSpec.describe Forms::RoutesInput do
         routes_input.routes_attributes = attributes
 
         expect(routes_input.routes.length).to eq(1)
-        expect(routes_input.routes.map(&:page)).to eq([pages.first])
+        expect(routes_input.routes.map(&:page).map(&:id)).to eq([pages.first.id])
       end
     end
   end

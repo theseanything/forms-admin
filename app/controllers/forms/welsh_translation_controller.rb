@@ -94,7 +94,7 @@ module Forms
     end
 
     def form_with_pages_and_conditions
-      Form.includes(pages: [:routing_conditions]).find(current_form.id)
+      Form.find(current_form.id)
     end
   end
 end

@@ -127,8 +127,8 @@ describe "forms/draft/show.html.erb" do
       expect(rendered).to have_link("Delete draft form", href: delete_form_path(form.id))
     end
 
-    it "contains a link to make a copy of the form" do
-      expect(rendered).to have_link("Make a copy of this form")
+    it "does not contain a link to make a copy of the form" do
+      expect(rendered).not_to have_link("Make a copy of this form")
     end
   end
 end

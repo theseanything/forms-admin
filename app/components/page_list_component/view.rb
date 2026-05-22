@@ -30,7 +30,7 @@ module PageListComponent
 
     def unconditional_description(condition)
       if condition.goto_page_id.present?
-        goto_page = @pages.find { |page| page.id == condition.goto_page_id }
+        goto_page = find_page(condition.goto_page_id)
         I18n.t("page_conditions.unconditional_goto_page_text", goto_page_question_number: goto_page.position, goto_page_question_text: goto_page.question_text)
       elsif condition.skip_to_end
         I18n.t("page_conditions.unconditional_skip_to_end_text")
@@ -41,13 +41,15 @@ module PageListComponent
       if group.first.skip_to_end
         I18n.t("page_conditions.condition_group_description_end_of_form")
       else
-        goto_page = @pages.find { |page| page.id == group.first.goto_page_id }
+        goto_page = find_page(group.first.goto_page_id)
+        return I18n.t("page_conditions.condition_group_description_end_of_form") if goto_page.nil?
+
         I18n.t("page_conditions.condition_group_description", goto_page_question_text: goto_page.question_text, goto_page_question_number: goto_page.position)
       end
     end
 
     def condition_check_page_text(condition)
-      check_page = @pages.find { |page| page.id == condition.check_page_id }
+      check_page = find_page(condition.check_page_id)
       I18n.t("page_conditions.condition_check_page_text", check_page_question_text: check_page.question_text)
     end
 
@@ -71,7 +73,7 @@ module PageListComponent
 
     def goto_page_text_for_condition(condition)
       if condition.goto_page_id.present?
-        goto_page = @pages.find { |page| page.id == condition.goto_page_id }
+        goto_page = find_page(condition.goto_page_id)
         I18n.t("page_conditions.condition_goto_page_text", goto_page_question_number: goto_page.position, goto_page_question_text: goto_page.question_text)
       elsif condition.skip_to_end
         I18n.t("page_conditions.condition_goto_page_end_of_form")
@@ -87,7 +89,7 @@ module PageListComponent
     end
 
     def condition_page(condition)
-      condition.attributes["check_page"] ||= @pages.find { |page| page.id == condition.check_page_id }
+      condition.check_page || find_page(condition.check_page_id)
     end
 
     def condition_page_position(condition)
@@ -96,7 +98,7 @@ module PageListComponent
     end
 
     def skip_condition_route_page_text(condition)
-      routing_page = @pages.find { |page| page.id == condition.routing_page_id }
+      routing_page = find_page(condition.routing_page_id)
       I18n.t("page_conditions.skip_condition_route_page_text", route_page_question_text: routing_page.question_text, route_page_question_number: routing_page.position)
     end
 
@@ -107,6 +109,12 @@ module PageListComponent
         .in_order_of(:answer_value, answer_order, filter: false)
         .group_by(&:goto_page_id)
         .sort_by { |goto_page_id, _| goto_page_id || Float::INFINITY }
+    end
+
+  private
+
+    def find_page(page_id)
+      @pages.find { |page| page.id.to_s == page_id.to_s }
     end
   end
 end

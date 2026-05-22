@@ -1,7 +1,7 @@
 require "rails_helper"
 
 feature "Copy a form", type: :feature do
-  let(:original_form) { create(:form, :with_pages, name: "Apply for a juggling license") }
+  let(:original_form) { create(:form, pages_count: 5, name: "Apply for a juggling license") }
   let(:group) { create(:group, organisation: standard_user.organisation) }
 
   before do

@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Routes::BuildService do
-  let(:form) { create(:form, pages:) }
-  let(:pages) { [] }
+  let(:form) { create(:form, pages_count: 0) }
+  let!(:pages) { [] }
   let(:service) { described_class.new(form:) }
 
   describe "#build_routes" do
@@ -13,11 +13,9 @@ RSpec.describe Routes::BuildService do
     end
 
     context "when the form has pages" do
-      let(:pages) do
-        create_list(:page, 3) do |page, i|
-          page.id = i + 1
-          page.position = i + 1
-          page.question_text = "Page #{i + 1}"
+      let!(:pages) do
+        (1..3).map do |i|
+          create(:page, form:, id: i, position: i, question_text: "Page #{i}")
         end
       end
 
@@ -75,9 +73,9 @@ RSpec.describe Routes::BuildService do
         let(:selection_options) { [{ "name" => "Yes", "value" => "Yes" }, { "name" => "No", "value" => "No" }] }
         let!(:pages) do
           [
-            create(:page, :with_selection_settings, id: 1, position: 1, selection_options:),
-            create(:page, id: 2, position: 2),
-            create(:page, id: 3, position: 3),
+            create(:page, :with_selection_settings, form:, id: 1, position: 1, selection_options:),
+            create(:page, form:, id: 2, position: 2),
+            create(:page, form:, id: 3, position: 3),
           ]
         end
 
@@ -124,11 +122,11 @@ RSpec.describe Routes::BuildService do
         end
 
         context "when the selection page is optional" do
-          let(:pages) do
+          let!(:pages) do
             [
-              create(:page, :selection_with_none_of_the_above_question, id: 1, position: 1),
-              create(:page, id: 2, position: 2),
-              create(:page, id: 3, position: 3),
+              create(:page, :selection_with_none_of_the_above_question, form:, id: 1, position: 1),
+              create(:page, form:, id: 2, position: 2),
+              create(:page, form:, id: 3, position: 3),
             ]
           end
 
@@ -145,8 +143,8 @@ RSpec.describe Routes::BuildService do
         context "with conditions for selection options" do
           let!(:conditions) do
             [
-              create(:condition, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.third.id),
-              create(:condition, routing_page_id: pages.first.id, answer_value: "No", skip_to_end: true),
+              create(:condition, form:, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.third.id),
+              create(:condition, form:, routing_page_id: pages.first.id, answer_value: "No", skip_to_end: true),
             ]
           end
 
@@ -174,10 +172,10 @@ RSpec.describe Routes::BuildService do
       end
 
       context "with a selection page (checkboxes)" do
-        let(:pages) do
+        let!(:pages) do
           [
-            create(:page, :with_selection_settings, id: 1, position: 1, answer_settings: { only_one_option: "false" }),
-            create(:page, id: 2, position: 2),
+            create(:page, :with_selection_settings, form:, id: 1, position: 1, answer_settings: { only_one_option: "false" }),
+            create(:page, form:, id: 2, position: 2),
           ]
         end
 
@@ -198,11 +196,9 @@ RSpec.describe Routes::BuildService do
   end
 
   describe "#options_for_goto_page" do
-    let(:pages) do
-      create_list(:page, 3) do |page, i|
-        page.id = 101 + i
-        page.position = i + 1
-        page.question_text = "question #{i + 1}"
+    let!(:pages) do
+      (1..3).map do |i|
+        create(:page, form:, id: 101 + i - 1, position: i, question_text: "question #{i}")
       end
     end
 

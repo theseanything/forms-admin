@@ -62,8 +62,8 @@ private
   end
 
   def add_none_of_above_question(csv, page)
-    english_question = page.answer_settings.none_of_the_above_question.question_text
-    welsh_question = page.answer_settings_cy&.none_of_the_above_question&.question_text || ""
+    english_question = localised_string(page.answer_settings.none_of_the_above_question&.question_text)
+    welsh_question = localised_string(page.answer_settings_cy&.none_of_the_above_question&.question_text, locale: :cy)
 
     csv << [
       "#{question_name(page)} - question or label if ‘None of the above’ is selected",
@@ -122,5 +122,12 @@ private
     if english_value.present?
       csv << [label, english_value, welsh_value || ""]
     end
+  end
+
+  def localised_string(value, locale: :en)
+    return "" if value.blank?
+    return value if value.is_a?(String)
+
+    TranslatableString.for_locale(value.respond_to?(:to_h) ? value.to_h : value, locale:) || ""
   end
 end

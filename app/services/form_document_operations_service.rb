@@ -36,12 +36,12 @@ class FormDocumentOperationsService
     draft
   end
 
-  def publish!
+  def publish!(skip_readiness_check: false)
     if form.draft_form_document.blank?
       form.errors.add(:base, "No draft to publish")
       raise ActiveRecord::RecordInvalid, form
     end
-    unless form.all_ready_for_live?(ignore_missing_welsh: true)
+    unless skip_readiness_check || form.all_ready_for_live?(ignore_missing_welsh: true)
       form.errors.add(:base, "Form is not ready to go live")
       raise ActiveRecord::RecordInvalid, form
     end
@@ -49,8 +49,11 @@ class FormDocumentOperationsService
     ActiveRecord::Base.transaction do
       previous_live_id = form.live_form_document_id
       live_content = deep_dup_content(form.draft_form_document.content)
-      live_content["live_at"] = Time.current.iso8601
-      form.first_made_live_at ||= Time.current
+      published_at = Time.current
+      live_content["live_at"] = published_at.iso8601
+      live_content["first_made_live_at"] ||= form.first_made_live_at&.iso8601 || published_at.iso8601
+      live_content["created_at"] ||= form.created_at&.iso8601 || published_at.iso8601
+      form.first_made_live_at ||= published_at
 
       live_doc = FormDocument.create!(
         form:,
@@ -74,8 +77,9 @@ class FormDocumentOperationsService
     return false if form.draft_form_document_id.blank?
 
     ActiveRecord::Base.transaction do
+      draft = form.draft_form_document
       form.update!(draft_form_document_id: nil)
-      form.draft_form_document&.destroy!
+      draft.destroy!
     end
     true
   end
@@ -106,6 +110,15 @@ class FormDocumentOperationsService
   end
 
   def unarchive_and_publish!
+    was_ready = form.question_section_completed && form.declaration_section_completed && form.share_preview_completed
+    ensure_draft! if form.draft_form_document.blank? && form.live_form_document.present?
+    if was_ready
+      form.update!(
+        share_preview_completed: true,
+        question_section_completed: true,
+        declaration_section_completed: true,
+      )
+    end
     form.update!(archived: false)
     publish!
   end
@@ -149,9 +162,6 @@ private
   end
 
   def strip_cy_from_content!(content)
-    TranslatableString::SUPPORTED_LOCALES.each do |_locale|
-      # only strip cy
-    end
     content.each_value do |v|
       v.delete("cy") if v.is_a?(Hash) && v.key?("cy")
     end
@@ -159,6 +169,7 @@ private
       %w[question_text hint_text page_heading guidance_markdown exit_page_heading exit_page_markdown].each do |key|
         step[key]&.delete("cy") if step[key].is_a?(Hash)
       end
+      step.dig("data")&.delete("answer_settings_cy")
       Array(step["routing_conditions"]).each do |c|
         %w[exit_page_heading exit_page_markdown].each do |key|
           c[key]&.delete("cy") if c[key].is_a?(Hash)

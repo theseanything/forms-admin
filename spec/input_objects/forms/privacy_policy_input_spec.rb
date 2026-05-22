@@ -4,7 +4,7 @@ RSpec.describe Forms::PrivacyPolicyInput, type: :model do
   describe "Privacy policy URL" do
     context "when form is live" do
       let(:form) do
-        build(:form, :live)
+        create(:form, :live)
       end
 
       it "validates the URL" do
@@ -38,7 +38,7 @@ RSpec.describe Forms::PrivacyPolicyInput, type: :model do
 
     context "when form is not live" do
       let(:form) do
-        build(:form)
+        create(:form)
       end
 
       it "is valid if blank" do

@@ -2,7 +2,7 @@ require "rails_helper"
 
 describe "forms/archive_form/archive.html.erb" do
   let(:id) { 2 }
-  let(:form) { build(:form, :live, id:) }
+  let(:form) { create(:form, :live, id:) }
   let(:confirm_archive_input) { Forms::ConfirmArchiveInput.new(form:) }
 
   before do

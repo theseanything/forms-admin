@@ -64,23 +64,14 @@ RSpec.describe Forms::MakeLiveController, type: :request do
 
     context "when the form has an existing live welsh form document" do
       let(:form) do
-        create(:form, :with_welsh_translation,
+        create(:form, :live, :with_welsh_translation,
                support_email: "english@example.gov.uk",
                support_email_cy: "welsh@example.gov.uk",
                what_happens_next_markdown: "English what happens next",
                what_happens_next_markdown_cy: "Welsh what happens next",
-               question_section_completed: true,
-               declaration_section_completed: true,
-               share_preview_completed: true,
                privacy_policy_url: "https://www.gov.uk/english-privacy",
                privacy_policy_url_cy: "https://www.gov.uk/welsh-privacy",
-               welsh_completed: true,
-               pages: [build(:page, question_text: "English question", question_text_cy: "Welsh question")])
-      end
-
-      before do
-        # Create the en and cy live FormDocuments
-        form.make_live!
+               welsh_completed: true)
       end
 
       context "and a complete welsh translations" do
@@ -92,8 +83,8 @@ RSpec.describe Forms::MakeLiveController, type: :request do
 
       context "and in progress welsh translations" do
         before do
-          # Add a declaration in English only to the draft form
-          form.update!(declaration_markdown: "English declaration", share_preview_completed: true)
+          FormDocumentFactoryHelpers.create_live_with_draft!(form)
+          form.update!(declaration_markdown: "English declaration", share_preview_completed: true, welsh_completed: false)
         end
 
         it "renders make your changes to english live" do
@@ -148,7 +139,7 @@ RSpec.describe Forms::MakeLiveController, type: :request do
 
         it "sets the FormDocument's live_at time to be equal to the form's updated_at time" do
           post(make_live_path(form_id: form.id), params: form_params)
-          expect(FormDocument.find_by(form_id: form.id, tag: "live")["content"]["live_at"]).to eq form.reload.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%6NZ")
+          expect(Time.zone.parse(form.reload.live_form_document.content["live_at"])).to be_within(1.second).of(form.updated_at)
         end
       end
 

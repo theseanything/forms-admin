@@ -73,9 +73,10 @@ RSpec.describe ReportsController, type: :request do
 
     context "when the user is a super admin" do
       let(:form) do
-        create(:form, :live, pages: [
-          create(:page, answer_type: "email"),
-        ])
+        form = create(:form, :ready_for_live, pages_count: 0)
+        create(:page, form:, answer_type: "email")
+        FormDocumentFactoryHelpers.publish_form!(form)
+        form.reload
       end
       let(:forms) { [form] }
 
@@ -98,9 +99,10 @@ RSpec.describe ReportsController, type: :request do
   describe "#questions_with_add_another_answer" do
     let(:path) { report_questions_with_add_another_answer_path(tag: :live) }
     let(:form) do
-      create(:form, :live, pages: [
-        create(:page, is_repeatable: true),
-      ])
+      form = create(:form, :ready_for_live, pages_count: 0)
+      create(:page, form:, is_repeatable: true)
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
     end
     let(:forms) { [form] }
 
@@ -126,7 +128,11 @@ RSpec.describe ReportsController, type: :request do
   describe "#forms_that_are_copies" do
     let(:path) { report_forms_that_are_copies_path(tag: :live) }
     let(:original_form) { create(:form, :live) }
-    let(:form) { create(:form, :live, copied_from_id: original_form.id) }
+    let(:form) do
+      copied_form = create(:form, :live)
+      FormDocumentFactoryHelpers.set_copied_from_on_documents!(copied_form, original_form.id)
+      copied_form.reload
+    end
     let(:forms) { [form] }
 
     include_examples "unauthorized user is forbidden"
@@ -157,10 +163,10 @@ RSpec.describe ReportsController, type: :request do
   describe "#forms_with_routes" do
     let(:path) { report_forms_with_routes_path(tag: :live) }
     let(:form) do
-      form = create(:form, :live, :ready_for_routing)
-      create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
-      form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-      form
+      form = create(:form, :ready_for_live, routing_steps: true)
+      create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
     end
     let(:forms) { [form] }
 
@@ -187,11 +193,11 @@ RSpec.describe ReportsController, type: :request do
   describe "#forms_with_branch_routes" do
     let(:path) { report_forms_with_branch_routes_path(tag: :live) }
     let(:form) do
-      form = create(:form, :live, :ready_for_routing)
-      create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
-      create(:condition, routing_page_id: form.pages.second.id, check_page_id: form.pages.first.id, goto_page_id: form.pages.fourth.id)
-      form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-      form
+      form = create(:form, :ready_for_live, routing_steps: true)
+      create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
+      create(:condition, form:, routing_page_id: form.pages.second.id, check_page_id: form.pages.first.id, goto_page_id: form.pages.fourth.id)
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
     end
     let(:forms) { [form] }
 
@@ -473,10 +479,14 @@ RSpec.describe ReportsController, type: :request do
   end
 
   describe "selection question reports" do
-    let(:page_with_autocomplete) { build(:page, :selection_with_autocomplete, question_text: "Autocomplete question") }
-    let(:page_with_radios) { build(:page, :selection_with_radios, question_text: "Radios question") }
-    let(:page_with_checkboxes) { build(:page, :selection_with_checkboxes, question_text: "Checkboxes question") }
-    let(:form) { create(:form, :live, name: "A form", pages: [page_with_checkboxes, page_with_radios, page_with_autocomplete]) }
+    let(:form) do
+      form = create(:form, :ready_for_live, name: "A form", pages_count: 0)
+      create(:page, :selection_with_checkboxes, form:, question_text: "Checkboxes question")
+      create(:page, :selection_with_radios, form:, question_text: "Radios question")
+      create(:page, :selection_with_autocomplete, form:, question_text: "Autocomplete question")
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
+    end
     let(:forms) { [form] }
 
     describe "#selection_questions_summary" do
@@ -542,8 +552,12 @@ RSpec.describe ReportsController, type: :request do
   end
 
   describe "#selection_questions_with_none_of_the_above" do
-    let(:page) { build(:page, :with_selection_settings, question_text: "Question with none of the above", is_optional: true) }
-    let(:form) { create(:form, :live, name: "A form", pages: [page]) }
+    let(:form) do
+      f = create(:form, :ready_for_live, name: "A form", pages_count: 0)
+      create(:page, :with_selection_settings, form: f, question_text: "Question with none of the above", is_optional: true)
+      FormDocumentFactoryHelpers.publish_form!(f)
+      f.reload
+    end
     let(:forms) { [form] }
 
     before do
@@ -597,10 +611,10 @@ RSpec.describe ReportsController, type: :request do
 
     describe "#forms_with_routes as csv" do
       let(:form) do
-        form = create(:form, :live, :ready_for_routing)
-        create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
-        form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-        form
+        form = create(:form, :ready_for_live, routing_steps: true)
+        create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
+        FormDocumentFactoryHelpers.publish_form!(form)
+        form.reload
       end
       let(:forms) { [form, *create_list(:form, 2, :live)] }
       let(:expected_csv_filename) { "live_forms_with_routes_report-2025-05-15 15:31:57 UTC.csv" }
@@ -702,9 +716,10 @@ RSpec.describe ReportsController, type: :request do
 
     describe "#questions_with_answer_type as csv" do
       let(:form) do
-        create(:form, :live, pages: [
-          create(:page, answer_type: "text"),
-        ])
+        form = create(:form, :ready_for_live, pages_count: 0)
+        create(:page, form:, answer_type: "text")
+        FormDocumentFactoryHelpers.publish_form!(form)
+        form.reload
       end
       let(:forms) { [form, *create_list(:form, 2, :live)] }
       let(:expected_csv_filename) { "live_questions_report_text_answer_type-2025-05-15 15:31:57 UTC.csv" }
@@ -728,9 +743,10 @@ RSpec.describe ReportsController, type: :request do
 
     describe "#questions_with_add_another_answer as csv" do
       let(:form) do
-        create(:form, :live, pages: [
-          create(:page, is_repeatable: true),
-        ])
+        form = create(:form, :ready_for_live, pages_count: 0)
+        create(:page, form:, is_repeatable: true)
+        FormDocumentFactoryHelpers.publish_form!(form)
+        form.reload
       end
       let(:forms) { [form, *create_list(:form, 2, :live)] }
       let(:expected_csv_filename) { "live_questions_with_add_another_answer_report-2025-05-15 15:31:57 UTC.csv" }

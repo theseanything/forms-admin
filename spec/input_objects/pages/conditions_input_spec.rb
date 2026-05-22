@@ -71,7 +71,7 @@ RSpec.describe Pages::ConditionsInput, type: :model do
       it "creates a condition" do
         expect {
           conditions_input.submit
-        }.to change(Condition, :count).by(1)
+        }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(1)
       end
 
       context "when goto_page_id is 'create_exit_page'" do
@@ -92,7 +92,7 @@ RSpec.describe Pages::ConditionsInput, type: :model do
 
   describe "#update_condition" do
     context "when validation pass" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.third.id }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.third.id }
 
       before do
         conditions_input.answer_value = "England"
@@ -206,7 +206,7 @@ RSpec.describe Pages::ConditionsInput, type: :model do
   end
 
   describe "#check_errors_from_api" do
-    let(:condition) { create :condition, routing_page_id: page.id, answer_value: "England", check_page_id: page.id, goto_page_id: pages.third.id }
+    let(:condition) { create :condition, form:, routing_page_id: page.id, answer_value: "England", check_page_id: page.id, goto_page_id: pages.third.id }
 
     it "is invalid if there are validation errors" do
       error_message = I18n.t("activemodel.errors.models.pages/conditions_input.attributes.answer_value.answer_value_doesnt_exist")
@@ -217,7 +217,7 @@ RSpec.describe Pages::ConditionsInput, type: :model do
 
   describe "#assign_condition_values" do
     let(:conditions_input) { described_class.new(form:, page:, record: condition, answer_value: condition.answer_value, goto_page_id: condition.goto_page_id, skip_to_end: condition.skip_to_end) }
-    let(:condition) { create :condition, routing_page_id: page.id, answer_value: "England", check_page_id: page.id, goto_page_id:, skip_to_end: }
+    let(:condition) { create :condition, form:, routing_page_id: page.id, answer_value: "England", check_page_id: page.id, goto_page_id:, skip_to_end: }
     let(:goto_page_id) { nil }
     let(:skip_to_end) { false }
 
@@ -238,12 +238,12 @@ RSpec.describe Pages::ConditionsInput, type: :model do
     end
 
     context "when goto_page is not nil" do
-      let(:goto_page_id) { 3 }
+      let(:goto_page_id) { pages.third.id }
       let(:skip_to_end) { true }
 
       it "sets goto_page_id to 'end_of_form'" do
         conditions_input.assign_condition_values
-        expect(conditions_input.goto_page_id).to eq 3
+        expect(conditions_input.goto_page_id).to eq pages.third.id
       end
     end
 
@@ -287,20 +287,17 @@ RSpec.describe Pages::ConditionsInput, type: :model do
   describe "#secondary_skip?" do
     let(:page_routes_service) { instance_double(PageRoutesService) }
 
-    before do
-      page.reload
-    end
-
     context "when the page has a secondary skip condition" do
-      let(:condition) { create :condition, routing_page_id: pages.first.id, check_page_id: page.id, goto_page_id: pages.fourth.id }
+      let!(:condition) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: nil }
 
       it "is true" do
+        page.reload
         expect(conditions_input.secondary_skip?).to be true
       end
     end
 
     context "when the page does not have a secondary skip condition" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "England", goto_page_id: pages.fourth.id }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "England", goto_page_id: pages.fourth.id }
 
       it "is false" do
         expect(conditions_input.secondary_skip?).to be false

@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe FormDocument, type: :model do
   it "is valid with valid attributes" do
-    form_document = build(:form_document)
+    form_document = create(:form_document)
     expect(form_document).to be_valid
   end
 
@@ -21,7 +21,7 @@ RSpec.describe FormDocument, type: :model do
   end
 
   it "belongs to a Form" do
-    form_document = build(:form_document)
+    form_document = create(:form_document)
 
     expect(form_document.form).to be_a(Form)
   end

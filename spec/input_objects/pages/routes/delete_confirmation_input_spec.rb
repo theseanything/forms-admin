@@ -34,9 +34,9 @@ RSpec.describe Pages::Routes::DeleteConfirmationInput, type: :model do
       let(:form) { create :form, :ready_for_routing }
       let(:pages) { form.pages }
       let(:page) { pages.first }
-      let!(:primary_condition) { create :condition, routing_page: pages.first, check_page: pages.first, goto_page: pages.last }
-      let!(:secondary_skip_condition) { create :condition, routing_page: pages.fourth, check_page: pages.first, goto_page: pages.last }
-      let!(:other_condition) { create :condition, routing_page: pages.third, check_page: pages.third, skip_to_end: true }
+      let!(:primary_condition) { create :condition, form:, routing_page: pages.first, check_page: pages.first, goto_page: pages.last }
+      let!(:secondary_skip_condition) { create :condition, form:, routing_page: pages.fourth, check_page: pages.first, goto_page: pages.last }
+      let!(:other_condition) { create :condition, form:, routing_page: pages.third, check_page: pages.third, skip_to_end: true }
 
       before do
         pages.each(&:reload)
@@ -53,7 +53,7 @@ RSpec.describe Pages::Routes::DeleteConfirmationInput, type: :model do
 
           expect {
             delete_confirmation_input.submit
-          }.not_to change(Condition, :count)
+          }.not_to(change { Form.find(form.id).draft_content_service.conditions.count })
         end
       end
 
@@ -64,15 +64,18 @@ RSpec.describe Pages::Routes::DeleteConfirmationInput, type: :model do
         end
 
         it "deletes the primary route" do
-          expect(Condition.exists?(primary_condition.id)).to be false
+          form.reload
+          expect(form.draft_content_service.conditions.map(&:id)).not_to include(primary_condition.id)
         end
 
         it "deletes the secondary skip route" do
-          expect(Condition.exists?(secondary_skip_condition.id)).to be false
+          form.reload
+          expect(form.draft_content_service.conditions.map(&:id)).not_to include(secondary_skip_condition.id)
         end
 
         it "does not delete an unrelated route" do
-          expect(Condition.exists?(other_condition.id)).to be true
+          form.reload
+          expect(form.draft_content_service.conditions.map(&:id)).to include(other_condition.id)
         end
       end
     end

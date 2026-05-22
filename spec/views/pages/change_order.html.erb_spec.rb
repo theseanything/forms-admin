@@ -48,7 +48,7 @@ describe "pages/change_order.html.erb", type: :view do
     end
 
     it "the inline error message" do
-      expect(rendered).to have_css "#pages-change-order-input-position-for-page-#{form.pages[0].id}-error.govuk-error-message", text: "Position must be a whole number between 1 and 1000"
+      expect(rendered).to have_css "#pages-change-order-input-position-for-page-#{form.pages[0].id.to_s.downcase}-error.govuk-error-message", text: "Position must be a whole number between 1 and 1000"
       expect(rendered).to have_css "#pages-change-order-input-confirm-error.govuk-error-message", text: "Select ‘Yes, save this question order’ to save your changes"
     end
 

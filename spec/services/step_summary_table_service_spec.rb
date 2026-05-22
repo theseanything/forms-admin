@@ -5,8 +5,8 @@ describe StepSummaryTableService do
     described_class.new(step: form_document_step, steps: form_document_steps, welsh_steps: welsh_form_document_steps)
   end
 
-  let(:form) { create :form, :with_welsh_translation, :live, id: 1, pages: [page] }
-  let(:page) { create(:page) }
+  let(:form) { create(:form, :with_welsh_translation, :live, pages_count: 1) }
+  let(:page) { form.pages.first }
 
   let(:form_document_content) { FormDocument::Content.from_form_document(form.live_form_document) }
   let(:welsh_form_document_content) { FormDocument::Content.from_form_document(form.live_welsh_form_document) }
@@ -67,9 +67,15 @@ describe StepSummaryTableService do
   end
 
   describe "#values_with_welsh_content" do
+    before do
+      page
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
+    end
+
     context "when the page includes guidance markdown" do
       let(:page) do
-        create(:page,
+        create(:page, form:,
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                page_heading: "Licencing",
@@ -97,7 +103,7 @@ describe StepSummaryTableService do
 
     context "when the page includes hint_text" do
       let(:page) do
-        create(:page,
+        create(:page, form:,
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                hint_text: "Choose 'Yes' if you already have a valid licence.",
@@ -113,18 +119,18 @@ describe StepSummaryTableService do
 
     context "when the page is a selection question" do
       let(:page) do
-        create(:page,
+        create(:page, form:,
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                answer_type: "selection",
                answer_settings: {
                  "only_one_option" => "true",
-                 "selection_options" => [{ name: "Yes", value: "Yes" }, { name: "No", value: "No" }],
-               }.to_json,
+                 "selection_options" => [{ "name" => "Yes", "value" => "Yes" }, { "name" => "No", "value" => "No" }],
+               },
                answer_settings_cy: {
                  "only_one_option" => "true",
-                 "selection_options" => [{ name: "Ydy", value: "Yes" }, { name: "Nac ydy", value: "No" }],
-               }.to_json)
+                 "selection_options" => [{ "name" => "Ydy", "value" => "Yes" }, { "name" => "Nac ydy", "value" => "No" }],
+               })
       end
 
       it "includes a row for the selection options" do
@@ -135,42 +141,42 @@ describe StepSummaryTableService do
 
       context "when there are more than 10 options" do
         let(:page) do
-          create(:page,
+          create(:page, form:,
                  question_text: "Are you renewing a licence?",
                  question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                  answer_type: "selection",
                  answer_settings: {
                    "only_one_option" => "true",
                    "selection_options" => [
-                     { name: "One", value: "One" },
-                     { name: "Two", value: "Two" },
-                     { name: "Three", value: "Three" },
-                     { name: "Four", value: "Four" },
-                     { name: "Five", value: "Five" },
-                     { name: "Six", value: "Six" },
-                     { name: "Seven", value: "Seven" },
-                     { name: "Eight", value: "Eight" },
-                     { name: "Nine", value: "Nine" },
-                     { name: "Ten", value: "Ten" },
-                     { name: "Eleven", value: "Eleven" },
+                     { "name" => "One", "value" => "One" },
+                     { "name" => "Two", "value" => "Two" },
+                     { "name" => "Three", "value" => "Three" },
+                     { "name" => "Four", "value" => "Four" },
+                     { "name" => "Five", "value" => "Five" },
+                     { "name" => "Six", "value" => "Six" },
+                     { "name" => "Seven", "value" => "Seven" },
+                     { "name" => "Eight", "value" => "Eight" },
+                     { "name" => "Nine", "value" => "Nine" },
+                     { "name" => "Ten", "value" => "Ten" },
+                     { "name" => "Eleven", "value" => "Eleven" },
                    ],
-                 }.to_json,
+                 },
                  answer_settings_cy: {
                    "only_one_option" => "true",
                    "selection_options" => [
-                     { name: "Un", value: "One" },
-                     { name: "Dau", value: "Two" },
-                     { name: "Tri", value: "Three" },
-                     { name: "Pedwar", value: "Four" },
-                     { name: "Pum", value: "Five" },
-                     { name: "Chwe", value: "Six" },
-                     { name: "Saith", value: "Seven" },
-                     { name: "Wyth", value: "Eight" },
-                     { name: "Naw", value: "Nine" },
-                     { name: "Deg", value: "Ten" },
-                     { name: "Un ar ddeg", value: "Eleven" },
+                     { "name" => "Un", "value" => "One" },
+                     { "name" => "Dau", "value" => "Two" },
+                     { "name" => "Tri", "value" => "Three" },
+                     { "name" => "Pedwar", "value" => "Four" },
+                     { "name" => "Pum", "value" => "Five" },
+                     { "name" => "Chwe", "value" => "Six" },
+                     { "name" => "Saith", "value" => "Seven" },
+                     { "name" => "Wyth", "value" => "Eight" },
+                     { "name" => "Naw", "value" => "Nine" },
+                     { "name" => "Deg", "value" => "Ten" },
+                     { "name" => "Un ar ddeg", "value" => "Eleven" },
                    ],
-                 }.to_json)
+                 })
         end
 
         it "includes a row with the selection options in a details component" do
@@ -182,7 +188,7 @@ describe StepSummaryTableService do
 
       context "when there is custom 'None of the above' text" do
         let(:page) do
-          create(:page,
+          create(:page, form:,
                  is_optional: true,
                  question_text: "Are you renewing a licence?",
                  question_text_cy: "Ydych chi'n adnewyddu trwydded?",
@@ -190,31 +196,19 @@ describe StepSummaryTableService do
                  answer_settings: {
                    "only_one_option" => "true",
                    "selection_options" => [
-                     {
-                       name: "Yes",
-                       value: "Yes",
-                     },
-                     {
-                       name: "No",
-                       value: "No",
-                     },
+                     { "name" => "Yes", "value" => "Yes" },
+                     { "name" => "No", "value" => "No" },
                    ],
-                   none_of_the_above_question: { question_text: "Enter something" },
-                 }.to_json,
+                   "none_of_the_above_question" => { "question_text" => "Enter something" },
+                 },
                  answer_settings_cy: {
                    "only_one_option" => "true",
                    "selection_options" => [
-                     {
-                       name: "Ydy",
-                       value: "Yes",
-                     },
-                     {
-                       name: "Nac ydy",
-                       value: "No",
-                     },
+                     { "name" => "Ydy", "value" => "Yes" },
+                     { "name" => "Nac ydy", "value" => "No" },
                    ],
-                   none_of_the_above_question: { question_text: "Rhowch rywbeth i mewn" },
-                 }.to_json)
+                   "none_of_the_above_question" => { "question_text" => "Rhowch rywbeth i mewn" },
+                 })
         end
 
         it "includes a row with the none of the above text" do
@@ -227,6 +221,7 @@ describe StepSummaryTableService do
   describe "#untranslated_content" do
     let(:page) do
       create(:page,
+             form:,
              question_text: "Are you renewing a licence?",
              question_text_cy: "Ydych chi'n adnewyddu trwydded?",
              answer_type:,
@@ -413,6 +408,7 @@ describe StepSummaryTableService do
         create :form,
                :with_welsh_translation,
                :ready_for_live,
+               pages_count: 0,
                id: 1,
                name: "Apply for a juggling licence",
                name_cy: "Apply for a juggling licence (Welsh)",
@@ -432,199 +428,117 @@ describe StepSummaryTableService do
                privacy_policy_url_cy: "https://www.gov.uk/welsh-privacy",
                payment_url: "https://www.gov.uk/english-payment",
                payment_url_cy: "https://www.gov.uk/payments/your-welsh-payment-link",
-               welsh_completed: true,
-               pages: [
-                 create(
-                   :page,
-                   question_text: "Question",
-                   question_text_cy: "Question (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   :with_selection_settings,
-                   question_text: "Branch question (start of a route)",
-                   question_text_cy: "Branch question (start of a route) (Welsh)",
-                   answer_settings: DataStruct.new(
-                     only_one_option: "true",
-                     selection_options: [
-                       {
-                         name: "First branch",
-                         value: "First branch",
-                       },
-                       {
-                         name: "Second branch",
-                         value: "Second branch",
-                       },
-                     ],
-                   ),
-                   answer_settings_cy: DataStruct.new(
-                     only_one_option: "true",
-                     selection_options: [
-                       {
-                         name: "First branch (Welsh)",
-                         value: "First branch",
-                       },
-                       {
-                         name: "Second branch (Welsh)",
-                         value: "Second branch",
-                       },
-                     ],
-                   ),
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question in branch 1",
-                   question_text_cy: "Question in branch 1 (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question at the end of branch 1 (start of a secondary skip)",
-                   question_text_cy: "Question at the end of branch 1 (start of a secondary skip) (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question at the start of branch 2 (end of a route)",
-                   question_text_cy: "Question at the start of branch 2 (end of a route) (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question in branch 2",
-                   question_text_cy: "Question in branch 2 (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question at the end of branch 2",
-                   question_text_cy: "Question at the end of branch 2 (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question after a branch route (end of a secondary skip)",
-                   question_text_cy: "Question after a branch route (end of a secondary skip) (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question",
-                   question_text_cy: "Question (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   :with_selection_settings,
-                   question_text: "Skip question",
-                   question_text_cy: "Skip question (Welsh)",
-                   answer_settings: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Skip", value: "Skip" }, { name: "Don't skip", value: "Don't skip" }]),
-                   answer_settings_cy: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Skip (Welsh)", value: "Skip" }, { name: "Don't skip (Welsh)", value: "Don't skip" }]),
-                 ),
-                 create(
-                   :page,
-                   :with_selection_settings,
-                   question_text: "Question to be skipped",
-                   question_text_cy: "Question to be skipped (Welsh)",
-                   answer_settings: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Skip to end", value: "Skip to end" }, { name: "Don't skip", value: "Don't skip" }]),
-                   answer_settings_cy: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Skip to end (Welsh)", value: "Skip to end" }, { name: "Don't skip (Welsh)", value: "Don't skip" }]),
-                 ),
-                 create(
-                   :page,
-                   question_text: "Question",
-                   question_text_cy: "Question (Welsh)",
-                 ),
-                 create(
-                   :page,
-                   :with_selection_settings,
-                   question_text: "Exit page question",
-                   question_text_cy: "Exit page question (Welsh)",
-                   answer_settings: DataStruct.new(
-                     only_one_option: "true",
-                     selection_options: [
-                       {
-                         name: "Exit",
-                         value: "Exit",
-                       },
-                       {
-                         name: "Don't exit",
-                         value: "Don't exit",
-                       },
-                     ],
-                   ),
-                   answer_settings_cy: DataStruct.new(
-                     only_one_option: "true",
-                     selection_options: [
-                       {
-                         name: "Exit (Welsh)",
-                         value: "Exit",
-                       },
-                       {
-                         name: "Don't exit (Welsh)",
-                         value: "Don't exit",
-                       },
-                     ],
-                   ),
-                 ),
-               ]
+               welsh_completed: true
       end
 
       let(:pages) do
-        form.pages
+        pages_with_routing
       end
 
       let(:pages_with_routing) do
-        # Create conditions separately
-        create(
-          :condition,
-          answer_value: "Second branch",
-          check_page_id: pages[1].id,
-          goto_page_id: pages[4].id,
-          routing_page_id: pages[1].id,
-          exit_page_heading: nil,
-          exit_page_markdown: nil,
-        )
+        routing_pages = [
+          create(:page, form:, question_text: "Question", question_text_cy: "Question (Welsh)"),
+          create(
+            :page,
+            :with_selection_settings,
+            form:,
+            question_text: "Branch question (start of a route)",
+            question_text_cy: "Branch question (start of a route) (Welsh)",
+            selection_options: [{ "name" => "First branch", "value" => "First branch" }, { "name" => "Second branch", "value" => "Second branch" }],
+            answer_settings_cy: {
+              "only_one_option" => "true",
+              "selection_options" => [
+                { "name" => "First branch (Welsh)", "value" => "First branch" },
+                { "name" => "Second branch (Welsh)", "value" => "Second branch" },
+              ],
+            },
+          ),
+          create(:page, form:, question_text: "Question in branch 1", question_text_cy: "Question in branch 1 (Welsh)"),
+          create(
+            :page,
+            form:,
+            question_text: "Question at the end of branch 1 (start of a secondary skip)",
+            question_text_cy: "Question at the end of branch 1 (start of a secondary skip) (Welsh)",
+          ),
+          create(
+            :page,
+            form:,
+            question_text: "Question at the start of branch 2 (end of a route)",
+            question_text_cy: "Question at the start of branch 2 (end of a route) (Welsh)",
+          ),
+          create(:page, form:, question_text: "Question in branch 2", question_text_cy: "Question in branch 2 (Welsh)"),
+          create(:page, form:, question_text: "Question at the end of branch 2", question_text_cy: "Question at the end of branch 2 (Welsh)"),
+          create(
+            :page,
+            form:,
+            question_text: "Question after a branch route (end of a secondary skip)",
+            question_text_cy: "Question after a branch route (end of a secondary skip) (Welsh)",
+          ),
+          create(:page, form:, question_text: "Question", question_text_cy: "Question (Welsh)"),
+          create(
+            :page,
+            :with_selection_settings,
+            form:,
+            question_text: "Skip question",
+            question_text_cy: "Skip question (Welsh)",
+            selection_options: [{ "name" => "Skip", "value" => "Skip" }, { "name" => "Don't skip", "value" => "Don't skip" }],
+            answer_settings_cy: {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Skip (Welsh)", "value" => "Skip" }, { "name" => "Don't skip (Welsh)", "value" => "Don't skip" }],
+            },
+          ),
+          create(
+            :page,
+            :with_selection_settings,
+            form:,
+            question_text: "Question to be skipped",
+            question_text_cy: "Question to be skipped (Welsh)",
+            selection_options: [{ "name" => "Skip to end", "value" => "Skip to end" }, { "name" => "Don't skip", "value" => "Don't skip" }],
+            answer_settings_cy: {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Skip to end (Welsh)", "value" => "Skip to end" }, { "name" => "Don't skip (Welsh)", "value" => "Don't skip" }],
+            },
+          ),
+          create(:page, form:, question_text: "Question", question_text_cy: "Question (Welsh)"),
+          create(
+            :page,
+            :with_selection_settings,
+            form:,
+            question_text: "Exit page question",
+            question_text_cy: "Exit page question (Welsh)",
+            selection_options: [{ "name" => "Exit", "value" => "Exit" }, { "name" => "Don't exit", "value" => "Don't exit" }],
+            answer_settings_cy: {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Exit (Welsh)", "value" => "Exit" }, { "name" => "Don't exit (Welsh)", "value" => "Don't exit" }],
+            },
+          ),
+        ]
 
+        create(:condition, form:, answer_value: "Second branch", check_page_id: routing_pages[1].id, goto_page_id: routing_pages[4].id, routing_page_id: routing_pages[1].id)
+        create(:condition, form:, answer_value: "", check_page_id: routing_pages[1].id, goto_page_id: routing_pages[7].id, routing_page_id: routing_pages[3].id)
+        create(:condition, form:, answer_value: "Skip", check_page_id: routing_pages[9].id, goto_page_id: routing_pages[11].id, routing_page_id: routing_pages[9].id)
+        create(:condition, form:, answer_value: "Skip to end", check_page_id: routing_pages[10].id, goto_page_id: nil, routing_page_id: routing_pages[10].id, skip_to_end: true)
         create(
           :condition,
-          answer_value: nil,
-          check_page_id: pages[1].id,
-          goto_page_id: pages[7].id,
-          routing_page_id: pages[3].id,
-          exit_page_heading: nil,
-          exit_page_markdown: nil,
-        )
-
-        create(
-          :condition,
-          answer_value: "Skip",
-          check_page_id: pages[9].id,
-          goto_page_id: pages[11].id,
-          routing_page_id: pages[9].id,
-          exit_page_heading: nil,
-          exit_page_markdown: nil,
-        )
-
-        create(
-          :condition,
-          answer_value: "Skip to end",
-          check_page_id: pages[10].id,
-          goto_page_id: nil,
-          routing_page_id: pages[10].id,
-          exit_page_heading: nil,
-          exit_page_markdown: nil,
-          skip_to_end: true,
-        )
-
-        create(
-          :condition,
+          form:,
           answer_value: "Exit",
-          check_page_id: pages[12].id,
+          check_page_id: routing_pages[12].id,
           goto_page_id: nil,
-          routing_page_id: pages[12].id,
+          routing_page_id: routing_pages[12].id,
           exit_page_heading: "Exit page heading",
           exit_page_heading_cy: "Exit page heading (Welsh)",
           exit_page_markdown: "Exit page markdown",
           exit_page_markdown_cy: "Exit page markdown (Welsh)",
         )
 
-        pages.each(&:reload)
-        form.save_draft!
-        form.make_live!
-        pages
+        form.update!(
+          question_section_completed: true,
+          declaration_section_completed: true,
+          share_preview_completed: true,
+        )
+        FormDocumentFactoryHelpers.publish_form!(form)
+        form.reload
+        routing_pages.each(&:reload)
       end
 
       let(:branch_route_1) do
@@ -722,7 +636,7 @@ describe StepSummaryTableService do
               secondary_skip: false,
             },
             {
-              answer_value: nil,
+              answer_value: "",
               answer_value_cy: nil,
               check_page: "2. Branch question (start of a route)",
               check_page_cy: "2. Branch question (start of a route) (Welsh)",

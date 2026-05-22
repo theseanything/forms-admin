@@ -4,7 +4,7 @@ describe "pages/exit_page/edit.html.erb" do
   let(:form) { create :form, :with_pages }
   let(:group) { build :group }
   let(:pages) { form.pages }
-  let(:condition) { create :condition, :with_exit_page, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1" }
+  let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1") }
   let(:update_exit_page_input) { Pages::UpdateExitPageInput.new(form:, page: pages.first, record: condition).assign_condition_values }
 
   before do

@@ -25,20 +25,20 @@ class Pages::ChangeOrderService
     draft_service = form.draft_content_service
     step_ids = draft_service.steps.map { |s| s["id"] }
 
-    raise FormPagesAddedError if (step_ids - new_page_order).any?
+    raise FormPagesAddedError if (step_ids.map(&:to_s) - new_page_order.map(&:to_s)).any?
 
-    ordered_steps = new_page_order.map.with_index do |step_id, index|
-      step = draft_service.steps.find { |s| s["id"] == step_id }
-      step.merge("position" => index + 1)
-    end
-
-    ordered_steps.each_with_index do |step, index|
-      step["next_step_id"] = ordered_steps[index + 1]&.dig("id")
+    ordered_steps = new_page_order.filter_map do |step_id|
+      draft_service.steps.find { |s| s["id"].to_s == step_id.to_s }
     end
 
     hash = draft_service.content_hash
     hash["steps"] = ordered_steps
     hash["start_page"] = ordered_steps.first&.dig("id")
+    ordered_steps.each_with_index do |step, index|
+      step["position"] = index + 1
+      step["next_step_id"] = ordered_steps[index + 1]&.dig("id")
+    end
+    draft_service.save_content!(hash)
     draft_service.save_question_changes!
   end
 end

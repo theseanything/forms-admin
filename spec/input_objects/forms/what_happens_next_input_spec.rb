@@ -6,7 +6,7 @@ RSpec.describe Forms::WhatHappensNextInput, type: :model do
 
   context "when form is live" do
     let(:form) do
-      build(:form, :live)
+      create(:form, :live)
     end
 
     describe "validations" do
@@ -42,7 +42,7 @@ RSpec.describe Forms::WhatHappensNextInput, type: :model do
 
   context "when form is not live" do
     let(:form) do
-      build(:form)
+      create(:form)
     end
 
     describe "validations" do

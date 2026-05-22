@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Pages::QuestionTextController, type: :request do
-  let(:form) { create :form }
-  let(:pages) { build_list :page, 5, form_id: form.id }
+  let(:form) { create :form, :with_pages }
+  let(:pages) { form.pages }
   let(:user) { standard_user }
 
   let(:question_text_input) { build :question_text_input, form: }

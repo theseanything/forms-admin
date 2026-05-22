@@ -30,11 +30,11 @@ module Forms
     end
 
     def find_form_document
-      live_or_archived_form_document = current_form.form_documents.where(tag: %w[live archived]).first
+      document = current_form.live_form_document
 
-      raise NotFoundError if live_or_archived_form_document.nil?
+      raise NotFoundError if document.nil?
 
-      FormDocument::Content.from_form_document(live_or_archived_form_document)
+      FormDocument::Content.from_form_document(document)
     end
   end
 end

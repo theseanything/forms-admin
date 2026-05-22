@@ -32,7 +32,7 @@ class FormDraftContentService
   def conditions
     steps.flat_map do |step|
       Array(step["routing_conditions"]).map do |c|
-        FormDocument::Condition.new(**c.stringify_keys)
+        FormCondition.new(form: @form, condition: c, step_id: step["id"])
       end
     end
   end
@@ -93,7 +93,7 @@ class FormDraftContentService
   end
 
   def save_content!(hash)
-    normalise_welsh!(hash)
+    normalise_welsh_in_content!(hash)
     @operations.save_draft_content!(hash)
     @content_hash = nil
     @content = nil
@@ -139,6 +139,8 @@ private
   def load_content_hash
     if form.draft_form_document.present?
       form.draft_form_document.content.deep_dup
+    elsif form.live_form_document.present?
+      form.live_form_document.content.deep_dup
     else
       default_content_hash
     end
@@ -177,6 +179,7 @@ private
         "is_optional" => attrs.dig("data", "is_optional") || attrs["is_optional"],
         "is_repeatable" => attrs.dig("data", "is_repeatable") || attrs["is_repeatable"],
         "answer_settings" => attrs.dig("data", "answer_settings") || attrs["answer_settings"],
+        "answer_settings_cy" => attrs.dig("data", "answer_settings_cy") || attrs["answer_settings_cy"],
       }.compact,
       "routing_conditions" => attrs["routing_conditions"] || [],
     }.compact
@@ -192,12 +195,6 @@ private
     save_content!(content_hash)
   end
 
-  def normalise_welsh!(hash)
-    return unless hash["available_languages"]&.include?("cy")
-
-    normalise_welsh_in_content!(hash)
-  end
-
   def normalise_welsh_in_content!(hash)
     %w[declaration_markdown payment_url support_email support_phone support_url support_url_text what_happens_next_markdown].each do |key|
       next unless hash[key].is_a?(Hash)
@@ -205,7 +202,7 @@ private
       hash[key]["cy"] = nil if hash[key]["en"].blank?
     end
     Array(hash["steps"]).each do |step|
-      %w[hint_text page_heading guidance_markdown].each do |key|
+      %w[question_text hint_text page_heading guidance_markdown].each do |key|
         next unless step[key].is_a?(Hash)
 
         step[key]["cy"] = nil if step[key]["en"].blank?

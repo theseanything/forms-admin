@@ -168,7 +168,7 @@ RSpec.describe Forms::WelshConditionTranslationInput, type: :model do
     end
 
     context "when the condition has no exit page markdown" do
-      let(:condition) { create_condition(exit_page_markdown: nil) }
+      let(:condition) { create_condition(exit_page_markdown: nil, exit_page_heading: nil) }
 
       it "clears the Welsh exit page markdown and heading" do
         welsh_condition_translation_input.submit

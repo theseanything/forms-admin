@@ -34,8 +34,9 @@ RSpec.describe Pages::ChangeOrderInput, type: :model do
 
         it "is not valid" do
           error_message = I18n.t("activemodel.errors.models.pages/change_order_input.attributes.page_position.invalid", maximum: 1000)
+          page_id = page_position_params.keys[0].to_s.delete_prefix(Pages::ChangeOrderInput::INPUT_PREFIX)
           expect(change_order_input.valid?(:preview)).to be(false)
-          expect(change_order_input.errors.full_messages_for(page_position_params.keys[0])).to include("Position for page #{form.pages[0].id} #{error_message}")
+          expect(change_order_input.errors.full_messages_for(page_position_params.keys[0])).to include("Position for page #{page_id.downcase} #{error_message}")
         end
       end
 
@@ -44,8 +45,9 @@ RSpec.describe Pages::ChangeOrderInput, type: :model do
 
         it "is not valid" do
           error_message = I18n.t("activemodel.errors.models.pages/change_order_input.attributes.page_position.invalid", maximum: 1000)
+          page_id = page_position_params.keys[0].to_s.delete_prefix(Pages::ChangeOrderInput::INPUT_PREFIX)
           expect(change_order_input.valid?(:preview)).to be(false)
-          expect(change_order_input.errors.full_messages_for(page_position_params.keys[0])).to include("Position for page #{form.pages[0].id} #{error_message}")
+          expect(change_order_input.errors.full_messages_for(page_position_params.keys[0])).to include("Position for page #{page_id.downcase} #{error_message}")
         end
       end
 
@@ -54,8 +56,9 @@ RSpec.describe Pages::ChangeOrderInput, type: :model do
 
         it "is not valid" do
           error_message = I18n.t("activemodel.errors.models.pages/change_order_input.attributes.page_position.invalid", maximum: 1000)
+          page_id = page_position_params.keys[0].to_s.delete_prefix(Pages::ChangeOrderInput::INPUT_PREFIX)
           expect(change_order_input.valid?(:preview)).to be(false)
-          expect(change_order_input.errors.full_messages_for(page_position_params.keys[0])).to include("Position for page #{form.pages[0].id} #{error_message}")
+          expect(change_order_input.errors.full_messages_for(page_position_params.keys[0])).to include("Position for page #{page_id.downcase} #{error_message}")
         end
       end
     end
@@ -177,8 +180,17 @@ RSpec.describe Pages::ChangeOrderInput, type: :model do
       end
 
       context "when there is a page that no longer exists in the form" do
+        let!(:third_page_id) { form.pages[2].id }
+        let(:page_position_params) do
+          {
+            "position_for_page_#{form.pages[0].id}" => "2",
+            "position_for_page_#{form.pages[1].id}" => "1",
+            "position_for_page_#{third_page_id}" => "",
+          }
+        end
+
         before do
-          form.pages[2].delete
+          form.draft_content_service.destroy_step!(third_page_id)
           change_order_input.update_preview
         end
 

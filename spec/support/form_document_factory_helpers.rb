@@ -9,31 +9,54 @@ module FormDocumentFactoryHelpers
       "id" => id,
       "type" => "question",
       "position" => overrides[:position] || 1,
-      "question_text" => { "en" => overrides[:question_text] || Faker::Lorem.question.truncate(250) },
-      "hint_text" => { "en" => overrides[:hint_text] || "" },
-      "page_heading" => { "en" => overrides[:page_heading] || "" },
-      "guidance_markdown" => { "en" => overrides[:guidance_markdown] || "" },
+      "question_text" => translatable_step_field(overrides[:question_text] || Faker::Lorem.question.truncate(250), overrides[:question_text_cy]),
+      "hint_text" => translatable_step_field(overrides[:hint_text] || "", overrides[:hint_text_cy]),
+      "page_heading" => translatable_step_field(overrides[:page_heading] || "", overrides[:page_heading_cy]),
+      "guidance_markdown" => translatable_step_field(overrides[:guidance_markdown] || "", overrides[:guidance_markdown_cy]),
       "answer_type" => overrides[:answer_type] || FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample,
       "data" => {
         "is_optional" => overrides.fetch(:is_optional, false),
         "is_repeatable" => overrides.fetch(:is_repeatable, false),
         "answer_settings" => overrides[:answer_settings],
+        "answer_settings_cy" => normalize_answer_settings_cy(overrides[:answer_settings_cy]),
       }.compact,
       "routing_conditions" => overrides[:routing_conditions] || [],
     }
   end
 
+  def translatable_step_field(en_value, cy_value = nil)
+    result = { "en" => en_value }
+    result["cy"] = cy_value if cy_value.present?
+    result
+  end
+
+  def translatable_field(en_value, cy_value = nil)
+    result = {}
+    result["en"] = en_value if en_value.present?
+    result["cy"] = cy_value if cy_value.present?
+    result
+  end
+
+  def normalize_answer_settings_cy(settings)
+    return settings if settings.nil? || settings.is_a?(Hash)
+
+    settings.respond_to?(:to_h) ? settings.to_h.stringify_keys : settings
+  end
+
   def apply_form_content!(form, attrs = {})
     hash = form.draft_content_service.content_hash
-    hash["name"] = { "en" => attrs[:name] } if attrs[:name]
+    hash["name"] = translatable_field(attrs[:name], attrs[:name_cy]) if attrs[:name] || attrs[:name_cy]
     hash["submission_email"] = attrs[:submission_email] if attrs.key?(:submission_email)
     hash["submission_type"] = attrs[:submission_type] if attrs[:submission_type]
     hash["submission_format"] = attrs[:submission_format] if attrs[:submission_format]
-    hash["privacy_policy_url"] = { "en" => attrs[:privacy_policy_url] } if attrs[:privacy_policy_url]
-    hash["support_email"] = { "en" => attrs[:support_email] } if attrs[:support_email]
-    hash["what_happens_next_markdown"] = { "en" => attrs[:what_happens_next_markdown] } if attrs[:what_happens_next_markdown]
-    hash["declaration_markdown"] = { "en" => attrs[:declaration_markdown] } if attrs[:declaration_markdown]
-    hash["payment_url"] = { "en" => attrs[:payment_url] } if attrs[:payment_url]
+    hash["privacy_policy_url"] = translatable_field(attrs[:privacy_policy_url], attrs[:privacy_policy_url_cy]) if attrs[:privacy_policy_url] || attrs[:privacy_policy_url_cy]
+    hash["support_email"] = translatable_field(attrs[:support_email], attrs[:support_email_cy]) if attrs[:support_email] || attrs[:support_email_cy]
+    hash["support_phone"] = translatable_field(attrs[:support_phone], attrs[:support_phone_cy]) if attrs[:support_phone] || attrs[:support_phone_cy]
+    hash["support_url"] = translatable_field(attrs[:support_url], attrs[:support_url_cy]) if attrs[:support_url] || attrs[:support_url_cy]
+    hash["support_url_text"] = translatable_field(attrs[:support_url_text], attrs[:support_url_text_cy]) if attrs[:support_url_text] || attrs[:support_url_text_cy]
+    hash["what_happens_next_markdown"] = translatable_field(attrs[:what_happens_next_markdown], attrs[:what_happens_next_markdown_cy]) if attrs[:what_happens_next_markdown] || attrs[:what_happens_next_markdown_cy]
+    hash["declaration_markdown"] = translatable_field(attrs[:declaration_markdown], attrs[:declaration_markdown_cy]) if attrs[:declaration_markdown] || attrs[:declaration_markdown_cy]
+    hash["payment_url"] = translatable_field(attrs[:payment_url], attrs[:payment_url_cy]) if attrs[:payment_url] || attrs[:payment_url_cy]
     hash["available_languages"] = attrs[:available_languages] if attrs[:available_languages]
     hash["send_copy_of_answers"] = attrs[:send_copy_of_answers] if attrs[:send_copy_of_answers]
     hash["send_daily_submission_batch"] = attrs[:send_daily_submission_batch] if attrs.key?(:send_daily_submission_batch)
@@ -54,26 +77,95 @@ module FormDocumentFactoryHelpers
     FormDocumentOperationsService.new(form).save_draft_content!(hash)
   end
 
-  def publish_form!(form)
+  def publish_form!(form, skip_readiness_check: false)
     form.set_task_status_service(
       TaskStatusService.new(form:, current_user: OpenStruct.new(name: "Test", email: "test@example.gov.uk")),
     )
-    FormDocumentOperationsService.new(form).publish!
+    FormDocumentOperationsService.new(form).publish!(skip_readiness_check:)
   end
 
   def create_live_form!(form)
-    publish_form!(form)
+    skip_readiness = !(form.question_section_completed && form.declaration_section_completed && form.share_preview_completed)
+    publish_form!(form, skip_readiness_check: skip_readiness)
     form.reload
   end
 
   def create_live_with_draft!(form)
     create_live_form!(form) unless form.live_form_document_id.present?
+    was_ready = form.all_ready_for_live?(ignore_missing_welsh: true)
     FormDocumentOperationsService.new(form).ensure_draft!
+    if was_ready
+      form.update!(
+        share_preview_completed: true,
+        question_section_completed: true,
+        declaration_section_completed: true,
+      )
+    end
     form.reload
+  end
+
+  def find_form_by_step_id(step_id)
+    step_id = step_id.to_s
+    Form.order(created_at: :desc).find do |f|
+      steps = f.draft_content_service.content_hash["steps"] || f.live_form_document&.content&.dig("steps")
+      Array(steps).any? { |s| s["id"].to_s == step_id }
+    end
   end
 
   def archive_form!(form)
     FormDocumentOperationsService.new(form).archive!
+    form.reload
+  end
+
+  def report_form_document_json(form, tag: "live", **extra)
+    doc = form.live_form_document
+    json = doc.as_json
+    json["tag"] = tag
+    json["content"] = FormDocument::LocaleProjection.project(doc.content, language: "en")
+    json.merge(extra.stringify_keys)
+  end
+
+  def welsh_value_for_field(field, en_value)
+    case field
+    when "privacy_policy_url" then "https://www.gov.uk/welsh-privacy"
+    when "support_email" then "welsh-support@example.gov.uk"
+    when "support_url" then "https://www.gov.uk/welsh-support"
+    when "payment_url" then "https://www.gov.uk/welsh-payment"
+    else "Welsh #{en_value}"
+    end
+  end
+
+  def set_copied_from_on_documents!(form, copied_from_id)
+    form.update!(copied_from_id:)
+    hash = form.draft_content_service.content_hash
+    hash["copied_from_id"] = copied_from_id
+    FormDocumentOperationsService.new(form).save_draft_content!(hash)
+    FormDocumentOperationsService.new(form).publish! if form.live_form_document_id.present?
+    form.reload
+  end
+
+  def apply_lifecycle_state!(form, state)
+    case state.to_s.to_sym
+    when :live
+      create_live_form!(form) unless form.live_form_document_id.present?
+    when :live_with_draft
+      create_live_with_draft!(form)
+    when :archived
+      create_live_form!(form) unless form.live_form_document_id.present?
+      archive_form!(form) unless form.archived?
+    when :archived_with_draft
+      create_live_form!(form) unless form.live_form_document_id.present?
+      archive_form!(form) unless form.archived?
+      was_ready = form.question_section_completed && form.declaration_section_completed && form.share_preview_completed
+      FormDocumentOperationsService.new(form).ensure_draft!
+      if was_ready
+        form.update!(
+          share_preview_completed: true,
+          question_section_completed: true,
+          declaration_section_completed: true,
+        )
+      end
+    end
     form.reload
   end
 end

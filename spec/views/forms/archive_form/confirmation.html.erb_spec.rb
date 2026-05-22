@@ -2,7 +2,7 @@ require "rails_helper"
 
 describe "forms/archive_form/confirmation.html.erb" do
   let(:id) { 2 }
-  let(:form) { build(:form, :live, id:) }
+  let(:form) { create(:form, :live, id:) }
 
   before do
     render(template: "forms/archive_form/confirmation", locals: { form: })

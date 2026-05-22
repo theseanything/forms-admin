@@ -3,16 +3,33 @@ FactoryBot.define do
     transient do
       sequence(:form_name) { |n| "Form #{n}" }
       name { nil }
+      name_cy { nil }
       submission_email { Faker::Internet.email(domain: "example.gov.uk") }
       submission_type { "email" }
       submission_format { [] }
       privacy_policy_url { Faker::Internet.url(host: "gov.uk") }
+      privacy_policy_url_cy { nil }
       support_email { nil }
+      support_email_cy { nil }
+      support_phone { nil }
+      support_phone_cy { nil }
+      support_url { nil }
+      support_url_cy { nil }
+      support_url_text { nil }
+      support_url_text_cy { nil }
       what_happens_next_markdown { nil }
+      what_happens_next_markdown_cy { nil }
       declaration_markdown { nil }
+      declaration_markdown_cy { nil }
       payment_url { nil }
+      payment_url_cy { nil }
       available_languages { %w[en] }
       pages_count { 0 }
+      pages { nil }
+      state { nil }
+      lifecycle { nil }
+      routing_steps { false }
+      send_copy_of_answers { "disabled" }
     end
 
     question_section_completed { false }
@@ -26,18 +43,51 @@ FactoryBot.define do
       FormDocumentFactoryHelpers.apply_form_content!(
         form,
         name: evaluator.name.presence || evaluator.form_name,
+        name_cy: evaluator.name_cy,
         submission_email: evaluator.submission_email,
         submission_type: evaluator.submission_type,
         submission_format: evaluator.submission_format,
         privacy_policy_url: evaluator.privacy_policy_url,
+        privacy_policy_url_cy: evaluator.privacy_policy_url_cy,
         support_email: evaluator.support_email,
+        support_email_cy: evaluator.support_email_cy,
+        support_phone: evaluator.support_phone,
+        support_phone_cy: evaluator.support_phone_cy,
+        support_url: evaluator.support_url,
+        support_url_cy: evaluator.support_url_cy,
+        support_url_text: evaluator.support_url_text,
+        support_url_text_cy: evaluator.support_url_text_cy,
         what_happens_next_markdown: evaluator.what_happens_next_markdown,
+        what_happens_next_markdown_cy: evaluator.what_happens_next_markdown_cy,
         declaration_markdown: evaluator.declaration_markdown,
+        declaration_markdown_cy: evaluator.declaration_markdown_cy,
         payment_url: evaluator.payment_url,
+        payment_url_cy: evaluator.payment_url_cy,
         available_languages: evaluator.available_languages,
-        send_copy_of_answers: "disabled",
+        send_copy_of_answers: evaluator.send_copy_of_answers,
       )
-      FormDocumentFactoryHelpers.add_steps_to_form!(form, count: evaluator.pages_count) if evaluator.pages_count.positive?
+
+      if evaluator.routing_steps
+        steps = (1..5).map do |i|
+          FormDocumentFactoryHelpers.build_step_attrs(
+            position: i,
+            answer_type: "selection",
+            answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] },
+          )
+        end
+        steps.each_with_index { |s, i| s["next_step_id"] = steps[i + 1]&.dig("id") }
+        hash = form.draft_content_service.content_hash
+        hash["steps"] = steps
+        hash["start_page"] = steps.first["id"]
+        FormDocumentOperationsService.new(form).save_draft_content!(hash)
+      elsif evaluator.pages_count.positive?
+        FormDocumentFactoryHelpers.add_steps_to_form!(form, count: evaluator.pages_count)
+      elsif evaluator.pages.present?
+        form.pages = evaluator.pages
+      end
+
+      lifecycle = evaluator.lifecycle || evaluator.state
+      FormDocumentFactoryHelpers.apply_lifecycle_state!(form, lifecycle) if lifecycle.present?
     end
 
     trait :with_group do
@@ -106,36 +156,25 @@ FactoryBot.define do
     trait :live do
       ready_for_live
       first_made_live_at { Time.zone.now }
-
-      after(:create) do |form, _evaluator|
-        FormDocumentFactoryHelpers.create_live_form!(form)
-      end
+      lifecycle { :live }
     end
 
     trait :live_with_draft do
-      live
-
-      after(:create) do |form, _evaluator|
-        FormDocumentFactoryHelpers.create_live_with_draft!(form)
-      end
+      ready_for_live
+      first_made_live_at { Time.zone.now }
+      lifecycle { :live_with_draft }
     end
 
     trait :archived do
       ready_for_live
       first_made_live_at { Time.zone.now }
-
-      after(:create) do |form, _evaluator|
-        FormDocumentFactoryHelpers.create_live_form!(form)
-        FormDocumentFactoryHelpers.archive_form!(form)
-      end
+      lifecycle { :archived }
     end
 
     trait :archived_with_draft do
-      archived
-
-      after(:create) do |form, _evaluator|
-        FormDocumentOperationsService.new(form).ensure_draft!
-      end
+      ready_for_live
+      first_made_live_at { Time.zone.now }
+      lifecycle { :archived_with_draft }
     end
 
     trait :with_support do
@@ -143,22 +182,7 @@ FactoryBot.define do
     end
 
     trait :ready_for_routing do
-      pages_count { 5 }
-
-      after(:create) do |form, _evaluator|
-        steps = (1..5).map do |i|
-          FormDocumentFactoryHelpers.build_step_attrs(
-            position: i,
-            answer_type: "selection",
-            answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] },
-          )
-        end
-        steps.each_with_index { |s, i| s["next_step_id"] = steps[i + 1]&.dig("id") }
-        hash = form.draft_content_service.content_hash
-        hash["steps"] = steps
-        hash["start_page"] = steps.first["id"]
-        FormDocumentOperationsService.new(form).save_draft_content!(hash)
-      end
+      routing_steps { true }
     end
 
     trait :missing_pages do
@@ -173,8 +197,24 @@ FactoryBot.define do
 
       after(:create) do |form, evaluator|
         hash = form.draft_content_service.content_hash
-        hash["name"]["cy"] = "Welsh #{evaluator.form_name}"
+        hash["name"] ||= { "en" => evaluator.name.presence || evaluator.form_name }
+        hash["name"]["cy"] = "Welsh #{hash['name']['en']}"
         hash["available_languages"] = %w[en cy]
+
+        %w[privacy_policy_url support_email support_phone support_url support_url_text declaration_markdown what_happens_next_markdown payment_url].each do |field|
+          next unless hash[field].is_a?(Hash) && hash[field]["en"].present?
+
+          hash[field]["cy"] = FormDocumentFactoryHelpers.welsh_value_for_field(field, hash[field]["en"])
+        end
+
+        Array(hash["steps"]).each do |step|
+          %w[question_text hint_text page_heading guidance_markdown].each do |key|
+            next unless step[key].is_a?(Hash) && step[key]["en"].present?
+
+            step[key]["cy"] = "Welsh #{step[key]['en']}"
+          end
+        end
+
         FormDocumentOperationsService.new(form).save_draft_content!(hash)
       end
     end

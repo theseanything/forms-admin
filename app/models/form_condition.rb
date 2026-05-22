@@ -4,14 +4,17 @@ class FormCondition
   include ConditionMethods
 
   attr_accessor :id, :answer_value, :goto_page_id, :check_page_id, :routing_page_id,
-                :skip_to_end, :exit_page_heading, :exit_page_markdown
-  attr_reader :form, :draft_service
+                :skip_to_end, :exit_page_heading, :exit_page_markdown,
+                :routing_page, :goto_page, :check_page
+  attr_accessor :form
+  attr_reader :draft_service
 
   def self.create_and_update_form!(form_id:, routing_page_id:, **attrs)
     form = Form.find(form_id)
     draft_service = form.draft_content_service
-    step = draft_service.find_step(routing_page_id)
-    raise ActiveRecord::RecordNotFound unless step
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == routing_page_id.to_s }
+    raise ActiveRecord::RecordNotFound unless step_data
 
     condition = {
       "id" => next_condition_id(draft_service),
@@ -20,19 +23,24 @@ class FormCondition
       "answer_value" => attrs[:answer_value],
       "goto_page_id" => attrs[:goto_page_id]&.to_s,
       "skip_to_end" => attrs[:skip_to_end] || false,
-      "exit_page_heading" => TranslatableString.normalize(attrs[:exit_page_heading]),
-      "exit_page_markdown" => TranslatableString.normalize(attrs[:exit_page_markdown]),
+      "exit_page_heading" => translatable_field_if_present(attrs[:exit_page_heading]),
+      "exit_page_markdown" => translatable_field_if_present(attrs[:exit_page_markdown]),
     }.compact
 
-    step.step_data["routing_conditions"] ||= []
-    step.step_data["routing_conditions"] << condition
-    draft_service.save_content!(draft_service.content_hash)
+    step_data["routing_conditions"] ||= []
+    step_data["routing_conditions"] << condition
+    draft_service.save_content!(hash)
     new(form:, condition:, step_id: routing_page_id)
   end
 
   def self.next_condition_id(draft_service)
     ids = draft_service.conditions.map { |c| c.id.to_i }
     (ids.max || 0) + 1
+  end
+
+  def self.translatable_field_if_present(value)
+    normalized = TranslatableString.normalize(value)
+    normalized.values.any?(&:present?) ? normalized : nil
   end
 
   def initialize(form:, condition:, step_id:)
@@ -50,9 +58,12 @@ class FormCondition
   end
 
   def destroy_and_update_form!
-    step = draft_service.find_step(@step_id)
-    step.step_data["routing_conditions"] = Array(step.step_data["routing_conditions"]).reject { |c| c["id"].to_s == id.to_s }
-    draft_service.save_content!(draft_service.content_hash)
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == @step_id.to_s }
+    return false unless step_data
+
+    step_data["routing_conditions"] = Array(step_data["routing_conditions"]).reject { |c| c["id"].to_s == id.to_s }
+    draft_service.save_content!(hash)
     draft_service.save_question_changes!
     true
   end
@@ -61,12 +72,31 @@ class FormCondition
     condition_model.validation_errors
   end
 
+  def has_routing_errors
+    condition_model.has_routing_errors
+  end
+
+  alias_method :has_routing_errors?, :has_routing_errors
+
   def errors_with_fields
     condition_model.errors_with_fields
   end
 
   def as_json(options = {})
     condition_model.as_json(options)
+  end
+
+  def as_form_document_condition
+    {
+      "id" => id.to_s,
+      "answer_value" => answer_value,
+      "goto_page_id" => goto_page_id&.to_s,
+      "check_page_id" => check_page_id.to_s,
+      "routing_page_id" => routing_page_id.to_s,
+      "skip_to_end" => skip_to_end,
+      "exit_page_heading" => @exit_page_heading,
+      "exit_page_markdown" => @exit_page_markdown,
+    }.compact
   end
 
   def exit_page_heading=(value)
@@ -89,8 +119,76 @@ class FormCondition
     is_exit_page?
   end
 
+  def skip_to_end?
+    skip_to_end == true
+  end
+
   def secondary_skip?
     answer_value.blank? && check_page_id != routing_page_id
+  end
+
+  def routing_page
+    return @routing_page if instance_variable_defined?(:@routing_page) && @routing_page
+
+    form.pages.find { |page| page.id.to_s == routing_page_id.to_s }
+  end
+
+  def check_page
+    return @check_page if instance_variable_defined?(:@check_page) && @check_page
+
+    form.pages.find { |page| page.id.to_s == check_page_id.to_s }
+  end
+
+  def goto_page
+    return @goto_page if instance_variable_defined?(:@goto_page) && @goto_page
+
+    form.pages.find { |page| page.id.to_s == goto_page_id.to_s } if goto_page_id.present?
+  end
+
+  def exit_page_heading_cy
+    exit_page_heading(locale: :cy)
+  end
+
+  def exit_page_heading_cy=(value)
+    @exit_page_heading = TranslatableString.set_for_locale(@exit_page_heading, locale: :cy, string: value)
+  end
+
+  def exit_page_markdown_cy
+    exit_page_markdown(locale: :cy)
+  end
+
+  def exit_page_markdown_cy=(value)
+    @exit_page_markdown = TranslatableString.set_for_locale(@exit_page_markdown, locale: :cy, string: value)
+  end
+
+  def save!
+    save_and_update_form
+  end
+
+  def reload
+    @form = Form.find(@form.id)
+    @draft_service = @form.draft_content_service
+    hash = @draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == @step_id.to_s }
+    condition_data = Array(step_data&.dig("routing_conditions")).find { |c| c["id"].to_s == id.to_s }
+    if condition_data
+      @condition = condition_data.stringify_keys
+      assign_from_hash
+    end
+    self
+  end
+
+  def update!(attrs = {})
+    attrs.each { |key, value| public_send("#{key}=", value) if respond_to?("#{key}=") }
+    save!
+  end
+
+  def self.exists?(condition_id)
+    Form.find_each.any? do |form|
+      next if form.draft_form_document.blank?
+
+      form.draft_content_service.conditions.any? { |condition| condition.id.to_s == condition_id.to_s }
+    end
   end
 
 private
@@ -107,8 +205,11 @@ private
   end
 
   def update_in_document
-    step = draft_service.find_step(@step_id)
-    conditions = step.step_data["routing_conditions"] || []
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == @step_id.to_s }
+    return unless step_data
+
+    conditions = step_data["routing_conditions"] || []
     index = conditions.index { |c| c["id"].to_s == id.to_s }
     return unless index
 
@@ -116,15 +217,14 @@ private
       "id" => id,
       "routing_page_id" => routing_page_id.to_s,
       "check_page_id" => check_page_id.to_s,
-      "routing_page_id" => routing_page_id.to_s,
       "answer_value" => answer_value,
       "goto_page_id" => goto_page_id&.to_s,
       "skip_to_end" => skip_to_end,
-      "exit_page_heading" => TranslatableString.normalize(exit_page_heading),
-      "exit_page_markdown" => TranslatableString.normalize(exit_page_markdown),
+      "exit_page_heading" => self.class.translatable_field_if_present(@exit_page_heading),
+      "exit_page_markdown" => self.class.translatable_field_if_present(@exit_page_markdown),
     }.compact
-    step.step_data["routing_conditions"] = conditions
-    draft_service.save_content!(draft_service.content_hash)
+    step_data["routing_conditions"] = conditions
+    draft_service.save_content!(hash)
   end
 
   def condition_model

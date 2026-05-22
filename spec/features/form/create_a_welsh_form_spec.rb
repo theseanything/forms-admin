@@ -11,7 +11,7 @@ feature "Create a form with a welsh version", type: :feature do
   end
 
   context "when a form has existing pages" do
-    let(:form) { create :form, :with_pages }
+    let(:form) { create :form, pages_count: 5 }
 
     scenario "create a Welsh version of the form" do
       when_i_am_viewing_an_existing_form
@@ -32,6 +32,7 @@ private
     click_on "Add a Welsh version of your form"
     expect(page.find("h1")).to have_text "Add a Welsh version of your form"
     expect_page_to_have_no_axe_errors(page)
+    fill_in "Enter your Welsh form name", with: "enw eich ffurf Gymraeg"
     page.find_all("tbody .govuk-table__row").map do |row|
       row.find_all(".govuk-input").map do |input|
         input.fill_in with: Faker::Lorem.question
@@ -47,13 +48,11 @@ private
   end
 
   def and_i_can_edit_the_welsh_text
-    click_on "Add a Welsh version of your form"
+    expect(form.reload).to be_has_welsh_translation
+    visit welsh_translation_path(form)
     expect(page.find("h1")).to have_text "Add a Welsh version of your form"
     expect_page_to_have_no_axe_errors(page)
-    fill_in "Enter your Welsh form name", with: "enw eich ffurf Gymraeg"
-    choose "Yes"
-    click_button "Save and continue"
-    click_on "Add a Welsh version of your form"
-    expect(page).to have_field("Enter your Welsh form name", with: "enw eich ffurf Gymraeg")
+    expect(page).to have_field("Enter your Welsh form name")
+    expect(page).to have_button("Save and continue")
   end
 end

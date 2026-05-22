@@ -84,7 +84,7 @@ RSpec.describe Pages::AddressSettingsController, type: :request do
              answer_type: "address",
              user:,
              form_id: form.id,
-             page_id: page.id,
+             page_id: page.id.to_s,
              answer_settings: {
                input_type: {
                  uk_address: true.to_s,
@@ -139,10 +139,9 @@ RSpec.describe Pages::AddressSettingsController, type: :request do
       end
 
       it "saves the params to draft question" do
-        form_instance_variable = assigns(:address_settings_input)
-        expect(form_instance_variable.uk_address).to eq "true"
-        expect(form_instance_variable.international_address).to eq "false"
-        expect(form_instance_variable.draft_question.answer_settings).to include(input_type: { uk_address: "true", international_address: "false" })
+        draft_question = DraftQuestion.find_by!(form_id: form.id, user_id: user.id, page_id: page.id.to_s)
+        expect(draft_question.answer_settings.dig(:input_type, :uk_address)).to eq "true"
+        expect(draft_question.answer_settings.dig(:input_type, :international_address)).to eq "false"
       end
 
       it "redirects the user to the edit question page" do

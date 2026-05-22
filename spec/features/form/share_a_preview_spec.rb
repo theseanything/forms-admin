@@ -1,7 +1,7 @@
 require "rails_helper"
 
 feature "Share a preview", type: :feature do
-  let(:form) { create :form, :with_pages, name: "Test form" }
+  let(:form) { create :form, pages_count: 5, name: "Test form" }
   let(:group) { create(:group, organisation: standard_user.organisation, status: "active") }
 
   before do

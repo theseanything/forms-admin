@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe "routes/show.html.erb" do
-  let(:form) { build_stubbed :form, :with_pages, pages: }
-  let(:pages) { [] }
+  let(:form) { create(:form, pages_count: 3) }
+  let(:pages) { form.pages }
   let(:routes_input) { build(:routes_input, form:).assign_form_values }
 
   def render_page
@@ -28,23 +28,9 @@ describe "routes/show.html.erb" do
   end
 
   context "when the form has pages and routes" do
-    let(:pages) do
-      [
-        build_stubbed(
-          :page,
-          id: 101,
-          routing_conditions: [
-            build_stubbed(
-              :condition,
-              routing_page_id: 101,
-              goto_page_id: 103,
-              answer_value: nil,
-            ),
-          ],
-        ),
-        build_stubbed(:page, id: 102),
-        build_stubbed(:page, id: 103),
-      ]
+    before do
+      create(:condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.third.id)
+      form.reload
     end
 
     it "has a summary list with a row for each page" do
@@ -82,7 +68,7 @@ describe "routes/show.html.erb" do
       expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]') do |field|
         expect(select_options(field)).to eq [
           ["default", "Go to question 2"],
-          ["103", "3. #{pages.third.question_text}"],
+          [pages.third.id.to_s, "3. #{pages.third.question_text}"],
           ["end_of_form", "End of the form"],
         ]
       end
@@ -100,7 +86,7 @@ describe "routes/show.html.erb" do
 
       expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]') do |field|
         expect(field).to have_selector("option[selected]") do |option|
-          expect(option["value"]).to eq "103"
+          expect(option["value"]).to eq pages.third.id.to_s
         end
       end
 
@@ -112,23 +98,9 @@ describe "routes/show.html.erb" do
     end
 
     context "when the route goes to a page before the routing page" do
-      let(:pages) do
-        [
-          build_stubbed(:page, id: 101),
-          build_stubbed(
-            :page,
-            id: 102,
-            routing_conditions: [
-              build_stubbed(
-                :condition,
-                routing_page_id: 102,
-                goto_page_id: 101,
-                answer_value: nil,
-              ),
-            ],
-          ),
-          build_stubbed(:page, id: 103),
-        ]
+      before do
+        create(:condition, form:, routing_page_id: pages.second.id, check_page_id: pages.second.id, answer_value: nil, goto_page_id: pages.first.id)
+        form.reload
       end
 
       it "shows the selected goto page for the route" do
@@ -136,23 +108,33 @@ describe "routes/show.html.erb" do
 
         expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]') do |field|
           expect(field).to have_selector("option[selected]") do |option|
-            expect(option["value"]).to eq "101"
+            expect(option["value"]).to eq pages.first.id.to_s
           end
         end
       end
     end
 
     context "when a page is a select from a list question" do
-      let(:pages) do
-        [
-          build_stubbed(:page, :with_selection_settings, id: 101, selection_options:),
-          build_stubbed(:page, id: 102),
-          build_stubbed(:page, id: 103),
-        ]
+      let(:selection_options) do
+        [{ "name" => "Yes", "value" => "Yes" }, { "name" => "No", "value" => "No" }]
       end
 
-      let(:selection_options) do
-        [{ name: "Yes", value: "Yes" }, { name: "No", value: "No" }]
+      let(:form) do
+        create(:form).tap do |f|
+          hash = f.draft_content_service.content_hash
+          hash["steps"] = [
+            FormDocumentFactoryHelpers.build_step_attrs(
+              position: 1,
+              answer_type: "selection",
+              answer_settings: { "only_one_option" => "true", "selection_options" => selection_options },
+            ),
+            FormDocumentFactoryHelpers.build_step_attrs(position: 2),
+            FormDocumentFactoryHelpers.build_step_attrs(position: 3),
+          ]
+          hash["steps"].each_with_index { |s, i| s["next_step_id"] = hash["steps"][i + 1]&.dig("id") }
+          hash["start_page"] = hash["steps"].first["id"]
+          FormDocumentOperationsService.new(f).save_draft_content!(hash)
+        end
       end
 
       it "has inputs for each answer option" do
@@ -162,15 +144,15 @@ describe "routes/show.html.erb" do
           rows = summary_list.find_all(".govuk-summary-list__row")
 
           expect(rows[0]).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]')
-          expect(rows[0]).to have_selector('input[name="forms_routes_input[routes_attributes][0][page_id]"][value="101"]', visible: :hidden)
+          expect(rows[0]).to have_selector("input[name=\"forms_routes_input[routes_attributes][0][page_id]\"][value=\"#{pages.first.id}\"]", visible: :hidden)
           expect(rows[0]).to have_selector('input[name="forms_routes_input[routes_attributes][0][answer_value]"][value="Yes"]', visible: :hidden)
 
           expect(rows[0]).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][1][goto]"]')
-          expect(rows[0]).to have_selector('input[name="forms_routes_input[routes_attributes][1][page_id]"][value="101"]', visible: :hidden)
+          expect(rows[0]).to have_selector("input[name=\"forms_routes_input[routes_attributes][1][page_id]\"][value=\"#{pages.first.id}\"]", visible: :hidden)
           expect(rows[0]).to have_selector('input[name="forms_routes_input[routes_attributes][1][answer_value]"][value="No"]', visible: :hidden)
 
           expect(rows[1]).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][2][goto]"]')
-          expect(rows[1]).to have_selector('input[name="forms_routes_input[routes_attributes][2][page_id]"][value="102"]', visible: :hidden)
+          expect(rows[1]).to have_selector("input[name=\"forms_routes_input[routes_attributes][2][page_id]\"][value=\"#{pages.second.id}\"]", visible: :hidden)
 
           expect(rows[2]).not_to have_selector(".govuk-select")
         end
@@ -179,7 +161,7 @@ describe "routes/show.html.erb" do
       context "with more than 10 options" do
         let(:selection_options) do
           (1..11).map do |i|
-            { name: "Option #{i}", value: "Option #{i}" }
+            { "name" => "Option #{i}", "value" => "Option #{i}" }
           end
         end
 
@@ -217,11 +199,7 @@ describe "routes/show.html.erb" do
   end
 
   context "when there are not enoough pages" do
-    let(:pages) do
-      [
-        build_stubbed(:page, id: 101),
-      ]
-    end
+    let(:form) { create(:form, pages_count: 1) }
 
     it "shows a warning" do
       render_page

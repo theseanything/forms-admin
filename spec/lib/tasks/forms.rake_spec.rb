@@ -240,10 +240,11 @@ RSpec.describe "forms.rake", type: :task do
         expect(form.live_form_document.reload.content["submission_format"]).to eq([])
       end
 
-      it "updates the form's draft form document" do
+      it "updates the form's draft form document when a draft exists" do
+        FormDocumentFactoryHelpers.create_live_with_draft!(form)
         task.invoke(form.id)
         expect(form.draft_form_document.reload.content["submission_type"]).to eq("email")
-        expect(form.live_form_document.reload.content["submission_format"]).to eq([])
+        expect(form.draft_form_document.reload.content["submission_format"]).to eq([])
       end
 
       it "does not update a different form" do
@@ -384,7 +385,8 @@ RSpec.describe "forms.rake", type: :task do
           expect(form_document.content["s3_bucket_region"]).to eq(s3_bucket_region)
         end
 
-        it "updates the draft form document" do
+        it "updates the draft form document when a draft exists" do
+          FormDocumentFactoryHelpers.create_live_with_draft!(form)
           task.invoke(*valid_args)
           form_document = form.draft_form_document.reload
           expect(form_document.content["submission_type"]).to eq("s3")
@@ -415,7 +417,8 @@ RSpec.describe "forms.rake", type: :task do
           expect(form_document.content["submission_format"]).to eq(%w[json])
         end
 
-        it "updates the draft form document" do
+        it "updates the draft form document when a draft exists" do
+          FormDocumentFactoryHelpers.create_live_with_draft!(form)
           task.invoke(*valid_args)
           form_document = form.draft_form_document.reload
           expect(form_document.content["submission_type"]).to eq("s3")
@@ -574,16 +577,6 @@ RSpec.describe "forms.rake", type: :task do
       }.not_to(change { form_without_selection_options.draft_form_document.reload.content["steps"] })
     end
 
-    it "updates the pages with selection options" do
-      expect {
-        task.invoke
-      }.to change { pages.first.reload.answer_settings.as_json }.to(
-        { "only_one_option" => "true",
-          "selection_options" => [{ "name" => "option 1", "value" => "option 1" },
-                                  { "name" => "option 2", "value" => "option 2" }] },
-      )
-    end
-
     it "updates the draft questions with selection options" do
       expect {
         task.invoke
@@ -625,8 +618,15 @@ RSpec.describe "forms.rake", type: :task do
       Rake::Task["forms:convert_declaration_text_to_markdown"]
     end
 
-    let(:form) { create :form, declaration_text: "<p>This is a declaration</p>" }
+    let(:form) { create :form }
     let(:form_document) { form.draft_form_document }
+
+    before do
+      content = form_document.content.deep_dup
+      content["declaration_text"] = { "en" => "<p>This is a declaration</p>" }
+      content.delete("declaration_markdown")
+      form_document.update!(content:)
+    end
 
     it "converts declaration_text to markdown" do
       expect {
@@ -635,7 +635,9 @@ RSpec.describe "forms.rake", type: :task do
     end
 
     it "does not set declaration_markdown if markdown_text is empty" do
-      form.update!(declaration_text: "")
+      content = form_document.content.deep_dup
+      content["declaration_text"] = { "en" => "" }
+      form_document.update!(content:)
 
       expect {
         task.invoke
@@ -645,12 +647,20 @@ RSpec.describe "forms.rake", type: :task do
     it "converts form documents" do
       expect {
         task.invoke
-      }.to change { form_document.reload.content["declaration_markdown"] }.from(nil).to("This is a declaration\n\n")
+      }.to change { form_document.reload.content.dig("declaration_markdown", "en") }.from(nil).to("This is a declaration\n\n")
     end
 
     context "when a form has a Welsh version" do
-      let(:form) { create :form, :with_welsh_translation, declaration_text: "<p>This is a declaration</p>", declaration_text_cy: "<p>This is the Welsh declaration</p>" }
-      let(:form_document) { form.draft_form_document }
+      before do
+        form.available_languages = %w[en cy]
+        content = form_document.content.deep_dup
+        content["declaration_text"] = {
+          "en" => "<p>This is a declaration</p>",
+          "cy" => "<p>This is the Welsh declaration</p>",
+        }
+        content.delete("declaration_markdown")
+        form_document.update!(content:)
+      end
 
       it "converts declaration_text to markdown" do
         expect {

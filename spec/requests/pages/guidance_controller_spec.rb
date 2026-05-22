@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Pages::GuidanceController, type: :request do
-  let(:form) { create :form, id: 1 }
-  let(:pages) { create_list :page, 5, form_id: form.id }
+  let(:form) { create :form, :with_pages }
+  let(:pages) { form.pages }
   let(:page) { pages.first }
   let(:draft_question) { build :draft_question, form_id: form.id }
   let(:page_heading) { "Page heading" }
@@ -100,7 +100,8 @@ RSpec.describe Pages::GuidanceController, type: :request do
   end
 
   describe "#update" do
-    let(:pages) { create_list :page, 5, :with_guidance, form_id: form.id }
+    let(:form) { create(:form, pages_count: 0) }
+    let!(:pages) { create_list(:page, 5, :with_guidance, form:) }
     let(:route_to) { "preview" }
 
     before do

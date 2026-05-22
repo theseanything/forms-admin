@@ -243,7 +243,11 @@ describe "forms/_made_live_form.html.erb" do
   end
 
   context "with a support phone" do
-    let(:form_metadata) { create :form, :live, support_phone: "phone details" }
+    let(:form_document) do
+      content_hash = form_metadata.live_form_document.content.deep_dup
+      content_hash["support_phone"] = { "en" => "phone details" }
+      FormDocument::Content.new(content_hash).tap { |content| content.first_made_live_at = 1.week.ago }
+    end
 
     it "shows the support phone number" do
       expect(rendered).to have_css("h4", text: "Phone")
@@ -252,7 +256,12 @@ describe "forms/_made_live_form.html.erb" do
   end
 
   context "with a support online" do
-    let(:form_metadata) { create :form, :live, support_url_text: "website", support_url: "www.example.gov.uk" }
+    let(:form_document) do
+      content_hash = form_metadata.live_form_document.content.deep_dup
+      content_hash["support_url_text"] = { "en" => "website" }
+      content_hash["support_url"] = { "en" => "www.example.gov.uk" }
+      FormDocument::Content.new(content_hash).tap { |content| content.first_made_live_at = 1.week.ago }
+    end
 
     it "shows the support contact online" do
       expect(rendered).to have_css("h4", text: "Support contact online")
@@ -261,13 +270,14 @@ describe "forms/_made_live_form.html.erb" do
   end
 
   context "with no support information set" do
+    let(:form_metadata) { create(:form, :live) }
     let(:form_document) do
-      form_document_content = FormDocument::Content.from_form_document(form_metadata.live_form_document)
-      form_document_content.support_email = nil
-      form_document_content.support_url_text = nil
-      form_document_content.support_url = nil
-      form_document_content.support_phone = nil
-      form_document_content
+      content_hash = form_metadata.live_form_document.content.deep_dup
+      content_hash["support_email"] = nil
+      content_hash["support_url_text"] = nil
+      content_hash["support_url"] = nil
+      content_hash["support_phone"] = nil
+      FormDocument::Content.new(content_hash).tap { |content| content.first_made_live_at = 1.week.ago }
     end
 
     it "does not include support details if they are not set" do
@@ -332,9 +342,9 @@ describe "forms/_made_live_form.html.erb" do
       let(:status) { :archived }
       let(:form_metadata) { create :form, :archived }
       let(:form_document) do
-        form_document_content = FormDocument::Content.from_form_document(form_metadata.archived_form_document)
-        form_document_content.live_at = 1.week.ago
-        form_document_content
+        FormDocument::Content.from_form_document(form_metadata.archived_form_document).tap do |content|
+          content.first_made_live_at = 1.week.ago
+        end
       end
 
       it "contains a link to make a copy of the form" do
@@ -350,9 +360,9 @@ describe "forms/_made_live_form.html.erb" do
       let(:status) { :archived }
       let(:form_metadata) { create :form, :archived_with_draft }
       let(:form_document) do
-        form_document_content = FormDocument::Content.from_form_document(form_metadata.archived_form_document)
-        form_document_content.live_at = 1.week.ago
-        form_document_content
+        FormDocument::Content.from_form_document(form_metadata.archived_form_document).tap do |content|
+          content.first_made_live_at = 1.week.ago
+        end
       end
 
       it "contains a link to make a copy of the form" do
@@ -371,9 +381,16 @@ describe "forms/_made_live_form.html.erb" do
     end
 
     context "when the form is live and the form has a welsh translation" do
-      let(:form_metadata) { create :form, :live, :with_welsh_translation }
+      let(:what_happens_next_markdown_cy) { "Os nad ydych wedi derbyn ymateb o fewn 5 diwrnod gwaith, [cysylltwch â’n tîm cymorth defnyddwyr](https://example.com)." }
+      let(:form_metadata) do
+        create(:form, :ready_for_live, :with_welsh_translation, what_happens_next_markdown:, submission_type:, submission_format:).tap do |f|
+          f.what_happens_next_markdown_cy = what_happens_next_markdown_cy
+          f.privacy_policy_url_cy = "https://www.gov.uk/privacy_cy"
+          FormDocumentFactoryHelpers.create_live_form!(f)
+        end
+      end
       let(:welsh_form_document) do
-        FormDocument::Content.from_form_document(form_metadata.live_welsh_form_document)
+        FormDocument::Content.from_form_document(form_metadata.live_welsh_form_document).as_welsh
       end
 
       it "template contains a link to archive the welsh version of the form" do
@@ -423,11 +440,17 @@ describe "forms/_made_live_form.html.erb" do
 
   context "when the form has a Welsh translation" do
     let(:what_happens_next_markdown_cy) { "Os nad ydych wedi derbyn ymateb o fewn 5 diwrnod gwaith, [cysylltwch â’n tîm cymorth defnyddwyr](https://example.com)." }
-    let(:form_metadata) { create :form, :live, :with_welsh_translation, what_happens_next_markdown:, what_happens_next_markdown_cy:, submission_type:, submission_format: }
+    let(:form_metadata) do
+      create(:form, :ready_for_live, :with_welsh_translation, what_happens_next_markdown:, submission_type:, submission_format:).tap do |f|
+        f.what_happens_next_markdown_cy = what_happens_next_markdown_cy
+        f.privacy_policy_url_cy = "https://www.gov.uk/privacy_cy"
+        FormDocumentFactoryHelpers.create_live_form!(f)
+      end
+    end
     let(:welsh_form_document) do
-      form_document_content = FormDocument::Content.from_form_document(form_metadata.live_welsh_form_document)
-      form_document_content.first_made_live_at = 1.week.ago
-      form_document_content
+      FormDocument::Content.from_form_document(form_metadata.live_welsh_form_document).tap do |content|
+        content.first_made_live_at = 1.week.ago
+      end.as_welsh
     end
 
     it "includes the Welsh name of the form" do
@@ -462,7 +485,14 @@ describe "forms/_made_live_form.html.erb" do
     end
 
     context "when the form has a declaration" do
-      let(:form_metadata) { create :form, :live, :with_welsh_translation, declaration_markdown:, what_happens_next_markdown:, submission_type:, submission_format: }
+      let(:form_metadata) do
+        create(:form, :ready_for_live, :with_welsh_translation, declaration_markdown:, what_happens_next_markdown:, submission_type:, submission_format:).tap do |f|
+          f.what_happens_next_markdown_cy = what_happens_next_markdown_cy
+          f.declaration_markdown_cy = "Welsh declaration"
+          f.privacy_policy_url_cy = "https://www.gov.uk/privacy_cy"
+          FormDocumentFactoryHelpers.create_live_form!(f)
+        end
+      end
 
       it "contains a table displaying the declaration text in each language" do
         expect(rendered).to have_css(".govuk-summary-card__title", text: "Declaration")
@@ -475,7 +505,15 @@ describe "forms/_made_live_form.html.erb" do
 
     context "when the form has a GOV.UK Pay payment link" do
       let(:payment_url) { "https://www.gov.uk/payments/your-payment-link" }
-      let(:form_metadata) { create :form, :live, :with_welsh_translation, declaration_markdown:, what_happens_next_markdown:, submission_type:, submission_format:, payment_url: }
+      let(:form_metadata) do
+        create(:form, :ready_for_live, :with_welsh_translation, declaration_markdown:, what_happens_next_markdown:, submission_type:, submission_format:, payment_url:).tap do |f|
+          f.what_happens_next_markdown_cy = what_happens_next_markdown_cy
+          f.declaration_markdown_cy = "Welsh declaration"
+          f.payment_url_cy = "https://www.gov.uk/payments/your-welsh-payment-link"
+          f.privacy_policy_url_cy = "https://www.gov.uk/privacy_cy"
+          FormDocumentFactoryHelpers.create_live_form!(f)
+        end
+      end
 
       it "contains a table displaying the payment link in each language" do
         expect(rendered).to have_css(".govuk-summary-card__title", text: "GOV.UK Pay payment link")
@@ -495,7 +533,34 @@ describe "forms/_made_live_form.html.erb" do
     end
 
     context "with support details" do
-      let(:form_metadata) { create :form, :live, :with_welsh_translation, what_happens_next_markdown:, submission_type:, submission_format:, support_email: "support@example.gov.uk", support_phone: "phone details", support_url_text: "website", support_url: "www.example.gov.uk" }
+      let(:form_metadata) do
+        create(:form, :ready_for_live, :with_welsh_translation, what_happens_next_markdown:, submission_type:, submission_format:).tap do |f|
+          f.what_happens_next_markdown_cy = what_happens_next_markdown_cy
+          f.declaration_markdown_cy = "Welsh declaration"
+          f.privacy_policy_url_cy = "https://www.gov.uk/privacy_cy"
+          f.support_email_cy = "Welsh support email"
+          f.support_phone_cy = "Welsh phone details"
+          f.support_url_text_cy = "Welsh website"
+          f.support_url_cy = "https://www.example.wales.gov.uk"
+          FormDocumentFactoryHelpers.create_live_form!(f)
+        end
+      end
+      let(:form_document) do
+        content_hash = form_metadata.live_form_document.content.deep_dup
+        content_hash["support_email"] = { "en" => "support@example.gov.uk" }
+        content_hash["support_phone"] = { "en" => "phone details" }
+        content_hash["support_url_text"] = { "en" => "website" }
+        content_hash["support_url"] = { "en" => "https://www.example.gov.uk" }
+        FormDocument::Content.new(content_hash).tap { |content| content.first_made_live_at = 1.week.ago }
+      end
+      let(:welsh_form_document) do
+        content_hash = form_metadata.live_form_document.content.deep_dup
+        content_hash["support_email"] = { "en" => "support@example.gov.uk", "cy" => "Welsh support email" }
+        content_hash["support_phone"] = { "en" => "phone details", "cy" => "Welsh phone details" }
+        content_hash["support_url_text"] = { "en" => "website", "cy" => "Welsh website" }
+        content_hash["support_url"] = { "en" => "https://www.example.gov.uk", "cy" => "https://www.example.wales.gov.uk" }
+        FormDocument::Content.new(content_hash).tap { |content| content.first_made_live_at = 1.week.ago }.as_welsh
+      end
 
       it "contains a table displaying the support details in each language" do
         expect(rendered).to have_css(".govuk-summary-card__title", text: "Your form’s contact details for support")

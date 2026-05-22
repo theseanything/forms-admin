@@ -86,8 +86,8 @@ RSpec.describe "pages/delete" do
   end
 
   describe "when page to delete is at the end of one or more routes" do
-    let(:routing_page) { build :page, id: 1, position: 2 }
-    let(:page) { build :page, id: 2, position: 7 }
+    let(:routing_page) { create(:page, form: current_form, id: 1, position: 2) }
+    let(:page) { create(:page, form: current_form, id: 2, position: 7) }
 
     before do
       assign(:routing, :end_of_route)
@@ -123,8 +123,8 @@ RSpec.describe "pages/delete" do
   end
 
   describe "when page to delete is start of a secondary skip route" do
-    let(:check_page) { build(:page, id: 2, form_id: 1, position: 1) }
-    let(:page) { build(:page, id: 1, form_id: 1, position: 2) }
+    let(:check_page) { create(:page, form: current_form, id: 2, position: 1) }
+    let(:page) { create(:page, form: current_form, id: 1, position: 2) }
 
     before do
       assign(:routing, :start_of_secondary_skip_route)
@@ -160,8 +160,8 @@ RSpec.describe "pages/delete" do
   end
 
   describe "when page to delete is at the end of a secondary skip route" do
-    let(:check_page) { build(:page, id: 1, form_id: 1, position: 3) }
-    let(:page) { build(:page, id: 9, form_id: 1, position: 12) }
+    let(:check_page) { create(:page, form: current_form, id: 1, position: 3) }
+    let(:page) { create(:page, form: current_form, id: 9, position: 12) }
 
     before do
       assign(:routing, :end_of_secondary_skip_route)

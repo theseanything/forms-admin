@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Forms::WelshTranslationController, type: :request do
   let(:form) { create(:form, :ready_for_routing, welsh_completed: false) }
   let(:id) { form.id }
-  let(:condition) { create :condition, routing_page: form.pages.first, answer_value: "No", exit_page_heading: "You are ineligible", exit_page_markdown: "Sorry, you are ineligible for this service." }
+  let(:condition) { create :condition, form:, routing_page: form.pages.first, answer_value: "No", exit_page_heading: "You are ineligible", exit_page_markdown: "Sorry, you are ineligible for this service." }
 
   let(:current_user) { standard_user }
   let(:group) { create(:group, organisation: standard_user.organisation) }

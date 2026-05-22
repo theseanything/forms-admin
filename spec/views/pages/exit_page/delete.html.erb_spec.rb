@@ -1,14 +1,10 @@
 require "rails_helper"
 
 describe "pages/exit_page/delete.html.erb" do
-  let(:form) { create :form }
-  let(:pages) do
-    build_list(:page, 3) do |page, i|
-      page.id = i + 1
-    end
-  end
+  let(:form) { create(:form, pages_count: 3) }
+  let(:pages) { form.pages }
   let(:exit_page_input) { Pages::DeleteExitPageInput.new }
-  let(:exit_page) { build :condition, :with_exit_page, id: 1 }
+  let(:exit_page) { create(:condition, :with_exit_page, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1") }
 
   before do
     assign(:current_form, form)

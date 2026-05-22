@@ -3,7 +3,11 @@ require "rails_helper"
 describe RouteSummaryCardDataPresenter do
   include Capybara::RSpecMatchers
 
-  subject(:service) { described_class.new(form:, page:) }
+  subject(:service) do
+    reloaded_form = form.reload
+    reloaded_page = reloaded_form.pages.detect { |step| step.id.to_s == page.id.to_s }
+    described_class.new(form: reloaded_form, page: reloaded_page)
+  end
 
   let(:form) { create :form, :ready_for_routing }
   let(:pages) { form.pages }
@@ -16,11 +20,11 @@ describe RouteSummaryCardDataPresenter do
   describe "#summary_card_data" do
     context "with conditional routes" do
       before do
-        pages.each(&:reload)
+        form.reload
       end
 
       context "when there is a valid condition" do
-        let!(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "Option 1" }
+        let!(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "Option 1" }
 
         it "returns an array of route cards" do
           result = service.summary_card_data
@@ -36,7 +40,7 @@ describe RouteSummaryCardDataPresenter do
 
       context "when the goto_page does not exist" do
         before do
-          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: 127, answer_value: "Option 1"
+          create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: 127, answer_value: "Option 1"
         end
 
         it "uses placeholder text instead of question text" do
@@ -47,7 +51,7 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when the condition has an exit page data" do
-      let!(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1" }
+      let!(:condition) { create :condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1" }
 
       before do
         pages.each(&:reload)
@@ -61,7 +65,7 @@ describe RouteSummaryCardDataPresenter do
 
     context "with skip to end condition" do
       before do
-        create :condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", skip_to_end: true
+        create :condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", skip_to_end: true
         pages.each(&:reload)
       end
 
@@ -72,8 +76,8 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "with conditional routes and secondary skip routes" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Option 1" }
-      let(:secondary_skip_condition) { create :condition, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.last.id }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Option 1" }
+      let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "" }
 
       before do
         condition
@@ -99,7 +103,7 @@ describe RouteSummaryCardDataPresenter do
       end
 
       context "when the route's check answer does not exist" do
-        let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Non-existent-option" }
+        let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Non-existent-option" }
 
         it "shows an error message" do
           result = service.summary_card_data
@@ -109,7 +113,7 @@ describe RouteSummaryCardDataPresenter do
       end
 
       context "when route 1 does not skip any questions" do
-        let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "Option 1" }
+        let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "Option 1" }
 
         it "shows an error message" do
           result = service.summary_card_data
@@ -120,7 +124,7 @@ describe RouteSummaryCardDataPresenter do
 
       context "when route 1 routes to a previous question" do
         let(:page) { pages.second }
-        let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.first.id, answer_value: "Option 1" }
+        let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.first.id, answer_value: "Option 1" }
 
         it "shows an error message" do
           result = service.summary_card_data
@@ -130,7 +134,7 @@ describe RouteSummaryCardDataPresenter do
       end
 
       context "when the any other answer route does not skip a question" do
-        let(:secondary_skip_condition) { create :condition, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.fourth.id }
+        let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "" }
 
         it "shows an error message" do
           result = service.summary_card_data
@@ -140,7 +144,7 @@ describe RouteSummaryCardDataPresenter do
       end
 
       context "when the any other answer route skips to a previous question" do
-        let(:secondary_skip_condition) { create :condition, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.second.id }
+        let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "" }
 
         it "shows an error message" do
           result = service.summary_card_data
@@ -159,8 +163,8 @@ describe RouteSummaryCardDataPresenter do
   end
 
   describe "#routes" do
-    let!(:condition) { create :condition, routing_page: page, check_page: page, goto_page: pages.third, answer_value: "Option 1" }
-    let!(:secondary_skip_condition) { create :condition, routing_page: pages.second, check_page: page, goto_page: pages.fourth }
+    let!(:condition) { create :condition, form:, routing_page: page, check_page: page, goto_page: pages.third, answer_value: "Option 1" }
+    let!(:secondary_skip_condition) { create :condition, form:, routing_page: pages.third, check_page: page, goto_page: pages.fourth, answer_value: "" }
 
     before do
       pages.each(&:reload)
@@ -168,7 +172,7 @@ describe RouteSummaryCardDataPresenter do
 
     it "returns the conditions that check this page" do
       expect(service.routes.count).to eq 2
-      expect(service.routes).to contain_exactly(condition, secondary_skip_condition)
+      expect(service.routes.map(&:id)).to contain_exactly(condition.id, secondary_skip_condition.id)
     end
   end
 
@@ -179,13 +183,13 @@ describe RouteSummaryCardDataPresenter do
   end
 
   describe "#errors" do
-    let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Option 1" }
-    let(:secondary_skip_condition) { create :condition, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.last.id }
+    let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Option 1" }
+    let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "" }
 
     before do
       condition
-      secondary_skip_condition
-      pages.each(&:reload)
+      secondary_skip_condition if secondary_skip_condition
+      form.reload
     end
 
     it "returns an array of errors" do
@@ -193,7 +197,8 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a check error" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Non-existent-answer" }
+      let(:secondary_skip_condition) { nil }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Non-existent-answer" }
 
       it "contains the check error link and message" do
         expect(service.errors).to eq([OpenStruct.new(link: "#check-#{condition.id}", message: I18n.t("page_route_card.errors.answer_value_doesnt_exist"))])
@@ -201,7 +206,8 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a next page error" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "Option 1" }
+      let(:secondary_skip_condition) { nil }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "Option 1" }
 
       it "contains the next page error link and message" do
         expect(service.errors).to eq([OpenStruct.new(link: "#goto-#{condition.id}", message: I18n.t("page_route_card.errors.cannot_route_to_next_page"))])
@@ -209,7 +215,8 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a next page error for the secondary skip" do
-      let(:secondary_skip_condition) { create :condition, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.fourth.id }
+      let(:condition) { nil }
+      let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "" }
 
       it "contains the secondary skip next page error link and message" do
         expect(service.errors).to eq([OpenStruct.new(link: "#goto-#{secondary_skip_condition.id}", message: I18n.t("page_route_card.errors.cannot_route_to_next_page_secondary_skip"))])
@@ -217,8 +224,9 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a goto page before routing page error" do
+      let(:secondary_skip_condition) { nil }
       let(:page) { pages.second }
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.first.id, answer_value: "Option 1" }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.first.id, answer_value: "Option 1" }
 
       it "contains the goto page before routing page error link and message" do
         expect(service.errors).to eq([OpenStruct.new(link: "#goto-#{condition.id}", message: I18n.t("page_route_card.errors.cannot_have_goto_page_before_routing_page", question_number: 2))])
@@ -226,7 +234,8 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a goto page before routing page error for the secondary skip" do
-      let(:secondary_skip_condition) { create :condition, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.second.id }
+      let(:condition) { nil }
+      let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "" }
 
       it "contains the secondary skip goto page before routing page error link and message" do
         expect(service.errors).to eq([OpenStruct.new(link: "#goto-#{secondary_skip_condition.id}", message: I18n.t("page_route_card.errors.cannot_have_goto_page_before_routing_page_secondary_skip"))])

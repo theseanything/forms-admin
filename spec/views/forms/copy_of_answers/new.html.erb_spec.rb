@@ -1,7 +1,7 @@
 require "rails_helper"
 
 describe "forms/copy_of_answers/new.html.erb" do
-  let(:form) { build(:form, id: 1, send_copy_of_answers:) }
+  let(:form) { create(:form, id: 1, send_copy_of_answers:) }
   let(:send_copy_of_answers) { "enabled" }
   let(:copy_of_answers_input) { Forms::CopyOfAnswersInput.new(form:).assign_form_values }
 

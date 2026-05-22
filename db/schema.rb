@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_234401) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_153000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -37,7 +37,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_234401) do
     t.boolean "is_optional"
     t.boolean "is_repeatable"
     t.text "page_heading"
-    t.integer "page_id"
+    t.string "page_id"
     t.text "question_text"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false

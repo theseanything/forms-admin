@@ -37,54 +37,56 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
 
   describe "#submit" do
     let(:form) do
-      create :form,
-             name_cy: "New Welsh name",
-             what_happens_next_markdown: "English what happens next",
-             what_happens_next_markdown_cy: "New Welsh what happens next",
-             declaration_markdown: "English declaration",
-             declaration_markdown_cy: "New Welsh declaration",
-             support_email: "english-support@example.gov.uk",
-             support_email_cy: "new-welsh-support@example.gov.uk",
-             support_phone: "English support phone",
-             support_phone_cy: "0800 123 4567",
-             support_url: "https://www.gov.uk/english-support",
-             support_url_cy: "https://www.gov.uk/new-welsh-support",
-             support_url_text: "English support url text",
-             support_url_text_cy: "New Welsh Support",
-             privacy_policy_url: "https://www.gov.uk/english-privacy",
-             privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
-             payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
-             available_languages: %w[en cy],
-             welsh_completed: true,
-             pages: [page]
-    end
-
-    let(:page) do
-      create :page,
-             question_text_cy: "Ydych chi'n adnewyddu trwydded?",
-             hint_text: "English hint text",
-             hint_text_cy: "Dewiswch 'Ydw' os oes gennych drwydded ddilys eisoes.",
-             page_heading: "English page heading",
-             page_heading_cy: "Trwyddedu",
-             guidance_markdown: "English guidance",
-             guidance_markdown_cy: "Mae'r rhan hon o'r ffurflen yn ymwneud â thrwyddedu.",
-             answer_settings_cy: {
-               selection_options: [
-                 { name: "Welsh option 1", value: "Option 1" },
-                 { name: "Welsh option 2", value: "Option 2" },
-               ],
-               none_of_the_above_question: {
-                 question_text: "Welsh none of the above question?",
-               },
-             }
-    end
-
-    let(:condition) do
-      create :condition,
-             routing_page: page,
+      f = create(:form,
+                 pages_count: 0,
+                 name_cy: "New Welsh name",
+                 what_happens_next_markdown: "English what happens next",
+                 what_happens_next_markdown_cy: "New Welsh what happens next",
+                 declaration_markdown: "English declaration",
+                 declaration_markdown_cy: "New Welsh declaration",
+                 support_email: "english-support@example.gov.uk",
+                 support_email_cy: "new-welsh-support@example.gov.uk",
+                 support_phone: "English support phone",
+                 support_phone_cy: "0800 123 4567",
+                 support_url: "https://www.gov.uk/english-support",
+                 support_url_cy: "https://www.gov.uk/new-welsh-support",
+                 support_url_text: "English support url text",
+                 support_url_text_cy: "New Welsh Support",
+                 privacy_policy_url: "https://www.gov.uk/english-privacy",
+                 privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
+                 payment_url: "https://www.gov.uk/english-payment",
+                 payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
+                 available_languages: %w[en cy],
+                 welsh_completed: true)
+      created_page = create(:page,
+                            form: f,
+                            question_text_cy: "Ydych chi'n adnewyddu trwydded?",
+                            hint_text: "English hint text",
+                            hint_text_cy: "Dewiswch 'Ydw' os oes gennych drwydded ddilys eisoes.",
+                            page_heading: "English page heading",
+                            page_heading_cy: "Trwyddedu",
+                            guidance_markdown: "English guidance",
+                            guidance_markdown_cy: "Mae'r rhan hon o'r ffurflen yn ymwneud â thrwyddedu.",
+                            answer_settings_cy: {
+                              selection_options: [
+                                { name: "Welsh option 1", value: "Option 1" },
+                                { name: "Welsh option 2", value: "Option 2" },
+                              ],
+                              none_of_the_above_question: {
+                                question_text: "Welsh none of the above question?",
+                              },
+                            })
+      create(:condition,
+             form: f,
+             routing_page: created_page,
              exit_page_markdown_cy: "Nid ydych yn gymwys",
-             exit_page_heading_cy: "Mae'n ddrwg gennym, nid ydych yn gymwys ar gyfer y gwasanaeth hwn."
+             exit_page_heading_cy: "Mae'n ddrwg gennym, nid ydych yn gymwys ar gyfer y gwasanaeth hwn.")
+      f.reload
     end
+
+    let(:page) { form.pages.first }
+
+    let(:condition) { page.routing_conditions.first }
 
     context "when the input is invalid" do
       it "returns false" do
@@ -153,28 +155,9 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
         end
 
         context "when the form is live" do
-          let(:form)  do
-            create :form,
-                   :live,
-                   name_cy: "New Welsh name",
-                   what_happens_next_markdown: "English what happens next",
-                   what_happens_next_markdown_cy: "New Welsh what happens next",
-                   declaration_markdown: "English declaration",
-                   declaration_markdown_cy: "New Welsh declaration",
-                   support_email: "english-support@example.gov.uk",
-                   support_email_cy: "new-welsh-support@example.gov.uk",
-                   support_phone: "English support phone",
-                   support_phone_cy: "0800 123 4567",
-                   support_url: "https://www.gov.uk/english-support",
-                   support_url_cy: "https://www.gov.uk/new-welsh-support",
-                   support_url_text: "English support url text",
-                   support_url_text_cy: "New Welsh Support",
-                   privacy_policy_url: "https://www.gov.uk/english-privacy",
-                   privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
-                   payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
-                   available_languages: %w[en cy],
-                   welsh_completed: true,
-                   pages: [page]
+          before do
+            form.update!(question_section_completed: true, declaration_section_completed: true, share_preview_completed: true)
+            FormDocumentFactoryHelpers.publish_form!(form) unless form.has_live_version
           end
 
           it "sets the form_status to `live_with_draft`" do
@@ -183,28 +166,10 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
         end
 
         context "when the form is archived" do
-          let(:form)  do
-            create :form,
-                   :archived,
-                   name_cy: "New Welsh name",
-                   what_happens_next_markdown: "English what happens next",
-                   what_happens_next_markdown_cy: "New Welsh what happens next",
-                   declaration_markdown: "English declaration",
-                   declaration_markdown_cy: "New Welsh declaration",
-                   support_email: "english-support@example.gov.uk",
-                   support_email_cy: "new-welsh-support@example.gov.uk",
-                   support_phone: "English support phone",
-                   support_phone_cy: "0800 123 4567",
-                   support_url: "https://www.gov.uk/english-support",
-                   support_url_cy: "https://www.gov.uk/new-welsh-support",
-                   support_url_text: "English support url text",
-                   support_url_text_cy: "New Welsh Support",
-                   privacy_policy_url: "https://www.gov.uk/english-privacy",
-                   privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
-                   payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
-                   available_languages: %w[en cy],
-                   welsh_completed: true,
-                   pages: [page]
+          before do
+            form.update!(question_section_completed: true, declaration_section_completed: true, share_preview_completed: true)
+            FormDocumentFactoryHelpers.publish_form!(form) unless form.has_live_version
+            FormDocumentFactoryHelpers.archive_form!(form) unless form.archived?
           end
 
           it "sets the form_status to `archived_with_draft`" do
@@ -217,54 +182,56 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
 
   describe "#submit_without_confirm" do
     let(:form) do
-      create :form,
-             name_cy: "New Welsh name",
-             what_happens_next_markdown: "English what happens next",
-             what_happens_next_markdown_cy: "New Welsh what happens next",
-             declaration_text: "English declaration",
-             declaration_text_cy: "New Welsh declaration",
-             support_email: "english-support@example.gov.uk",
-             support_email_cy: "new-welsh-support@example.gov.uk",
-             support_phone: "English support phone",
-             support_phone_cy: "0800 123 4567",
-             support_url: "https://www.gov.uk/english-support",
-             support_url_cy: "https://www.gov.uk/new-welsh-support",
-             support_url_text: "English support url text",
-             support_url_text_cy: "New Welsh Support",
-             privacy_policy_url: "https://www.gov.uk/english-privacy",
-             privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
-             payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
-             available_languages: %w[en cy],
-             welsh_completed: true,
-             pages: [page]
-    end
-
-    let(:page) do
-      create :page,
-             question_text_cy: "Ydych chi'n adnewyddu trwydded?",
-             hint_text: "English hint text",
-             hint_text_cy: "Dewiswch 'Ydw' os oes gennych drwydded ddilys eisoes.",
-             page_heading: "English page heading",
-             page_heading_cy: "Trwyddedu",
-             guidance_markdown: "English guidance",
-             guidance_markdown_cy: "Mae'r rhan hon o'r ffurflen yn ymwneud â thrwyddedu.",
-             answer_settings_cy: {
-               selection_options: [
-                 { name: "Welsh option 1", value: "Option 1" },
-                 { name: "Welsh option 2", value: "Option 2" },
-               ],
-               none_of_the_above_question: {
-                 question_text: "Welsh none of the above question?",
-               },
-             }
-    end
-
-    let(:condition) do
-      create :condition,
-             routing_page: page,
+      f = create(:form,
+                 pages_count: 0,
+                 name_cy: "New Welsh name",
+                 what_happens_next_markdown: "English what happens next",
+                 what_happens_next_markdown_cy: "New Welsh what happens next",
+                 declaration_markdown: "English declaration",
+                 declaration_markdown_cy: "New Welsh declaration",
+                 support_email: "english-support@example.gov.uk",
+                 support_email_cy: "new-welsh-support@example.gov.uk",
+                 support_phone: "English support phone",
+                 support_phone_cy: "0800 123 4567",
+                 support_url: "https://www.gov.uk/english-support",
+                 support_url_cy: "https://www.gov.uk/new-welsh-support",
+                 support_url_text: "English support url text",
+                 support_url_text_cy: "New Welsh Support",
+                 privacy_policy_url: "https://www.gov.uk/english-privacy",
+                 privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
+                 payment_url: "https://www.gov.uk/english-payment",
+                 payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
+                 available_languages: %w[en cy],
+                 welsh_completed: true)
+      created_page = create(:page,
+                            form: f,
+                            question_text_cy: "Ydych chi'n adnewyddu trwydded?",
+                            hint_text: "English hint text",
+                            hint_text_cy: "Dewiswch 'Ydw' os oes gennych drwydded ddilys eisoes.",
+                            page_heading: "English page heading",
+                            page_heading_cy: "Trwyddedu",
+                            guidance_markdown: "English guidance",
+                            guidance_markdown_cy: "Mae'r rhan hon o'r ffurflen yn ymwneud â thrwyddedu.",
+                            answer_settings_cy: {
+                              selection_options: [
+                                { name: "Welsh option 1", value: "Option 1" },
+                                { name: "Welsh option 2", value: "Option 2" },
+                              ],
+                              none_of_the_above_question: {
+                                question_text: "Welsh none of the above question?",
+                              },
+                            })
+      create(:condition,
+             form: f,
+             routing_page: created_page,
              exit_page_markdown_cy: "Nid ydych yn gymwys",
-             exit_page_heading_cy: "Mae'n ddrwg gennym, nid ydych yn gymwys ar gyfer y gwasanaeth hwn."
+             exit_page_heading_cy: "Mae'n ddrwg gennym, nid ydych yn gymwys ar gyfer y gwasanaeth hwn.")
+      f.reload
     end
+
+    let(:page) { form.pages.first }
+
+    let(:condition) { page.routing_conditions.first }
 
     context "when called" do
       it "returns true" do
@@ -273,7 +240,7 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
 
       it "deletes all of the welsh form content" do
         expect { delete_welsh_translation_input.submit_without_confirm }.to change { form.reload.what_happens_next_markdown_cy }.to(nil)
-          .and change { form.reload.declaration_text_cy }.to(nil)
+          .and change { form.reload.declaration_markdown_cy }.to(nil)
           .and change { form.reload.support_email_cy }.to(nil)
           .and change { form.reload.support_phone_cy }.to(nil)
           .and change { form.reload.support_url_cy }.to(nil)
@@ -304,28 +271,9 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
       end
 
       context "when the form is live" do
-        let(:form) do
-          create :form,
-                 :live,
-                 name_cy: "New Welsh name",
-                 what_happens_next_markdown: "English what happens next",
-                 what_happens_next_markdown_cy: "New Welsh what happens next",
-                 declaration_text: "English declaration",
-                 declaration_text_cy: "New Welsh declaration",
-                 support_email: "english-support@example.gov.uk",
-                 support_email_cy: "new-welsh-support@example.gov.uk",
-                 support_phone: "English support phone",
-                 support_phone_cy: "0800 123 4567",
-                 support_url: "https://www.gov.uk/english-support",
-                 support_url_cy: "https://www.gov.uk/new-welsh-support",
-                 support_url_text: "English support url text",
-                 support_url_text_cy: "New Welsh Support",
-                 privacy_policy_url: "https://www.gov.uk/english-privacy",
-                 privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
-                 payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
-                 available_languages: %w[en cy],
-                 welsh_completed: true,
-                 pages: [page]
+        before do
+          form.update!(question_section_completed: true, declaration_section_completed: true, share_preview_completed: true)
+          FormDocumentFactoryHelpers.publish_form!(form) unless form.has_live_version
         end
 
         it "sets the form_status to `live_with_draft`" do
@@ -334,28 +282,10 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
       end
 
       context "when the form is archived" do
-        let(:form)  do
-          create :form,
-                 :archived,
-                 name_cy: "New Welsh name",
-                 what_happens_next_markdown: "English what happens next",
-                 what_happens_next_markdown_cy: "New Welsh what happens next",
-                 declaration_text: "English declaration",
-                 declaration_text_cy: "New Welsh declaration",
-                 support_email: "english-support@example.gov.uk",
-                 support_email_cy: "new-welsh-support@example.gov.uk",
-                 support_phone: "English support phone",
-                 support_phone_cy: "0800 123 4567",
-                 support_url: "https://www.gov.uk/english-support",
-                 support_url_cy: "https://www.gov.uk/new-welsh-support",
-                 support_url_text: "English support url text",
-                 support_url_text_cy: "New Welsh Support",
-                 privacy_policy_url: "https://www.gov.uk/english-privacy",
-                 privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
-                 payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
-                 available_languages: %w[en cy],
-                 welsh_completed: true,
-                 pages: [page]
+        before do
+          form.update!(question_section_completed: true, declaration_section_completed: true, share_preview_completed: true)
+          FormDocumentFactoryHelpers.publish_form!(form) unless form.has_live_version
+          FormDocumentFactoryHelpers.archive_form!(form) unless form.archived?
         end
 
         it "sets the form_status to `archived_with_draft`" do

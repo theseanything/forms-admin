@@ -8,7 +8,7 @@ describe "reports/add_another_answer.html.erb" do
   let(:report) do
     OpenStruct.new(
       count: 1,
-      forms: [OpenStruct.new(form_id:, name:, state:, repeatable_pages: [OpenStruct.new(page_id: 5, question_text:)])],
+      forms: [OpenStruct.new(form_id:, name:, lifecycle_status: state, repeatable_pages: [OpenStruct.new(page_id: 5, question_text:)])],
     )
   end
 

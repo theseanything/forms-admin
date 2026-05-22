@@ -11,30 +11,29 @@ RSpec.describe Reports::FormsCsvReportService do
   let(:group_external_id) { Faker::Alphanumeric.alphanumeric(number: 8) }
   let(:form_documents) do
     forms.map do |form|
-      # FormDocumentsService adds in the organisation and group details as part of the database query
-      form.live_form_document.as_json
-          .merge({
-            "organisation_name" => organisation_name,
-            "organisation_id" => organisation_id,
-            "group_name" => group_name,
-            "group_external_id" => group_external_id,
-          })
+      FormDocumentFactoryHelpers.report_form_document_json(form).merge(
+        "organisation_name" => organisation_name,
+        "organisation_id" => organisation_id,
+        "group_name" => group_name,
+        "group_external_id" => group_external_id,
+      )
     end
   end
   let(:form) do
-    create(:form, :live, :with_support, submission_type: "email", submission_format: %w[csv json],
-                                        payment_url: "https://www.gov.uk/payments/organisation/service", send_daily_submission_batch: true,
-                                        send_weekly_submission_batch: true, pages: [
-                                          create(:page, :with_address_settings, is_repeatable: true),
-                                          create(:page, :with_date_settings),
-                                          create(:page, answer_type: "email"),
-                                          create(:page, :with_full_name_settings),
-                                          create(:page, answer_type: "national_insurance_number"),
-                                          create(:page, answer_type: "number"),
-                                          create(:page, answer_type: "phone_number"),
-                                          create(:page, :with_selection_settings, is_optional: true),
-                                          create(:page, :with_single_line_text_settings, is_repeatable: true),
-                                        ])
+    f = create(:form, :ready_for_live, :with_support, pages_count: 0, submission_type: "email", submission_format: %w[csv json],
+                                                       payment_url: "https://www.gov.uk/payments/organisation/service", send_daily_submission_batch: true,
+                                                       send_weekly_submission_batch: true)
+    create(:page, :with_address_settings, form: f, is_repeatable: true)
+    create(:page, :with_date_settings, form: f)
+    create(:page, form: f, answer_type: "email")
+    create(:page, :with_full_name_settings, form: f)
+    create(:page, form: f, answer_type: "national_insurance_number")
+    create(:page, form: f, answer_type: "number")
+    create(:page, form: f, answer_type: "phone_number")
+    create(:page, :with_selection_settings, form: f, is_optional: true)
+    create(:page, :with_single_line_text_settings, form: f, is_repeatable: true)
+    FormDocumentFactoryHelpers.publish_form!(f)
+    f.reload
   end
   let(:forms) { [form, create(:form, :live)] }
 
@@ -57,8 +56,8 @@ RSpec.describe Reports::FormsCsvReportService do
         organisation_id.to_s,
         group_name,
         group_external_id,
-        form.created_at.iso8601(6),
-        form.first_made_live_at.iso8601(6),
+        form_documents.first["content"]["created_at"],
+        form_documents.first["content"]["live_at"],
         form_documents.first["content"]["live_at"],
         "9",
         "false",

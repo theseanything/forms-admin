@@ -61,17 +61,18 @@ private
 
   def build_title
     page_number = page_number(@step)
-    heading = @step.page_heading
-    question = @step.question_text
+    heading = localized_step_field(@step, :page_heading)
+    question = localized_step_field(@step, :question_text)
 
+    answer_type = @step.try(:answer_type) || @step.data&.answer_type
     # Use the actual heading instead of the question text for the title on file upload type
-    title = if @step.answer_type == "file" && heading.present?
+    title = if answer_type.to_s == "file" && heading.present?
               "#{page_number}. #{heading}"
             else
               "#{page_number}. #{question}"
             end
 
-    title += " (optional)" if @step.is_optional? && @step.answer_type != "selection"
+    title += " (optional)" if @step.is_optional? && answer_type.to_s != "selection"
 
     title += "<br><span lang=\"cy\" class=\"govuk-!-font-weight-regular\">#{build_title_cy}</span>" if welsh_step.present?
 
@@ -80,11 +81,12 @@ private
 
   def build_title_cy
     page_number = welsh_step.position
-    heading = welsh_step.page_heading
-    question = welsh_step.question_text
+    heading = localized_step_field(welsh_step, :page_heading, locale: :cy)
+    question = localized_step_field(welsh_step, :question_text, locale: :cy)
 
+    welsh_answer_type = welsh_step.try(:answer_type) || welsh_step.data&.answer_type
     # Use the actual heading instead of the question text for the title on file upload type
-    title = if welsh_step.answer_type == "file" && heading.present?
+    title = if welsh_answer_type.to_s == "file" && heading.present?
               "#{page_number}. #{heading}"
             else
               "#{page_number}. #{question}"
@@ -93,6 +95,17 @@ private
     title += " (dewisol)" if welsh_step.is_optional? && welsh_step.answer_type != "selection"
 
     title
+  end
+
+  def localized_step_field(step, field, locale: :en)
+    value = if step.is_a?(FormDocument::Step)
+              step.data&.public_send(field)
+            elsif step.is_a?(FormStep)
+              step.public_send(:"#{field}_for", locale)
+            else
+              step.public_send(field)
+            end
+    TranslatableString.for_locale(value, locale:) || value.to_s
   end
 
   def page_number(step)

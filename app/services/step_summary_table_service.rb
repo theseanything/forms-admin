@@ -16,10 +16,10 @@ class StepSummaryTableService
   def values_with_welsh_content
     rows = []
 
-    rows.push(page_heading_row) if @step.respond_to?(:page_heading) && @step.page_heading.present?
-    rows.push(guidance_markdown_row) if @step.respond_to?(:guidance_markdown) && @step.guidance_markdown.present?
-    rows.push(question_text_row) if @step.page_heading.present?
-    rows.push(hint_row) if @step.hint_text.present?
+    rows.push(page_heading_row) if @step.respond_to?(:page_heading) && localized_present?(@step.page_heading)
+    rows.push(guidance_markdown_row) if @step.respond_to?(:guidance_markdown) && localized_present?(@step.guidance_markdown)
+    rows.push(question_text_row) if localized_present?(@step.page_heading)
+    rows.push(hint_row) if localized_present?(@step.hint_text)
     rows.concat(selection_rows) if @step.answer_type == "selection"
     rows
   end
@@ -40,17 +40,17 @@ class StepSummaryTableService
         answer_value: condition.answer_value,
         answer_value_cy: welsh_answer_value(welsh_condition),
         goto_page: print_goto_page(condition, @steps),
-        goto_page_cy: print_goto_page(welsh_condition, @welsh_steps),
+        goto_page_cy: print_goto_page(welsh_condition, @welsh_steps, locale: :cy),
         routing_page: print_routing_page(condition, @steps),
-        routing_page_cy: print_routing_page(welsh_condition, @welsh_steps),
+        routing_page_cy: print_routing_page(welsh_condition, @welsh_steps, locale: :cy),
         check_page: print_check_page(condition, @steps),
-        check_page_cy: print_check_page(welsh_condition, @welsh_steps),
+        check_page_cy: print_check_page(welsh_condition, @welsh_steps, locale: :cy),
         secondary_skip: condition.secondary_skip?,
         exit_page: condition.exit_page?,
-        exit_page_heading: condition.exit_page_heading,
-        exit_page_heading_cy: welsh_condition.exit_page_heading,
-        exit_page_markdown: condition.exit_page_markdown,
-        exit_page_markdown_cy: welsh_condition.exit_page_markdown,
+        exit_page_heading: localized_text(condition.exit_page_heading),
+        exit_page_heading_cy: localized_text(welsh_condition.exit_page_heading, locale: :cy),
+        exit_page_markdown: localized_text(condition.exit_page_markdown),
+        exit_page_markdown_cy: localized_text(welsh_condition.exit_page_markdown, locale: :cy),
       }
       condition_data
     end
@@ -61,25 +61,25 @@ private
   def page_heading_row
     [
       I18n.t("step_summary_card.page_heading"),
-      @step.page_heading,
-      welsh_step.page_heading,
+      localized_text(@step.page_heading),
+      localized_text(welsh_step.page_heading, locale: :cy),
     ]
   end
 
   def question_text_row
     [
       I18n.t("step_summary_card.question_text"),
-      @step.question_text,
-      welsh_step.question_text,
+      localized_text(@step.question_text),
+      localized_text(welsh_step.question_text, locale: :cy),
     ]
   end
 
   def markdown_content
-    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, @step.guidance_markdown, "</pre>".html_safe])
+    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, localized_text(@step.guidance_markdown), "</pre>".html_safe])
   end
 
   def markdown_content_cy
-    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, welsh_step.guidance_markdown, "</pre>".html_safe])
+    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, localized_text(welsh_step.guidance_markdown, locale: :cy), "</pre>".html_safe])
   end
 
   def guidance_markdown_row
@@ -92,8 +92,8 @@ private
 
   def hint_row
     [I18n.t("step_summary_card.hint_text"),
-     @step.hint_text,
-     welsh_step.hint_text]
+     localized_text(@step.hint_text),
+     localized_text(welsh_step.hint_text, locale: :cy)]
   end
 
   def generic_row
@@ -143,9 +143,10 @@ private
   end
 
   def selection_list_cy
-    return welsh_step.show_selection_options unless welsh_step.answer_settings.selection_options.length >= 1
+    settings = welsh_answer_settings
+    return welsh_step.show_selection_options unless settings.selection_options.length >= 1
 
-    options = welsh_step.answer_settings.selection_options.map(&:name)
+    options = settings.selection_options.map(&:name)
     options << I18n.t("step_summary_card.selection_type.none_of_the_above") if welsh_step.is_optional?
     formatted_list = html_unordered_list(options)
 
@@ -172,7 +173,7 @@ private
   end
 
   def get_none_of_the_above_question_text_cy
-    none_of_the_above_question = welsh_step.answer_settings.none_of_the_above_question
+    none_of_the_above_question = welsh_answer_settings.none_of_the_above_question
     return nil if none_of_the_above_question.blank? || none_of_the_above_question.question_text.blank?
 
     if ActiveRecord::Type::Boolean.new.cast(none_of_the_above_question.is_optional)
@@ -249,6 +250,16 @@ private
     item.map { |i| content_tag(:li, i) }.join.html_safe
   end
 
+  def localized_text(value, locale: :en)
+    return value if value.is_a?(String)
+
+    TranslatableString.for_locale(value, locale:)
+  end
+
+  def localized_present?(value, locale: :en)
+    localized_text(value, locale:).present?
+  end
+
   def welsh_step
     @welsh_steps.find { |welsh_step| welsh_step.id == @step.id }
   end
@@ -269,30 +280,40 @@ private
     @welsh_steps.flat_map(&:routing_conditions).find { |welsh_condition| welsh_condition.id == condition_id }
   end
 
-  def build_title(step)
-    question_text = ActionController::Base.helpers.sanitize(step.question_text)
+  def build_title(step, locale: :en)
+    question_text = ActionController::Base.helpers.sanitize(localized_text(step.question_text, locale:))
 
     "#{step.position}. #{question_text}"
   end
 
-  def print_goto_page(condition, steps, locale: "en")
+  def print_goto_page(condition, steps, locale: :en)
     return I18n.t("step_summary_card.end_of_form.#{locale}") if condition.skip_to_end
-    return condition.exit_page_heading if condition.exit_page?
+    return localized_text(condition.exit_page_heading, locale:) if condition.exit_page?
 
-    build_title(steps.find { |step| step.id == condition.goto_page_id })
+    build_title(steps.find { |step| step.id == condition.goto_page_id }, locale:)
   end
 
-  def print_routing_page(condition, steps)
-    build_title(steps.find { |step| step.id == condition.routing_page_id })
+  def print_routing_page(condition, steps, locale: :en)
+    build_title(steps.find { |step| step.id == condition.routing_page_id }, locale:)
   end
 
-  def print_check_page(condition, steps)
-    build_title(steps.find { |step| step.id == condition.check_page_id })
+  def print_check_page(condition, steps, locale: :en)
+    build_title(steps.find { |step| step.id == condition.check_page_id }, locale:)
   end
 
   def welsh_answer_value(welsh_condition)
     return nil if welsh_condition.answer_value.blank?
 
-    @welsh_steps.find { |step| step.id == welsh_condition.check_page_id }.answer_settings.selection_options.find { |option| option.value == welsh_condition.answer_value }.name
+    check_step = @welsh_steps.find { |step| step.id == welsh_condition.check_page_id }
+    welsh_settings_for_step(check_step).selection_options.find { |option| option.value == welsh_condition.answer_value }.name
+  end
+
+  def welsh_answer_settings
+    welsh_settings_for_step(welsh_step)
+  end
+
+  def welsh_settings_for_step(step)
+    settings = step.data.answer_settings_cy.presence || step.answer_settings
+    settings.is_a?(DataStruct) ? settings : DataStructType.new.cast_value(settings)
   end
 end

@@ -36,7 +36,7 @@ feature "Add/editing a single question", type: :feature do
   end
 
   context "when a form has existing pages" do
-    let(:form) { create :form, :with_pages }
+    let(:form) { create :form, pages_count: 5 }
 
     scenario "add a question" do
       when_i_am_viewing_an_existing_form

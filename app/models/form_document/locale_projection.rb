@@ -51,9 +51,14 @@ private
       projected[key] = project_value(projected[key]) if projected.key?(key)
     end
 
-    if projected["data"].is_a?(Hash)
-      projected["data"] = project_step_data(projected["data"])
+    projected["data"] ||= {}
+    projected["data"] = project_step_data(projected["data"]) if projected["data"].is_a?(Hash)
+    projected["data"]["answer_type"] ||= projected["answer_type"]
+    TRANSLATABLE_STEP_KEYS.each do |key|
+      projected["data"][key] = projected[key] if projected.key?(key)
     end
+    projected["data"]["is_optional"] = ActiveRecord::Type::Boolean.new.cast(projected.dig("data", "is_optional"))
+    projected["data"]["is_repeatable"] = ActiveRecord::Type::Boolean.new.cast(projected.dig("data", "is_repeatable"))
 
     projected["routing_conditions"] = Array(projected["routing_conditions"]).map { |c| project_condition(c) }
     projected

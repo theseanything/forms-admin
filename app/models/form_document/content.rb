@@ -56,20 +56,56 @@ class FormDocument::Content
     available_languages.present? && available_languages.include?("cy")
   end
 
+  def name(locale = :en)
+    translatable_string_for("name", locale:)
+  end
+
   def name_for(locale = :en)
-    TranslatableString.for_locale(name, locale:)
+    name(locale)
+  end
+
+  def declaration_markdown(locale = :en)
+    translatable_string_for("declaration_markdown", locale:)
   end
 
   def declaration_markdown_for(locale = :en)
-    TranslatableString.for_locale(declaration_markdown, locale:)
+    declaration_markdown(locale)
+  end
+
+  def what_happens_next_markdown(locale = :en)
+    translatable_string_for("what_happens_next_markdown", locale:)
   end
 
   def what_happens_next_markdown_for(locale = :en)
-    TranslatableString.for_locale(what_happens_next_markdown, locale:)
+    what_happens_next_markdown(locale)
+  end
+
+  def payment_url(locale = :en)
+    translatable_string_for("payment_url", locale:)
   end
 
   def payment_url_for(locale = :en)
-    TranslatableString.for_locale(payment_url, locale:)
+    payment_url(locale)
+  end
+
+  def privacy_policy_url(locale = :en)
+    translatable_string_for("privacy_policy_url", locale:)
+  end
+
+  def support_email(locale = :en)
+    translatable_string_for("support_email", locale:)
+  end
+
+  def support_phone(locale = :en)
+    translatable_string_for("support_phone", locale:)
+  end
+
+  def support_url(locale = :en)
+    translatable_string_for("support_url", locale:)
+  end
+
+  def support_url_text(locale = :en)
+    translatable_string_for("support_url_text", locale:)
   end
 
   def to_content_hash
@@ -77,5 +113,42 @@ class FormDocument::Content
     hash["steps"] = @steps.map(&:to_content_hash)
     hash["form_id"] = form_id.to_s
     hash
+  end
+
+  def as_welsh
+    WelshView.new(self)
+  end
+
+  class WelshView
+    TRANSLATABLE_METHODS = %i[
+      name declaration_markdown what_happens_next_markdown payment_url
+      privacy_policy_url support_email support_phone support_url support_url_text
+    ].freeze
+
+    def initialize(content)
+      @content = content
+    end
+
+    def steps
+      @content.steps
+    end
+
+    def method_missing(name, *args, **kwargs, &block)
+      if TRANSLATABLE_METHODS.include?(name) && args.empty? && kwargs.empty?
+        @content.public_send(name, :cy)
+      else
+        @content.public_send(name, *args, **kwargs, &block)
+      end
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      TRANSLATABLE_METHODS.include?(name) || @content.respond_to?(name, include_private)
+    end
+  end
+
+private
+
+  def translatable_string_for(attribute, locale:)
+    TranslatableString.for_locale(attributes[attribute], locale:)
   end
 end

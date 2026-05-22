@@ -23,7 +23,7 @@ RSpec.describe "config/initializers/sentry" do
     let(:form) { create :form, submission_email: }
 
     before do
-      raise "Something went wrong: #{form.inspect}"
+      raise "Something went wrong: #{form.submission_email}"
     rescue RuntimeError => e
       Sentry.set_context(:user, { email: user_email, id: "some-user-id" })
       Sentry.capture_exception(e)

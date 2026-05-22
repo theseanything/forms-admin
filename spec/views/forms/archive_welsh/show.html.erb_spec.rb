@@ -2,7 +2,7 @@ require "rails_helper"
 
 describe "forms/archive_welsh/show.html.erb" do
   let(:id) { 2 }
-  let(:form) { build(:form, :live, id:) }
+  let(:form) { create(:form, :live, id:) }
   let(:confirm_archive_welsh_input) { Forms::ConfirmArchiveWelshInput.new(form:) }
 
   before do

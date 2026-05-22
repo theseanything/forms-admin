@@ -25,7 +25,7 @@ RSpec.describe Forms::RouteInput, type: :model do
   describe "attributes" do
     it "can be initialized with a hash of attributes" do
       expect(route_input.id).to eq(1)
-      expect(route_input.page_id).to eq(2)
+      expect(route_input.page_id).to eq("2")
       expect(route_input.goto).to eq(3)
       expect(route_input.answer_value).to eq("Yes")
       expect(route_input.page).to eq(page)
@@ -91,13 +91,13 @@ RSpec.describe Forms::RouteInput, type: :model do
 
     it "returns skip_to_end: true if the route is to the end of the form" do
       route_input.goto = check_your_answers_value
-      expect(route_input.condition_attributes).to eq({ goto_page_id: nil, skip_to_end: true, check_page_id: page.id })
+      expect(route_input.condition_attributes).to eq({ goto_page_id: nil, skip_to_end: true, check_page_id: page.id, answer_value: "Yes" })
     end
 
     it "returns the correct attributes if the route is to a different page" do
       route_input.goto = 123
       expect(route_input.condition_attributes).to eq(
-        { goto_page_id: 123, skip_to_end: false, check_page_id: page.id },
+        { goto_page_id: 123, skip_to_end: false, check_page_id: page.id, answer_value: "Yes" },
       )
     end
   end

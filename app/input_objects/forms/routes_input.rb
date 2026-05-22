@@ -32,8 +32,8 @@ class Forms::RoutesInput < BaseInput
 
     route_build_service = Routes::BuildService.new(form:)
 
-    @routes = attributes.values.map { |route_attrs|
-      page = pages_by_id[route_attrs["page_id"].to_i]
+    @routes = attributes.values.filter_map { |route_attrs|
+      page = pages_by_id[route_attrs["page_id"].to_s]
       next unless page # Skip if page not found or doesn't belong to form
 
       Forms::RouteInput.new(
@@ -42,6 +42,6 @@ class Forms::RoutesInput < BaseInput
           goto_options: route_build_service.options_for_goto_page(page, route_attrs["goto"]),
         ),
       )
-    }.compact
+    }
   end
 end

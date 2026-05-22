@@ -47,7 +47,7 @@ RSpec.describe Forms::GroupSelect, type: :model do
 
       context "when the form is live but the target group is trial" do
         it "returns only groups that are active" do
-          form = build(:form, :live, id: 1)
+          form = create(:form, :live, id: 1)
 
           active_group = create(:group, name: "Active", status: :active, organisation: group.organisation)
           trial_group = create(:group, name: "Trial", status: :trial, organisation: group.organisation)
@@ -60,7 +60,7 @@ RSpec.describe Forms::GroupSelect, type: :model do
 
         context "when the form is archived but the target group is trial" do
           it "returns groups that are active and trial" do
-            form = build(:form, :archived, id: 1)
+            form = create(:form, :archived, id: 1)
 
             active_group = create(:group, name: "Active", status: :active, organisation: group.organisation)
             trial_group = create(:group, name: "Trial", status: :trial, organisation: group.organisation)

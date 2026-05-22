@@ -1,7 +1,7 @@
 require "rails_helper"
 
 describe "forms/share_preview/new.html.erb" do
-  let(:form) { build(:form, id: 1) }
+  let(:form) { create(:form, id: 1) }
   let(:page) { Capybara.string(rendered.html) }
 
   context "when there are no errors" do
@@ -53,7 +53,7 @@ describe "forms/share_preview/new.html.erb" do
     end
 
     context "when the form is live" do
-      let(:form) { build(:form, :live, id: 1) }
+      let(:form) { create(:form, :live, id: 1) }
 
       it "has a back link with text `Back to edit your form`" do
         expect(view.content_for(:back_link)).to have_link(t("back_link.form_edit"), href: form_path(form.id))
@@ -61,7 +61,7 @@ describe "forms/share_preview/new.html.erb" do
     end
 
     context "when the form is archived" do
-      let(:form) { build(:form, :archived, id: 1) }
+      let(:form) { create(:form, :archived, id: 1) }
 
       it "has a back link with text `Back to edit your form`" do
         expect(view.content_for(:back_link)).to have_link(t("back_link.form_edit"), href: form_path(form.id))

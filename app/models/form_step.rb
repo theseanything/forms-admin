@@ -20,12 +20,20 @@ class FormStep
     @step_data["position"].to_i
   end
 
+  def position=(value)
+    @step_data["position"] = value.to_i
+  end
+
   def answer_type
     @step_data["answer_type"]
   end
 
   def question_text(locale: :en)
     TranslatableString.for_locale(@step_data["question_text"], locale:)
+  end
+
+  def question_text=(value)
+    @step_data["question_text"] = TranslatableString.set_for_locale(@step_data["question_text"], locale: :en, string: value)
   end
 
   def question_text_cy
@@ -61,30 +69,73 @@ class FormStep
   end
 
   def answer_settings_cy
-    @step_data.dig("data", "answer_settings")
+    settings = @step_data.dig("data", "answer_settings_cy")
+    return nil if settings.nil?
+
+    settings.is_a?(DataStruct) ? settings : DataStructType.new.cast_value(settings)
+  end
+
+  def answer_settings_cy=(value)
+    @step_data["data"] ||= {}
+    settings = value.is_a?(DataStruct) ? value.to_h : value
+    @step_data["data"]["answer_settings_cy"] = settings
+    draft_service.update_step!(id, @step_data)
+    @step_data = draft_service.find_step(id).step_data
   end
 
   def hint_text(locale: :en)
     TranslatableString.for_locale(@step_data["hint_text"], locale:)
   end
 
+  def hint_text=(value)
+    @step_data["hint_text"] = TranslatableString.set_for_locale(@step_data["hint_text"], locale: :en, string: value)
+  end
+
   def page_heading(locale: :en)
     TranslatableString.for_locale(@step_data["page_heading"], locale:)
+  end
+
+  def page_heading=(value)
+    @step_data["page_heading"] = TranslatableString.set_for_locale(@step_data["page_heading"], locale: :en, string: value)
   end
 
   def guidance_markdown(locale: :en)
     TranslatableString.for_locale(@step_data["guidance_markdown"], locale:)
   end
 
+  def guidance_markdown=(value)
+    @step_data["guidance_markdown"] = TranslatableString.set_for_locale(@step_data["guidance_markdown"], locale: :en, string: value)
+  end
+
   def is_optional?
     ActiveRecord::Type::Boolean.new.cast(data["is_optional"]) || false
   end
 
+  def is_optional=(value)
+    @step_data["data"] ||= {}
+    @step_data["data"]["is_optional"] = value
+  end
+
   alias_method :optional?, :is_optional?
+  alias_method :is_optional, :is_optional?
+
+  def reload
+    draft_service.instance_variable_set(:@content_hash, nil)
+    draft_service.instance_variable_set(:@content, nil)
+    fresh = draft_service.find_step(id)
+    @step_data = JSON.parse(JSON.generate(fresh.step_data)) if fresh
+    self
+  end
+
+  def attributes
+    as_json.stringify_keys
+  end
 
   def is_repeatable?
     ActiveRecord::Type::Boolean.new.cast(data["is_repeatable"]) || false
   end
+
+  alias_method :is_repeatable, :is_repeatable?
 
   def data
     @step_data["data"] || {}
@@ -92,12 +143,19 @@ class FormStep
 
   def answer_settings
     settings = data["answer_settings"]
-    settings.is_a?(DataStruct) ? settings : DataStruct.new(settings || {})
+    return DataStruct.new({}) if settings.nil?
+
+    settings.is_a?(DataStruct) ? settings : DataStructType.new.cast_value(settings)
   end
 
   def routing_conditions
     Array(@step_data["routing_conditions"]).map do |c|
-      FormCondition.new(form:, condition: c, step_id: id)
+      if c.is_a?(FormCondition)
+        c.form ||= @form
+        c
+      else
+        FormCondition.new(form:, condition: c, step_id: id)
+      end
     end
   end
 
@@ -108,11 +166,22 @@ class FormStep
   end
 
   def check_conditions
-    draft_service.conditions.select { |c| c.check_page_id == id }
+    conditions_for_step(check_page_id: id)
   end
 
   def goto_conditions
-    draft_service.conditions.select { |c| c.goto_page_id == id }
+    conditions_for_step(goto_page_id: id)
+  end
+
+  def conditions_for_step(**filters)
+    filter_key, filter_value = filters.first
+    draft_service.content_hash["steps"].flat_map do |step|
+      Array(step["routing_conditions"]).filter_map do |c|
+        next unless c[filter_key.to_s].to_s == filter_value.to_s
+
+        FormCondition.new(form:, condition: c, step_id: step["id"])
+      end
+    end
   end
 
   def only_one_option?
@@ -141,6 +210,14 @@ class FormStep
     id
   end
 
+  def ==(other)
+    other.is_a?(self.class) && form_id == other.form_id && id.to_s == other.id.to_s
+  end
+
+  def form_id
+    form.id
+  end
+
   def next_page
     @step_data["next_step_id"]
   end
@@ -150,14 +227,23 @@ class FormStep
   end
 
   def save_and_update_form
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == id.to_s }
+    @step_data["routing_conditions"] = step_data["routing_conditions"] if step_data&.key?("routing_conditions")
+
+    draft_service.update_step!(id, @step_data)
     draft_service.save_question_changes!
     true
   end
+
+  alias_method :save!, :save_and_update_form
 
   def destroy_and_update_form!
     draft_service.destroy_step!(id)
     true
   end
+
+  alias_method :delete, :destroy_and_update_form!
 
   def move_page(direction)
     draft_service.move_step!(id, direction)
@@ -168,13 +254,25 @@ class FormStep
     %w[question_text hint_text page_heading guidance_markdown].each do |key|
       attrs[key] = { "en" => attrs[key] } if attrs[key].is_a?(String)
     end
-    attrs["data"] = {
+    data_attrs = {
       "is_optional" => attrs.delete("is_optional"),
       "is_repeatable" => attrs.delete("is_repeatable"),
       "answer_settings" => attrs.delete("answer_settings"),
+      "answer_settings_cy" => attrs.delete("answer_settings_cy"),
     }.compact
+    attrs["data"] = (@step_data["data"] || {}).merge(data_attrs) if data_attrs.present?
     draft_service.update_step!(id, @step_data.merge(attrs))
+    @step_data = draft_service.find_step(id).step_data
     self
+  end
+
+  def answer_type=(value)
+    assign_attributes(answer_type: value)
+  end
+
+  def answer_settings=(value)
+    settings = value.is_a?(DataStruct) ? value.to_h : value
+    assign_attributes(answer_settings: settings)
   end
 
   def update!(attrs)
@@ -185,15 +283,51 @@ class FormStep
     check_conditions.find { |c| c.answer_value.blank? && c.check_page_id != c.routing_page_id }
   end
 
+  def find_routing_condition(condition_id)
+    routing_conditions.find { |c| c.id.to_s == condition_id.to_s }
+  end
+
   def as_json(options = {})
+    settings = data["answer_settings"]
+    settings = settings.to_h if settings.is_a?(DataStruct)
     {
       id:,
       position:,
       question_text: question_text,
+      hint_text: hint_text,
+      page_heading: page_heading,
+      guidance_markdown: guidance_markdown,
       answer_type:,
+      answer_settings: settings,
       is_optional: is_optional?,
       is_repeatable: is_repeatable?,
       routing_conditions: routing_conditions.map(&:as_json),
+    }
+  end
+
+  def as_form_document_step(next_step = nil)
+    next_step_id = case next_step
+                   when FormStep then next_step.id
+                   when nil then @step_data["next_step_id"]
+                   else next_step
+                   end
+
+    {
+      "id" => id,
+      "type" => @step_data["type"] || "question",
+      "position" => position,
+      "next_step_id" => next_step_id,
+      "question_text" => @step_data["question_text"],
+      "hint_text" => @step_data["hint_text"],
+      "page_heading" => @step_data["page_heading"],
+      "guidance_markdown" => @step_data["guidance_markdown"],
+      "answer_type" => answer_type,
+      "routing_conditions" => @step_data["routing_conditions"] || [],
+      "data" => {
+        "is_optional" => is_optional?,
+        "is_repeatable" => is_repeatable?,
+        "answer_settings" => data["answer_settings"],
+      }.compact,
     }
   end
 end

@@ -7,10 +7,10 @@ describe StepSummaryCardService do
 
   let(:form_document_content) { FormDocument::Content.from_form_document(form.live_form_document) }
   let(:form_document_steps) { form_document_content.steps }
-  let(:form_document_step) { FormDocument::Step.new(page.as_form_document_step(nil)) }
+  let(:form_document_step) { FormDocument::Step.new(page.reload.as_form_document_step(nil)) }
   let(:multiple_branches_enabled) { false }
 
-  let(:form) { create :form, :live }
+  let(:form) { create(:form, :live) }
 
   let(:pages) { form.pages }
 
@@ -110,18 +110,17 @@ describe StepSummaryCardService do
     end
 
     context "with selection" do
-      let(:is_optional) { "false" }
+      let(:is_optional) { false }
       let(:only_one_option) { "false" }
       let(:selection_options) do
-        [DataStruct.new({ name: "Option 1" }),
-         DataStruct.new({ name: "Option 2" })]
+        [{ "name" => "Option 1" }, { "name" => "Option 2" }]
       end
       let(:page) do
         create :page,
                form:,
                is_optional:,
                answer_type: "selection",
-               answer_settings: DataStruct.new(only_one_option:, selection_options:)
+               answer_settings: { "only_one_option" => only_one_option, "selection_options" => selection_options }
       end
 
       it "returns the correct options" do
@@ -144,7 +143,7 @@ describe StepSummaryCardService do
 
       context "with more than ten options" do
         let(:option_names) { Array.new(11).each_with_index.map { |_element, index| "Option #{index}" } }
-        let(:selection_options) { option_names.map { |option| DataStruct.new({ name: option }) } }
+        let(:selection_options) { option_names.map { |option| { "name" => option } } }
 
         it "returns the options in a details component" do
           expected_list_items = "<li>#{option_names.join('</li><li>')}</li>"
@@ -182,7 +181,7 @@ describe StepSummaryCardService do
 
         context "when there is an empty none_of_the_above_question" do
           before do
-            page.answer_settings.none_of_the_above_question = DataStruct.new
+            page.update!(answer_settings: page.answer_settings.to_h.merge("none_of_the_above_question" => {}))
           end
 
           it "does not include a row for none of the above question" do
@@ -196,10 +195,12 @@ describe StepSummaryCardService do
           let(:none_of_the_above_question_optional) { "true" }
 
           before do
-            page.answer_settings.none_of_the_above_question = DataStruct.new({
-              question_text: "Enter your own option",
-              is_optional: none_of_the_above_question_optional,
-            })
+            page.update!(answer_settings: page.answer_settings.to_h.merge(
+              "none_of_the_above_question" => {
+                "question_text" => "Enter your own option",
+                "is_optional" => none_of_the_above_question_optional,
+              },
+            ))
           end
 
           context "when it is optional" do
@@ -288,10 +289,11 @@ describe StepSummaryCardService do
         let(:goto_page) { form.pages.third }
 
         before do
-          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: "Option 1"
+          create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: "Option 1"
 
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
@@ -309,10 +311,16 @@ describe StepSummaryCardService do
 
         before do
           page.update!(is_optional: true)
-          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: "none_of_the_above"
+          create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: goto_page.id, answer_value: "none_of_the_above"
 
+          form.update!(
+            question_section_completed: true,
+            declaration_section_completed: true,
+            share_preview_completed: true,
+          )
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
@@ -330,11 +338,12 @@ describe StepSummaryCardService do
         let(:second_goto_page) { form.pages.fourth }
 
         before do
-          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: first_goto_page.id, answer_value: "Option 1"
-          create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: second_goto_page.id, answer_value: "Option 2"
+          create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: first_goto_page.id, answer_value: "Option 1"
+          create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: second_goto_page.id, answer_value: "Option 2"
 
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
@@ -352,10 +361,11 @@ describe StepSummaryCardService do
 
       context "with a condition that points to the end of the form" do
         before do
-          create :condition, routing_page_id: page.id, check_page_id: page.id, skip_to_end: true, answer_value: "Option 1"
+          create :condition, form:, routing_page_id: page.id, check_page_id: page.id, skip_to_end: true, answer_value: "Option 1"
 
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
@@ -372,11 +382,12 @@ describe StepSummaryCardService do
         let(:page) { pages.second }
 
         before do
-          create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
-          create :condition, routing_page_id: page.id, check_page_id: pages.first.id, skip_to_end: true
+          create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+          create :condition, form:, routing_page_id: page.id, check_page_id: pages.first.id, skip_to_end: true, answer_value: ""
 
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
@@ -393,11 +404,12 @@ describe StepSummaryCardService do
         let(:page) { form.pages.second }
 
         before do
-          create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
-          create :condition, routing_page_id: page.id, check_page_id: pages.first.id, goto_page_id: pages.fourth.id
+          create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+          create :condition, form:, routing_page_id: page.id, check_page_id: pages.first.id, goto_page_id: pages.fourth.id, answer_value: ""
 
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
@@ -415,10 +427,11 @@ describe StepSummaryCardService do
 
         context "when there is a single condition that routes to a page" do
           before do
-            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+            create :condition, form:, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
 
             page.reload
-            form.reload.make_live!
+            FormDocumentFactoryHelpers.publish_form!(form)
+            form.reload
           end
 
           it "returns the correct options" do
@@ -443,10 +456,11 @@ describe StepSummaryCardService do
 
         context "when there is a single condition that skips to the end of the form" do
           before do
-            create :condition, routing_page_id: pages.first.id, skip_to_end: true, answer_value: "Option 1"
+            create :condition, form:, routing_page_id: pages.first.id, skip_to_end: true, answer_value: "Option 1"
 
             page.reload
-            form.reload.make_live!
+            FormDocumentFactoryHelpers.publish_form!(form)
+            form.reload
           end
 
           it "returns the correct options" do
@@ -471,11 +485,12 @@ describe StepSummaryCardService do
 
         context "when there are multiple conditions routing to the same page" do
           before do
-            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
-            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 2"
+            create :condition, form:, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+            create :condition, form:, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 2"
 
             page.reload
-            form.reload.make_live!
+            FormDocumentFactoryHelpers.publish_form!(form)
+            form.reload
           end
 
           it "returns the correct options" do
@@ -501,12 +516,13 @@ describe StepSummaryCardService do
 
         context "when there are multiple conditions routing to different places" do
           before do
-            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
-            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.fourth.id, answer_value: "Option 2"
-            create :condition, routing_page_id: pages.first.id, answer_value: "Option 3", skip_to_end: true
+            create :condition, form:, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: "Option 1"
+            create :condition, form:, routing_page_id: pages.first.id, goto_page_id: pages.fourth.id, answer_value: "Option 2"
+            create :condition, form:, routing_page_id: pages.first.id, answer_value: "Option 3", skip_to_end: true
 
             page.reload
-            form.reload.make_live!
+            FormDocumentFactoryHelpers.publish_form!(form)
+            form.reload
           end
 
           it "returns the correct options" do
@@ -547,10 +563,11 @@ describe StepSummaryCardService do
 
         context "when there is an unconditional route to a page" do
           before do
-            create :condition, routing_page_id: pages.first.id, goto_page_id: pages.third.id
+            create :condition, form:, routing_page_id: pages.first.id, goto_page_id: pages.third.id, answer_value: nil
 
             page.reload
-            form.reload.make_live!
+            FormDocumentFactoryHelpers.publish_form!(form)
+            form.reload
           end
 
           it "returns the correct options" do
@@ -565,10 +582,11 @@ describe StepSummaryCardService do
 
         context "when there is an unconditional route to the end of the form" do
           before do
-            create :condition, routing_page_id: pages.first.id, skip_to_end: true
+            create :condition, form:, routing_page_id: pages.first.id, skip_to_end: true, answer_value: nil
 
             page.reload
-            form.reload.make_live!
+            FormDocumentFactoryHelpers.publish_form!(form)
+            form.reload
           end
 
           it "returns the correct options" do
@@ -583,18 +601,26 @@ describe StepSummaryCardService do
       end
 
       context "with an exit page" do
-        let!(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1" }
-
         before do
+          create(:condition,
+                 form:,
+                 routing_page_id: page.id,
+                 check_page_id: page.id,
+                 answer_value: "Option 1",
+                 goto_page_id: nil,
+                 exit_page_heading: "Exit heading",
+                 exit_page_markdown: "Exit body")
+
           page.reload
-          form.reload.make_live!
+          FormDocumentFactoryHelpers.publish_form!(form)
+          form.reload
         end
 
         it "returns the correct options" do
           expect(step_summary_card_service.all_options_for_answer_type).to include(
             {
               key: { text: I18n.t("page_conditions.route") },
-              value: { text: I18n.t("page_conditions.condition_compact_html_exit_page", answer_value: condition.answer_value, exit_page_heading: condition.exit_page_heading) },
+              value: { text: I18n.t("page_conditions.condition_compact_html_exit_page", answer_value: "Option 1", exit_page_heading: "Exit heading") },
             },
           )
         end
@@ -620,8 +646,8 @@ describe StepSummaryCardService do
 
       context "when page doesn't have a page_heading or guidance_markdown method defined" do
         before do
-          form_document_step.data.delete_field(:page_heading)
-          form_document_step.data.delete_field(:guidance_markdown)
+          form_document_step.page_heading = nil
+          form_document_step.guidance_markdown = nil
         end
 
         it "does not raise an error" do

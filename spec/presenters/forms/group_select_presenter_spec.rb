@@ -16,7 +16,7 @@ describe Forms::GroupSelectPresenter do
     end
 
     context "when the form is live" do
-      let(:form) { build(:form, :live) }
+      let(:form) { create(:form, :live) }
 
       it "returns just the group name" do
         expect(presenter.group_name(group)).to eq("Test Group")
@@ -24,7 +24,7 @@ describe Forms::GroupSelectPresenter do
     end
 
     context "when the form is archived" do
-      let(:form) { build(:form, :archived) }
+      let(:form) { create(:form, :archived) }
 
       it "returns the group name with its status" do
         expect(presenter.group_name(group)).to eq("Test Group (Trial)")
@@ -50,7 +50,7 @@ describe Forms::GroupSelectPresenter do
     end
 
     context "when the form is live" do
-      let(:form) { build(:form, :live) }
+      let(:form) { create(:form, :live) }
 
       context "and there are no other active groups" do
         it "returns legend inidicating no other active groups" do
@@ -86,7 +86,7 @@ describe Forms::GroupSelectPresenter do
     end
 
     context "when the form is live" do
-      let(:form) { build(:form, :live) }
+      let(:form) { create(:form, :live) }
 
       context "and there are no other active groups" do
         it "returns hint indicating trial groups need upgrading" do

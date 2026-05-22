@@ -45,10 +45,11 @@ class FormDocument::Condition
   end
 
   def warning_answer_doesnt_exist
+    return nil if secondary_skip?
     return nil if has_precondition? && answer_value.nil?
 
     check_step = find_step(check_page_id)
-    answer_options = check_step&.data&.dig("answer_settings", "selection_options")&.pluck("name")
+    answer_options = check_step&.dig("data", "answer_settings", "selection_options")&.map { |o| o["name"] }
     return nil if answer_options.blank? || answer_options.include?(answer_value)
 
     DataStruct.new(name: "answer_value_doesnt_exist")
@@ -79,6 +80,10 @@ class FormDocument::Condition
 
   def is_end_of_form?
     goto_page_id.nil? && skip_to_end
+  end
+
+  def skip_to_end?
+    skip_to_end == true
   end
 
   def has_routing_errors
