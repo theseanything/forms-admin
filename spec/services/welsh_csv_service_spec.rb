@@ -73,7 +73,12 @@ RSpec.describe "WelshCsvService" do
 
     context "when the form has support information" do
       context "when the form has an email address" do
-        let(:form) { build :form, support_email: "support@example.gov.uk", support_email_cy: "support@example.gov.uk" }
+        let(:form) do
+          f = create(:form, support_email: "support@example.gov.uk")
+          f.support_email_cy = "support@example.gov.uk"
+          f.save_question_changes!
+          f.reload
+        end
 
         it "contains the support email" do
           expect(csv_rows(form)).to include([
@@ -85,7 +90,12 @@ RSpec.describe "WelshCsvService" do
       end
 
       context "when the form has a phone number" do
-        let(:form) { build :form, support_phone: "English support phone", support_phone_cy: "Welsh support phone" }
+        let(:form) do
+          f = create(:form, support_phone: "English support phone")
+          f.support_phone_cy = "Welsh support phone"
+          f.save_question_changes!
+          f.reload
+        end
 
         it "contains the support phone" do
           expect(csv_rows(form)).to include([
@@ -97,7 +107,15 @@ RSpec.describe "WelshCsvService" do
       end
 
       context "when the form has a URL" do
-        let(:form) { build :form, support_url: "https://www.gov.uk/support", support_url_cy: "https://www.gov.uk/support_cy", support_url_text: "Text to describe the contact link", support_url_text_cy: "Welsh Text to describe the contact link" }
+        let(:form) do
+          f = create(:form,
+                     support_url: "https://www.gov.uk/support",
+                     support_url_text: "Text to describe the contact link")
+          f.support_url_cy = "https://www.gov.uk/support_cy"
+          f.support_url_text_cy = "Welsh Text to describe the contact link"
+          f.save_question_changes!
+          f.reload
+        end
 
         it "contains the support URL" do
           expect(csv_rows(form)).to include([
@@ -126,9 +144,16 @@ RSpec.describe "WelshCsvService" do
     end
 
     context "and the form has a page" do
-      let(:form) { create(:form, :with_pages) }
-      let!(:page_step) { page }
-      let(:page) { build :page, question_text: "Question text", question_text_cy: "Welsh question text" }
+      let(:form) do
+        create(:form, pages_count: 1).tap do |f|
+          f.pages.first.tap do |page|
+            page.question_text = "Question text"
+            page.question_text_cy = "Welsh question text"
+            page.save_and_update_form
+          end
+          f.reload
+        end
+      end
 
       it "contains the question text" do
         expect(csv_rows(form)).to include([
@@ -142,9 +167,11 @@ RSpec.describe "WelshCsvService" do
     context "and the form has a page with a hint" do
       let(:form) do
         create(:form, pages_count: 1).tap do |f|
-          f.pages.first.hint_text = "Hint text"
-          f.pages.first.hint_text_cy = "Welsh hint text"
-          f.pages.first.save_and_update_form
+          f.pages.first.tap do |page|
+            page.hint_text = "Hint text"
+            page.hint_text_cy = "Welsh hint text"
+            page.save_and_update_form
+          end
           f.reload
         end
       end
@@ -159,20 +186,23 @@ RSpec.describe "WelshCsvService" do
     end
 
     context "and the form has a page with options" do
-      let(:form) { create(:form, :with_pages) }
-      let!(:page_step) { page }
-      let(:page) do
-        build :page,
-              question_text: "Question text",
-              answer_type: "selection",
-              answer_settings: {
-                "only_one_option" => "true",
-                "selection_options" => [{ name: "Yes", value: "Yes" }, { name: "No", value: "No" }],
-              }.to_json,
-              answer_settings_cy: {
-                "only_one_option" => "true",
-                "selection_options" => [{ name: "Ydy", value: "Yes" }, { name: "Nac ydy", value: "No" }],
-              }.to_json
+      let(:form) do
+        create(:form, pages_count: 1).tap do |f|
+          f.pages.first.tap do |page|
+            page.question_text = "Question text"
+            page.answer_type = "selection"
+            page.answer_settings = {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Yes", "value" => "Yes" }, { "name" => "No", "value" => "No" }],
+            }
+            page.answer_settings_cy = {
+              "only_one_option" => "true",
+              "selection_options" => [{ "name" => "Ydy", "value" => "Yes" }, { "name" => "Nac ydy", "value" => "No" }],
+            }
+            page.save_and_update_form
+          end
+          f.reload
+        end
       end
 
       it "contains the options" do
@@ -189,14 +219,17 @@ RSpec.describe "WelshCsvService" do
     end
 
     context "and the form has a page with guidance" do
-      let(:form) { create(:form, :with_pages) }
-      let!(:page_step) { page }
-      let(:page) do
-        build :page,
-              guidance_markdown: "Markdown",
-              guidance_markdown_cy: "Welsh markdown",
-              page_heading: "Page heading",
-              page_heading_cy: "Welsh page heading"
+      let(:form) do
+        create(:form, pages_count: 1).tap do |f|
+          f.pages.first.tap do |page|
+            page.guidance_markdown = "Markdown"
+            page.guidance_markdown_cy = "Welsh markdown"
+            page.page_heading = "Page heading"
+            page.page_heading_cy = "Welsh page heading"
+            page.save_and_update_form
+          end
+          f.reload
+        end
       end
 
       it "contains the guidance" do
@@ -213,15 +246,24 @@ RSpec.describe "WelshCsvService" do
     end
 
     context "when the page has a none of the above question" do
-      let(:form) { create(:form, :with_pages) }
-      let!(:page_step) { page }
-      let(:page) do
-        page = build :page,
-                     :selection_with_none_of_the_above_question,
-                     none_of_the_above_question_text: "None of the above question?"
-        page.answer_settings_cy = page.answer_settings.as_json
-        page.answer_settings_cy[:none_of_the_above_question][:question_text] = "Welsh None of the above question?"
-        page
+      let(:form) do
+        create(:form, pages_count: 0).tap do |f|
+          create(:page,
+                 form: f,
+                 :selection_with_none_of_the_above_question,
+                 none_of_the_above_question_text: "None of the above question?")
+          f.reload.pages.first.tap do |page|
+            page.answer_settings_cy = {
+              "only_one_option" => "true",
+              "selection_options" => page.answer_settings["selection_options"],
+              "none_of_the_above_question" => {
+                "question_text" => "Welsh None of the above question?",
+              },
+            }
+            page.save_and_update_form
+          end
+          f.reload
+        end
       end
 
       it "contains the none of the above question" do
@@ -234,10 +276,19 @@ RSpec.describe "WelshCsvService" do
     end
 
     context "when the page has an exit condition" do
-      let(:form) { create(:form, :with_pages) }
-      let!(:page_step) { page }
-      let(:page) { create :page, position: 1, routing_conditions: [condition] }
-      let(:condition) { create :condition, :with_exit_page, exit_page_heading: "Exit page heading", exit_page_markdown: "Exit page markdown", exit_page_heading_cy: "Welsh exit page heading", exit_page_markdown_cy: "Welsh exit page markdown" }
+      let(:form) do
+        f = create(:form, pages_count: 1)
+        page = f.pages.first
+        create(:condition,
+               form: f,
+               routing_page: page,
+               :with_exit_page,
+               exit_page_heading: "Exit page heading",
+               exit_page_markdown: "Exit page markdown",
+               exit_page_heading_cy: "Welsh exit page heading",
+               exit_page_markdown_cy: "Welsh exit page markdown")
+        f.reload
+      end
 
       it "contains the exit page heading" do
         expect(csv_rows(form)).to include([
@@ -250,39 +301,60 @@ RSpec.describe "WelshCsvService" do
 
     context "with a complete example" do
       let(:form) do
-        build :form,
-              :with_pages,
-              name: "A form",
-              name_cy: "Welsh A form",
-              what_happens_next_markdown: "English what happens next",
-              what_happens_next_markdown_cy: "Welsh what happens next",
-              privacy_policy_url: "https://www.gov.uk/privacy",
-              payment_url: "https://www.gov.uk/payment",
-              payment_url_cy: "https://www.gov.uk/payment_cy",
-              support_email: "support@example.gov.uk",
-              support_email_cy: "support@example.gov.uk",
-              support_phone: "English support phone",
-              support_phone_cy: "Welsh support phone",
-              support_url: "https://www.gov.uk/support",
-              support_url_cy: "https://www.gov.uk/support_cy",
-              support_url_text: "Support URL text",
-              support_url_text_cy: "Welsh Support URL text",
-              declaration_text: "Declaration text",
-              pages: [page, another_page]
+        f = create(:form,
+                   pages_count: 0,
+                   name: "A form",
+                   what_happens_next_markdown: "English what happens next",
+                   privacy_policy_url: "https://www.gov.uk/privacy",
+                   payment_url: "https://www.gov.uk/payment",
+                   support_email: "support@example.gov.uk",
+                   support_phone: "English support phone",
+                   support_url: "https://www.gov.uk/support",
+                   support_url_text: "Support URL text",
+                   declaration_markdown: "Declaration text")
+        f.name_cy = "Welsh A form"
+        f.what_happens_next_markdown_cy = "Welsh what happens next"
+        f.payment_url_cy = "https://www.gov.uk/payment_cy"
+        f.support_email_cy = "support@example.gov.uk"
+        f.support_phone_cy = "Welsh support phone"
+        f.support_url_cy = "https://www.gov.uk/support_cy"
+        f.support_url_text_cy = "Welsh Support URL text"
+        f.save_question_changes!
+
+        page = create(:page,
+                      form: f,
+                      :selection_with_none_of_the_above_question,
+                      question_text: "None of the above question?",
+                      none_of_the_above_question_text: "None of the above question?")
+        page.question_text_cy = "Welsh None of the above question?"
+        page.answer_settings_cy = {
+          "only_one_option" => "true",
+          "selection_options" => page.answer_settings["selection_options"],
+          "none_of_the_above_question" => { "question_text" => "Welsh None of the above question?" },
+        }
+        page.save_and_update_form
+
+        create(:condition,
+               form: f,
+               routing_page: page,
+               :with_exit_page,
+               exit_page_heading: "Exit page heading",
+               exit_page_markdown: "Exit page markdown",
+               exit_page_heading_cy: "Welsh exit page heading",
+               exit_page_markdown_cy: "Welsh exit page markdown")
+
+        another_page = create(:page,
+                              form: f,
+                              question_text: "What?",
+                              page_heading: "Page heading",
+                              guidance_markdown: "This is the guidance.")
+        another_page.question_text_cy = "Welsh What?"
+        another_page.page_heading_cy = "Welsh Page heading"
+        another_page.guidance_markdown_cy = "Welsh This is the guidance."
+        another_page.save_and_update_form
+
+        f.reload
       end
-      let(:page) do
-        page = build :page,
-                     :selection_with_none_of_the_above_question,
-                     question_text: "None of the above question?",
-                     question_text_cy: "Welsh None of the above question?",
-                     none_of_the_above_question_text: "None of the above question?",
-                     routing_conditions: [condition]
-        page.answer_settings_cy = page.answer_settings.as_json
-        page.answer_settings_cy[:none_of_the_above_question][:question_text] = "Welsh None of the above question?"
-        page
-      end
-      let(:condition) { create :condition, :with_exit_page, exit_page_heading: "Exit page heading", exit_page_markdown: "Exit page markdown", exit_page_heading_cy: "Welsh exit page heading", exit_page_markdown_cy: "Welsh exit page markdown" }
-      let(:another_page) { build :page, question_text: "What?", question_text_cy: "Welsh What?", page_heading: "Page heading", page_heading_cy: "Welsh Page heading", guidance_markdown: "This is the guidance.", guidance_markdown_cy: "Welsh This is the guidance." }
 
       it "returns a CSV with a header row and the expected rows" do
         csv = csv_rows(form)
@@ -312,14 +384,14 @@ RSpec.describe "WelshCsvService" do
   end
 
   describe "#filename" do
-    let(:form) { build :form, name: "My form: \"full of odd.\\..\. characters\"" }
+    let(:form) { create(:form, name: "My form: \"full of odd.\\..\. characters\"") }
 
     it "returns a filename with a safe form name" do
       expect(WelshCsvService.new(form).filename).to eq("my_form_full_of_odd_characters.csv")
     end
 
     context "when the form name is too long" do
-      let(:form) { build :form, name: "a" * 120 }
+      let(:form) { create(:form, name: "a" * 120) }
 
       it "returns a filename with a safe form name" do
         expect(WelshCsvService.new(form).filename.length).to eq(80)

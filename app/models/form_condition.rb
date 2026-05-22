@@ -138,6 +138,32 @@ class FormCondition
     save_and_update_form
   end
 
+  def reload
+    @form = Form.find(@form.id)
+    @draft_service = @form.draft_content_service
+    hash = @draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == @step_id.to_s }
+    condition_data = Array(step_data&.dig("routing_conditions")).find { |c| c["id"].to_s == id.to_s }
+    if condition_data
+      @condition = condition_data.stringify_keys
+      assign_from_hash
+    end
+    self
+  end
+
+  def update!(attrs = {})
+    attrs.each { |key, value| public_send("#{key}=", value) if respond_to?("#{key}=") }
+    save!
+  end
+
+  def self.exists?(condition_id)
+    Form.find_each.any? do |form|
+      next if form.draft_form_document.blank?
+
+      form.draft_content_service.conditions.any? { |condition| condition.id.to_s == condition_id.to_s }
+    end
+  end
+
 private
 
   def assign_from_hash

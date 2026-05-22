@@ -16,10 +16,10 @@ class StepSummaryTableService
   def values_with_welsh_content
     rows = []
 
-    rows.push(page_heading_row) if @step.respond_to?(:page_heading) && @step.page_heading.present?
-    rows.push(guidance_markdown_row) if @step.respond_to?(:guidance_markdown) && @step.guidance_markdown.present?
-    rows.push(question_text_row) if @step.page_heading.present?
-    rows.push(hint_row) if @step.hint_text.present?
+    rows.push(page_heading_row) if @step.respond_to?(:page_heading) && localized_present?(@step.page_heading)
+    rows.push(guidance_markdown_row) if @step.respond_to?(:guidance_markdown) && localized_present?(@step.guidance_markdown)
+    rows.push(question_text_row) if localized_present?(@step.page_heading)
+    rows.push(hint_row) if localized_present?(@step.hint_text)
     rows.concat(selection_rows) if @step.answer_type == "selection"
     rows
   end
@@ -61,25 +61,25 @@ private
   def page_heading_row
     [
       I18n.t("step_summary_card.page_heading"),
-      @step.page_heading,
-      welsh_step.page_heading,
+      localized_text(@step.page_heading),
+      localized_text(welsh_step.page_heading, locale: :cy),
     ]
   end
 
   def question_text_row
     [
       I18n.t("step_summary_card.question_text"),
-      @step.question_text,
-      welsh_step.question_text,
+      localized_text(@step.question_text),
+      localized_text(welsh_step.question_text, locale: :cy),
     ]
   end
 
   def markdown_content
-    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, @step.guidance_markdown, "</pre>".html_safe])
+    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, localized_text(@step.guidance_markdown), "</pre>".html_safe])
   end
 
   def markdown_content_cy
-    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, welsh_step.guidance_markdown, "</pre>".html_safe])
+    safe_join(['<pre class="app-markdown-editor__markdown-example-block">'.html_safe, localized_text(welsh_step.guidance_markdown, locale: :cy), "</pre>".html_safe])
   end
 
   def guidance_markdown_row
@@ -92,8 +92,8 @@ private
 
   def hint_row
     [I18n.t("step_summary_card.hint_text"),
-     @step.hint_text,
-     welsh_step.hint_text]
+     localized_text(@step.hint_text),
+     localized_text(welsh_step.hint_text, locale: :cy)]
   end
 
   def generic_row
@@ -249,6 +249,16 @@ private
     item.map { |i| content_tag(:li, i) }.join.html_safe
   end
 
+  def localized_text(value, locale: :en)
+    return value if value.is_a?(String)
+
+    TranslatableString.for_locale(value, locale:)
+  end
+
+  def localized_present?(value, locale: :en)
+    localized_text(value, locale:).present?
+  end
+
   def welsh_step
     @welsh_steps.find { |welsh_step| welsh_step.id == @step.id }
   end
@@ -270,7 +280,7 @@ private
   end
 
   def build_title(step)
-    question_text = ActionController::Base.helpers.sanitize(step.question_text)
+    question_text = ActionController::Base.helpers.sanitize(localized_text(step.question_text))
 
     "#{step.position}. #{question_text}"
   end

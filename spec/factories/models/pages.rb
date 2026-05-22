@@ -150,7 +150,14 @@ FactoryBot.define do
       end
 
       answer_type { "address" }
-      answer_settings { { "uk_address" => uk_address, "international_address" => international_address } }
+      answer_settings do
+        {
+          "input_type" => {
+            "uk_address" => uk_address,
+            "international_address" => international_address,
+          },
+        }
+      end
     end
 
     trait :with_name_settings do

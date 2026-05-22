@@ -67,9 +67,15 @@ describe StepSummaryTableService do
   end
 
   describe "#values_with_welsh_content" do
+    before do
+      page
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
+    end
+
     context "when the page includes guidance markdown" do
       let(:page) do
-        create(:page,
+        create(:page, form:,
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                page_heading: "Licencing",
@@ -97,7 +103,7 @@ describe StepSummaryTableService do
 
     context "when the page includes hint_text" do
       let(:page) do
-        create(:page,
+        create(:page, form:,
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                hint_text: "Choose 'Yes' if you already have a valid licence.",
@@ -113,7 +119,7 @@ describe StepSummaryTableService do
 
     context "when the page is a selection question" do
       let(:page) do
-        create(:page,
+        create(:page, form:,
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                answer_type: "selection",
@@ -135,7 +141,7 @@ describe StepSummaryTableService do
 
       context "when there are more than 10 options" do
         let(:page) do
-          create(:page,
+          create(:page, form:,
                  question_text: "Are you renewing a licence?",
                  question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                  answer_type: "selection",
@@ -182,7 +188,7 @@ describe StepSummaryTableService do
 
       context "when there is custom 'None of the above' text" do
         let(:page) do
-          create(:page,
+          create(:page, form:,
                  is_optional: true,
                  question_text: "Are you renewing a licence?",
                  question_text_cy: "Ydych chi'n adnewyddu trwydded?",

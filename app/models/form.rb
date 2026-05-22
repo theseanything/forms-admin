@@ -115,7 +115,19 @@ class Form < ApplicationRecord
   end
 
   def conditions
-    draft_content_service.conditions
+    draft_content_service.conditions.tap do |list|
+      form_ref = self
+      list.define_singleton_method(:reload) do
+        form_ref.draft_content_service.instance_variable_set(:@content_hash, nil)
+        form_ref.draft_content_service.conditions
+      end
+      list.define_singleton_method(:find_by) do |attrs|
+        attrs = attrs.stringify_keys
+        find do |condition|
+          attrs.all? { |key, value| condition.public_send(key).to_s == value.to_s }
+        end
+      end
+    end
   end
 
   def draft_document_content

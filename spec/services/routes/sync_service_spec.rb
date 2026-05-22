@@ -3,8 +3,8 @@ require "rails_helper"
 RSpec.describe Routes::SyncService do
   subject(:service) { described_class.new(form:, routes:) }
 
-  let(:form) { create(:form, pages:) }
-  let(:pages) { create_list(:page, 3) }
+  let(:form) { create(:form, pages_count: 0) }
+  let!(:pages) { create_list(:page, 3, form:) }
 
   let(:routes) { [] }
 
@@ -45,7 +45,7 @@ RSpec.describe Routes::SyncService do
     context "when updating an existing condition" do
       # Create an existing condition that will be updated.
       let!(:existing_condition) do
-        create(:condition, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.second.id)
+        create(:condition, form:, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.second.id)
       end
 
       # Provide a route that matches the key of the existing condition but has a new destination.
@@ -68,7 +68,7 @@ RSpec.describe Routes::SyncService do
     context "when destroying a stale condition" do
       # Create an existing condition that will now be considered stale.
       let!(:stale_condition) do
-        create(:condition, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.second.id)
+        create(:condition, form:, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.second.id)
       end
 
       # Provide a route that matches the stale condition's key, but is now a "default" route.
@@ -86,7 +86,7 @@ RSpec.describe Routes::SyncService do
 
     context "with an answer_value of an empty string" do
       let!(:existing_condition) do
-        create(:condition, routing_page_id: pages.first.id, answer_value: "", goto_page_id: pages.second.id)
+        create(:condition, form:, routing_page_id: pages.first.id, answer_value: "", goto_page_id: pages.second.id)
       end
 
       # The route has an empty string, which .presence converts to nil for the DB lookup.
@@ -109,9 +109,9 @@ RSpec.describe Routes::SyncService do
 
     context "with a mix of create, update, and delete operations" do
       # Arrange: Set up a complex initial state
-      let!(:condition_to_update) { create(:condition, routing_page_id: pages.first.id, answer_value: "Update Me", goto_page_id: pages.second.id) }
-      let!(:condition_to_delete) { create(:condition, routing_page_id: pages.first.id, answer_value: "Delete Me", goto_page_id: pages.second.id) }
-      let!(:condition_to_keep) { create(:condition, routing_page_id: pages.second.id, answer_value: "Option A", goto_page_id: pages.third.id) }
+      let!(:condition_to_update) { create(:condition, form:, routing_page_id: pages.first.id, answer_value: "Update Me", goto_page_id: pages.second.id) }
+      let!(:condition_to_delete) { create(:condition, form:, routing_page_id: pages.first.id, answer_value: "Delete Me", goto_page_id: pages.second.id) }
+      let!(:condition_to_keep) { create(:condition, form:, routing_page_id: pages.second.id, answer_value: "Option A", goto_page_id: pages.third.id) }
 
       let(:routes) do
         [
@@ -154,32 +154,25 @@ RSpec.describe Routes::SyncService do
     end
 
     context "when a database error occurs during the transaction" do
-      let!(:condition_to_delete) { create(:condition, routing_page_id: pages.first.id, answer_value: "An Existing Answer", goto_page_id: pages.second.id) }
+      let!(:condition_to_delete) { create(:condition, form:, routing_page_id: pages.first.id, answer_value: "An Existing Answer", goto_page_id: pages.second.id) }
 
       let(:route_to_succeed) { build(:route_input, :default, page: pages.first, answer_value: "An Existing Answer") }
       let(:route_to_fail) { build(:route_input, page: pages.first, answer_value: "A New Answer", goto: pages.third.id) }
       let(:routes) { [route_to_succeed, route_to_fail] }
 
-      let(:failing_condition_double) { instance_double(Condition) }
-
       before do
-        allow(Condition).to receive(:find_or_initialize_by).and_call_original
+        save_count = 0
+        allow_any_instance_of(FormDraftContentService).to receive(:save_content!).and_wrap_original do |method, *args|
+          save_count += 1
+          raise ActiveRecord::RecordInvalid if save_count > 1
 
-        allow(Condition).to receive(:find_or_initialize_by)
-          .with(routing_page_id: route_to_fail.page_id, answer_value: route_to_fail.answer_value.presence)
-          .and_return(failing_condition_double)
-
-        # We need to allow the `assign_attributes` call
-        allow(failing_condition_double).to receive(:assign_attributes)
-
-        # Simulate a failure when `save!` is called
-        allow(failing_condition_double).to receive(:save!).and_raise(ActiveRecord::RecordInvalid)
+          method.call(*args)
+        end
       end
 
       it "rolls back the transaction, leaving the database unchanged" do
         expect { service.sync_conditions_from_routes }.to raise_error(ActiveRecord::RecordInvalid)
 
-        # It didn't delete the condition that should have been deleted
         expect(condition_to_delete.reload).to be_present
         expect(Condition.exists?(condition_to_delete.id)).to be true
       end
