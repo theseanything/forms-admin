@@ -1,10 +1,11 @@
 # FormStep stand-in for legacy :page factory
 FactoryBot.define do
-  factory :page do
+  factory :page, class: "FormStep" do
     skip_create
 
     transient do
-      form { create(:form) }
+      id { nil }
+      form { nil }
       question_text { Faker::Lorem.question.truncate(250) }
       answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
       is_optional { false }
@@ -17,8 +18,9 @@ FactoryBot.define do
       routing_conditions { [] }
     end
 
-    initialize_with do |evaluator|
-      form = evaluator.form
+    initialize_with do |evaluator, *_args|
+      evaluator ||= OpenStruct.new
+      form = evaluator.form || create(:form)
       hash = form.draft_content_service.content_hash
       position = evaluator.position || hash["steps"].length + 1
       step = FormDocumentFactoryHelpers.build_step_attrs(
@@ -27,12 +29,13 @@ FactoryBot.define do
         answer_type: evaluator.answer_type,
         is_optional: evaluator.is_optional,
         is_repeatable: evaluator.is_repeatable,
-        answer_settings: evaluator.answer_settings,
+        answer_settings: normalize_answer_settings(evaluator.answer_settings),
         hint_text: evaluator.hint_text,
         page_heading: evaluator.page_heading,
         guidance_markdown: evaluator.guidance_markdown,
         routing_conditions: evaluator.routing_conditions,
       )
+      step["id"] = evaluator.id.to_s if evaluator.id.present?
       hash["steps"] ||= []
       hash["steps"] << step
       hash["steps"].sort_by! { |s| s["position"] }
@@ -51,18 +54,128 @@ FactoryBot.define do
       guidance_markdown { "## List of items \n\n\n #{Faker::Markdown.ordered_list}" }
     end
 
+    trait :with_simple_answer_type do
+      answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
+    end
+
     trait :with_selection_settings do
+      transient do
+        only_one_option { "true" }
+        selection_options { [{ "name" => "Option 1", "value" => "Option 1" }, { "name" => "Option 2", "value" => "Option 2" }] }
+      end
+
       answer_type { "selection" }
-      answer_settings { { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] } }
+      answer_settings { { "only_one_option" => only_one_option, "selection_options" => selection_options } }
+    end
+
+    trait :selection_with_radios do
+      answer_type { "selection" }
+      answer_settings do
+        {
+          "only_one_option" => "true",
+          "selection_options" => (1..30).to_a.map { |i| { "name" => i.to_s, "value" => i.to_s } },
+        }
+      end
+    end
+
+    trait :selection_with_autocomplete do
+      answer_type { "selection" }
+      answer_settings do
+        {
+          "only_one_option" => "true",
+          "selection_options" => (1..31).to_a.map { |i| { "name" => i.to_s, "value" => i.to_s } },
+        }
+      end
+    end
+
+    trait :selection_with_checkboxes do
+      answer_type { "selection" }
+      answer_settings do
+        {
+          "only_one_option" => "false",
+          "selection_options" => [{ "name" => "Option 1", "value" => "Option 1" }, { "name" => "Option 2", "value" => "Option 2" }],
+        }
+      end
+    end
+
+    trait :selection_with_none_of_the_above_question do
+      transient do
+        only_one_option { "true" }
+        selection_options { [{ "name" => "Option 1", "value" => "Option 1" }, { "name" => "Option 2", "value" => "Option 2" }] }
+        none_of_the_above_question_text { "None of the above question?" }
+        none_of_the_above_question_is_optional { "true" }
+      end
+
+      answer_type { "selection" }
+      is_optional { true }
+      answer_settings do
+        {
+          "only_one_option" => only_one_option,
+          "selection_options" => selection_options,
+          "none_of_the_above_question" => {
+            "question_text" => { "en" => none_of_the_above_question_text },
+            "is_optional" => none_of_the_above_question_is_optional,
+          },
+        }
+      end
     end
 
     trait :with_text_settings do
+      transient do
+        input_type { "single_line" }
+      end
+
+      answer_type { "text" }
+      answer_settings { { "input_type" => input_type } }
+    end
+
+    trait :with_single_line_text_settings do
       answer_type { "text" }
       answer_settings { { "input_type" => "single_line" } }
+    end
+
+    trait :with_date_settings do
+      transient do
+        input_type { "date_of_birth" }
+      end
+
+      answer_type { "date" }
+      answer_settings { { "input_type" => input_type } }
+    end
+
+    trait :with_address_settings do
+      transient do
+        uk_address { "true" }
+        international_address { "true" }
+      end
+
+      answer_type { "address" }
+      answer_settings { { "uk_address" => uk_address, "international_address" => international_address } }
+    end
+
+    trait :with_name_settings do
+      transient do
+        input_type { "full_name" }
+        title_needed { "false" }
+      end
+
+      answer_type { "name" }
+      answer_settings { { "input_type" => input_type, "title_needed" => title_needed } }
+    end
+
+    trait :with_full_name_settings do
+      answer_type { "name" }
+      answer_settings { { "input_type" => "full_name", "title_needed" => "false" } }
     end
 
     trait :with_file_upload_answer_type do
       answer_type { "file" }
     end
   end
+end
+
+def normalize_answer_settings(settings)
+  return settings if settings.nil? || settings.is_a?(Hash)
+
+  settings.respond_to?(:to_h) ? settings.to_h.stringify_keys : settings
 end

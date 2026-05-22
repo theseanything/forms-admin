@@ -9,8 +9,6 @@ class Form < ApplicationRecord
   has_one :group_form, dependent: :destroy
   has_many :form_documents, dependent: :destroy
 
-  validates :send_copy_of_answers, inclusion: { in: %w[disabled enabled] }, allow_nil: true
-
   after_create :set_external_id
   after_create :create_initial_draft_document
 
@@ -89,7 +87,13 @@ class Form < ApplicationRecord
   alias_method :is_archived?, :has_been_archived
 
   def pages
-    draft_content_service.steps_for_list
+    list = draft_content_service.steps_for_list
+    list.define_singleton_method(:reorder) { |*_args| self }
+    list.define_singleton_method(:in_order_of) do |field, values|
+      field = field.to_s
+      sort_by { |page| values.index(page.public_send(field == "id" ? :id : field)) || values.length }
+    end
+    list
   end
 
   def pages=(page_list)
@@ -159,6 +163,19 @@ class Form < ApplicationRecord
     draft_content_service.content_hash["form_slug"]
   end
 
+  def form_slug=(value)
+    update_draft_field!("form_slug", value)
+  end
+
+  %i[
+    submission_format_previously_changed?
+    send_daily_submission_batch_previously_changed?
+    send_weekly_submission_batch_previously_changed?
+    send_copy_of_answers_previously_changed?
+  ].each do |method_name|
+    define_method(method_name) { false }
+  end
+
   def submission_type
     draft_content_service.content_hash["submission_type"]
   end
@@ -194,6 +211,10 @@ class Form < ApplicationRecord
   def declaration_markdown=(value, locale: :en)
     update_draft_translatable!("declaration_markdown", value, locale:)
   end
+
+  alias_method :declaration_text, :declaration_markdown
+  alias_method :declaration_text_cy, :declaration_markdown_cy
+  alias_method :declaration_text_cy=, :declaration_markdown_cy=
 
   def what_happens_next_markdown(locale: :en)
     TranslatableString.for_locale(draft_content_service.content_hash["what_happens_next_markdown"], locale:)
@@ -358,6 +379,8 @@ class Form < ApplicationRecord
     pages.count { |p| p.answer_type.to_sym == :file }
   end
 
+  before_destroy :clear_document_pointers, prepend: true
+
   after_destroy do
     group_form&.destroy
   end
@@ -423,6 +446,12 @@ class Form < ApplicationRecord
 
   def destroy_form!
     destroy!
+  end
+
+  def clear_document_pointers
+    Form.where(id: id).update_all(draft_form_document_id: nil, live_form_document_id: nil)
+    self.draft_form_document_id = nil
+    self.live_form_document_id = nil
   end
 
   def live_welsh_form_document

@@ -3,9 +3,15 @@ require "rails_helper"
 describe "pages/edit.html.erb" do
   let(:question_text) { Faker::Lorem.question.truncate(250) }
 
-  let(:form) { create :form, pages: [page] }
+  let(:form) { create(:form, pages_count: 1) }
   let(:group) { create :group }
-  let(:page) { create :page, question_text:, answer_type:, answer_settings: {}, page_heading: nil }
+  let(:page) do
+    form.pages.first.tap do |p|
+      p.assign_attributes(question_text:, answer_type:, answer_settings: {}, page_heading: nil)
+      p.save_and_update_form
+    end
+    form.reload.pages.first
+  end
   let(:answer_type) { "email" }
 
   let(:draft_question) { question_input.draft_question }

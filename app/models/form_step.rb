@@ -20,6 +20,10 @@ class FormStep
     @step_data["position"].to_i
   end
 
+  def position=(value)
+    @step_data["position"] = value.to_i
+  end
+
   def answer_type
     @step_data["answer_type"]
   end
@@ -78,6 +82,11 @@ class FormStep
 
   def is_optional?
     ActiveRecord::Type::Boolean.new.cast(data["is_optional"]) || false
+  end
+
+  def is_optional=(value)
+    @step_data["data"] ||= {}
+    @step_data["data"]["is_optional"] = value
   end
 
   alias_method :optional?, :is_optional?
@@ -194,6 +203,32 @@ class FormStep
       is_optional: is_optional?,
       is_repeatable: is_repeatable?,
       routing_conditions: routing_conditions.map(&:as_json),
+    }
+  end
+
+  def as_form_document_step(next_step = nil)
+    next_step_id = case next_step
+                   when FormStep then next_step.id
+                   when nil then @step_data["next_step_id"]
+                   else next_step
+                   end
+
+    {
+      "id" => id,
+      "type" => @step_data["type"] || "question",
+      "position" => position,
+      "next_step_id" => next_step_id,
+      "question_text" => @step_data["question_text"],
+      "hint_text" => @step_data["hint_text"],
+      "page_heading" => @step_data["page_heading"],
+      "guidance_markdown" => @step_data["guidance_markdown"],
+      "answer_type" => answer_type,
+      "routing_conditions" => @step_data["routing_conditions"] || [],
+      "data" => {
+        "is_optional" => is_optional?,
+        "is_repeatable" => is_repeatable?,
+        "answer_settings" => data["answer_settings"],
+      }.compact,
     }
   end
 end

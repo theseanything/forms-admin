@@ -69,6 +69,19 @@ class FormCondition
     condition_model.as_json(options)
   end
 
+  def as_form_document_condition
+    {
+      "id" => id.to_s,
+      "answer_value" => answer_value,
+      "goto_page_id" => goto_page_id&.to_s,
+      "check_page_id" => check_page_id.to_s,
+      "routing_page_id" => routing_page_id.to_s,
+      "skip_to_end" => skip_to_end,
+      "exit_page_heading" => @exit_page_heading,
+      "exit_page_markdown" => @exit_page_markdown,
+    }.compact
+  end
+
   def exit_page_heading=(value)
     @exit_page_heading = value
   end

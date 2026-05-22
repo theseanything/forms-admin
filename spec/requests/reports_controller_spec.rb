@@ -157,10 +157,10 @@ RSpec.describe ReportsController, type: :request do
   describe "#forms_with_routes" do
     let(:path) { report_forms_with_routes_path(tag: :live) }
     let(:form) do
-      form = create(:form, :live, :ready_for_routing)
-      create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
-      form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-      form
+      form = create(:form, :ready_for_live, routing_steps: true)
+      create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
     end
     let(:forms) { [form] }
 
@@ -187,11 +187,11 @@ RSpec.describe ReportsController, type: :request do
   describe "#forms_with_branch_routes" do
     let(:path) { report_forms_with_branch_routes_path(tag: :live) }
     let(:form) do
-      form = create(:form, :live, :ready_for_routing)
-      create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
-      create(:condition, routing_page_id: form.pages.second.id, check_page_id: form.pages.first.id, goto_page_id: form.pages.fourth.id)
-      form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-      form
+      form = create(:form, :ready_for_live, routing_steps: true)
+      create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
+      create(:condition, form:, routing_page_id: form.pages.second.id, check_page_id: form.pages.first.id, goto_page_id: form.pages.fourth.id)
+      FormDocumentFactoryHelpers.publish_form!(form)
+      form.reload
     end
     let(:forms) { [form] }
 
@@ -597,10 +597,10 @@ RSpec.describe ReportsController, type: :request do
 
     describe "#forms_with_routes as csv" do
       let(:form) do
-        form = create(:form, :live, :ready_for_routing)
-        create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
-        form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-        form
+        form = create(:form, :ready_for_live, routing_steps: true)
+        create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", goto_page_id: form.pages.second.id)
+        FormDocumentFactoryHelpers.publish_form!(form)
+        form.reload
       end
       let(:forms) { [form, *create_list(:form, 2, :live)] }
       let(:expected_csv_filename) { "live_forms_with_routes_report-2025-05-15 15:31:57 UTC.csv" }

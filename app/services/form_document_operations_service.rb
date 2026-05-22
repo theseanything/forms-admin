@@ -74,8 +74,9 @@ class FormDocumentOperationsService
     return false if form.draft_form_document_id.blank?
 
     ActiveRecord::Base.transaction do
+      draft = form.draft_form_document
       form.update!(draft_form_document_id: nil)
-      form.draft_form_document&.destroy!
+      draft.destroy!
     end
     true
   end

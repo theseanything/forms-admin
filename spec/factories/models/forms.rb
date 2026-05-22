@@ -13,6 +13,10 @@ FactoryBot.define do
       payment_url { nil }
       available_languages { %w[en] }
       pages_count { 0 }
+      pages { nil }
+      state { nil }
+      lifecycle { nil }
+      routing_steps { false }
     end
 
     question_section_completed { false }
@@ -37,7 +41,28 @@ FactoryBot.define do
         available_languages: evaluator.available_languages,
         send_copy_of_answers: "disabled",
       )
-      FormDocumentFactoryHelpers.add_steps_to_form!(form, count: evaluator.pages_count) if evaluator.pages_count.positive?
+
+      if evaluator.routing_steps
+        steps = (1..5).map do |i|
+          FormDocumentFactoryHelpers.build_step_attrs(
+            position: i,
+            answer_type: "selection",
+            answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] },
+          )
+        end
+        steps.each_with_index { |s, i| s["next_step_id"] = steps[i + 1]&.dig("id") }
+        hash = form.draft_content_service.content_hash
+        hash["steps"] = steps
+        hash["start_page"] = steps.first["id"]
+        FormDocumentOperationsService.new(form).save_draft_content!(hash)
+      elsif evaluator.pages_count.positive?
+        FormDocumentFactoryHelpers.add_steps_to_form!(form, count: evaluator.pages_count)
+      elsif evaluator.pages.present?
+        form.pages = evaluator.pages
+      end
+
+      lifecycle = evaluator.lifecycle || evaluator.state
+      FormDocumentFactoryHelpers.apply_lifecycle_state!(form, lifecycle) if lifecycle.present?
     end
 
     trait :with_group do
@@ -106,36 +131,25 @@ FactoryBot.define do
     trait :live do
       ready_for_live
       first_made_live_at { Time.zone.now }
-
-      after(:create) do |form, _evaluator|
-        FormDocumentFactoryHelpers.create_live_form!(form)
-      end
+      lifecycle { :live }
     end
 
     trait :live_with_draft do
-      live
-
-      after(:create) do |form, _evaluator|
-        FormDocumentFactoryHelpers.create_live_with_draft!(form)
-      end
+      ready_for_live
+      first_made_live_at { Time.zone.now }
+      lifecycle { :live_with_draft }
     end
 
     trait :archived do
       ready_for_live
       first_made_live_at { Time.zone.now }
-
-      after(:create) do |form, _evaluator|
-        FormDocumentFactoryHelpers.create_live_form!(form)
-        FormDocumentFactoryHelpers.archive_form!(form)
-      end
+      lifecycle { :archived }
     end
 
     trait :archived_with_draft do
-      archived
-
-      after(:create) do |form, _evaluator|
-        FormDocumentOperationsService.new(form).ensure_draft!
-      end
+      ready_for_live
+      first_made_live_at { Time.zone.now }
+      lifecycle { :archived_with_draft }
     end
 
     trait :with_support do
@@ -143,22 +157,7 @@ FactoryBot.define do
     end
 
     trait :ready_for_routing do
-      pages_count { 5 }
-
-      after(:create) do |form, _evaluator|
-        steps = (1..5).map do |i|
-          FormDocumentFactoryHelpers.build_step_attrs(
-            position: i,
-            answer_type: "selection",
-            answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] },
-          )
-        end
-        steps.each_with_index { |s, i| s["next_step_id"] = steps[i + 1]&.dig("id") }
-        hash = form.draft_content_service.content_hash
-        hash["steps"] = steps
-        hash["start_page"] = steps.first["id"]
-        FormDocumentOperationsService.new(form).save_draft_content!(hash)
-      end
+      routing_steps { true }
     end
 
     trait :missing_pages do

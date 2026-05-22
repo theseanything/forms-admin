@@ -10,29 +10,30 @@ RSpec.describe Reports::FormDocumentsService do
   let(:live_internal_organisation_form) { create :form }
   let(:form_with_welsh_translation) { create :form, welsh_completed: true }
   let(:branch_route_form) do
-    form = create(:form, :live, :ready_for_routing)
-    create(:condition, :with_exit_page, routing_page_id: form.pages[0].id, check_page_id: form.pages[0].id, answer_value: "Option 1")
-    create(:condition, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
-    create(:condition, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, goto_page_id: form.pages[4].id)
-    form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-    form
+    form = create(:form, :ready_for_live, routing_steps: true)
+    create(:condition, :with_exit_page, form:, routing_page_id: form.pages[0].id, check_page_id: form.pages[0].id, answer_value: "Option 1")
+    create(:condition, form:, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
+    create(:condition, form:, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, goto_page_id: form.pages[4].id)
+    FormDocumentFactoryHelpers.publish_form!(form)
+    form.reload
   end
 
   let(:basic_route_form) do
-    form = create(:form, :live, :ready_for_routing)
-    create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", skip_to_end: true)
-    form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-    form
+    form = create(:form, :ready_for_live, routing_steps: true)
+    create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", skip_to_end: true)
+    FormDocumentFactoryHelpers.publish_form!(form)
+    form.reload
   end
 
   let(:form_with_2_branch_routes) do
-    form = create(:form, :live, :ready_for_routing, pages_count: 10)
-    create(:condition, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
-    create(:condition, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, answer_value: "Option 2", goto_page_id: form.pages[4].id)
-    create(:condition, routing_page_id: form.pages[6].id, check_page_id: form.pages[6].id, answer_value: "Option 1", goto_page_id: form.pages[8].id)
-    create(:condition, routing_page_id: form.pages[7].id, check_page_id: form.pages[6].id, answer_value: "Option 2", goto_page_id: form.pages[9].id)
-    form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-    form
+    form = create(:form, :ready_for_live)
+    FormDocumentFactoryHelpers.add_steps_to_form!(form, count: 10, answer_type: "selection", answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] })
+    create(:condition, form:, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
+    create(:condition, form:, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, answer_value: "Option 2", goto_page_id: form.pages[4].id)
+    create(:condition, form:, routing_page_id: form.pages[6].id, check_page_id: form.pages[6].id, answer_value: "Option 1", goto_page_id: form.pages[8].id)
+    create(:condition, form:, routing_page_id: form.pages[7].id, check_page_id: form.pages[6].id, answer_value: "Option 2", goto_page_id: form.pages[9].id)
+    FormDocumentFactoryHelpers.publish_form!(form)
+    form.reload
   end
 
   describe "#form_documents" do

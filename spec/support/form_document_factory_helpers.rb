@@ -76,4 +76,21 @@ module FormDocumentFactoryHelpers
     FormDocumentOperationsService.new(form).archive!
     form.reload
   end
+
+  def apply_lifecycle_state!(form, state)
+    case state.to_s.to_sym
+    when :live
+      create_live_form!(form) unless form.live_form_document_id.present?
+    when :live_with_draft
+      create_live_with_draft!(form)
+    when :archived
+      create_live_form!(form) unless form.live_form_document_id.present?
+      archive_form!(form) unless form.archived?
+    when :archived_with_draft
+      create_live_form!(form) unless form.live_form_document_id.present?
+      archive_form!(form) unless form.archived?
+      FormDocumentOperationsService.new(form).ensure_draft!
+    end
+    form.reload
+  end
 end

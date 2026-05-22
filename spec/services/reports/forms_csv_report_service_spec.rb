@@ -22,19 +22,20 @@ RSpec.describe Reports::FormsCsvReportService do
     end
   end
   let(:form) do
-    create(:form, :live, :with_support, submission_type: "email", submission_format: %w[csv json],
-                                        payment_url: "https://www.gov.uk/payments/organisation/service", send_daily_submission_batch: true,
-                                        send_weekly_submission_batch: true, pages: [
-                                          create(:page, :with_address_settings, is_repeatable: true),
-                                          create(:page, :with_date_settings),
-                                          create(:page, answer_type: "email"),
-                                          create(:page, :with_full_name_settings),
-                                          create(:page, answer_type: "national_insurance_number"),
-                                          create(:page, answer_type: "number"),
-                                          create(:page, answer_type: "phone_number"),
-                                          create(:page, :with_selection_settings, is_optional: true),
-                                          create(:page, :with_single_line_text_settings, is_repeatable: true),
-                                        ])
+    f = create(:form, :ready_for_live, :with_support, submission_type: "email", submission_format: %w[csv json],
+                                                       payment_url: "https://www.gov.uk/payments/organisation/service", send_daily_submission_batch: true,
+                                                       send_weekly_submission_batch: true)
+    create(:page, form: f, :with_address_settings, is_repeatable: true)
+    create(:page, form: f, :with_date_settings)
+    create(:page, form: f, answer_type: "email")
+    create(:page, form: f, :with_full_name_settings)
+    create(:page, form: f, answer_type: "national_insurance_number")
+    create(:page, form: f, answer_type: "number")
+    create(:page, form: f, answer_type: "phone_number")
+    create(:page, form: f, :with_selection_settings, is_optional: true)
+    create(:page, form: f, :with_single_line_text_settings, is_repeatable: true)
+    FormDocumentFactoryHelpers.publish_form!(f)
+    f.reload
   end
   let(:forms) { [form, create(:form, :live)] }
 

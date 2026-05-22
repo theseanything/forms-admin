@@ -3,19 +3,22 @@ FactoryBot.define do
     skip_create
 
     transient do
-      form { create(:form, :ready_for_routing) }
+      form { nil }
       routing_page { nil }
       check_page { nil }
       goto_page { nil }
+      routing_page_id { nil }
+      check_page_id { nil }
+      goto_page_id { nil }
       answer_value { "Option 1" }
       skip_to_end { false }
     end
 
     initialize_with do |evaluator|
-      form = evaluator.form
-      routing_page = evaluator.routing_page || form.pages.first
-      check_page = evaluator.check_page || routing_page
-      goto_page = evaluator.goto_page
+      form = evaluator.form || create(:form, :ready_for_live, routing_steps: true)
+      routing_page = evaluator.routing_page || form.pages.find { |p| p.id == evaluator.routing_page_id } || form.pages.first
+      check_page = evaluator.check_page || (evaluator.check_page_id && form.pages.find { |p| p.id == evaluator.check_page_id }) || routing_page
+      goto_page = evaluator.goto_page || (evaluator.goto_page_id && form.pages.find { |p| p.id == evaluator.goto_page_id })
 
       FormCondition.create_and_update_form!(
         form_id: form.id,

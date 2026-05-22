@@ -24,31 +24,32 @@ RSpec.describe Reports::QuestionsCsvReportService do
     end
   end
   let(:form_with_all_answer_types) do
-    create(:form, :live, :with_support, submission_type: "email", payment_url: "https://www.gov.uk/payments/organisation/service", pages: [
-      create(:page, :with_address_settings, is_repeatable: true),
-      create(:page, :with_date_settings),
-      create(:page, answer_type: "email"),
-      create(:page, :with_full_name_settings),
-      create(:page, answer_type: "national_insurance_number"),
-      create(:page, answer_type: "number"),
-      create(:page, answer_type: "phone_number"),
-      create(:page, :selection_with_none_of_the_above_question, none_of_the_above_question_text: "A follow-up question", none_of_the_above_question_is_optional: "true"),
-      create(:page, :with_single_line_text_settings, is_repeatable: true),
-    ])
+    form = create(:form, :ready_for_live, :with_support, submission_type: "email", payment_url: "https://www.gov.uk/payments/organisation/service")
+    create(:page, form:, :with_address_settings, is_repeatable: true)
+    create(:page, form:, :with_date_settings)
+    create(:page, form:, answer_type: "email")
+    create(:page, form:, :with_full_name_settings)
+    create(:page, form:, answer_type: "national_insurance_number")
+    create(:page, form:, answer_type: "number")
+    create(:page, form:, answer_type: "phone_number")
+    create(:page, form:, :selection_with_none_of_the_above_question, none_of_the_above_question_text: "A follow-up question", none_of_the_above_question_is_optional: "true")
+    create(:page, form:, :with_single_line_text_settings, is_repeatable: true)
+    FormDocumentFactoryHelpers.publish_form!(form)
+    form.reload
   end
   let(:branch_route_form) do
-    form = create(:form, :live, :ready_for_routing)
-    create(:condition, :with_exit_page, routing_page_id: form.pages[0].id, check_page_id: form.pages[0].id, answer_value: "Option 1")
-    create(:condition, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
-    create(:condition, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, goto_page_id: form.pages[4].id)
-    form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-    form
+    form = create(:form, :ready_for_live, routing_steps: true)
+    create(:condition, :with_exit_page, form:, routing_page_id: form.pages[0].id, check_page_id: form.pages[0].id, answer_value: "Option 1")
+    create(:condition, form:, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
+    create(:condition, form:, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, goto_page_id: form.pages[4].id)
+    FormDocumentFactoryHelpers.publish_form!(form)
+    form.reload
   end
   let(:basic_route_form) do
-    form = create(:form, :live, :ready_for_routing)
-    create(:condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", skip_to_end: true)
-    form.live_form_document.update!(content: form.reload.as_form_document(live_at: form.updated_at))
-    form
+    form = create(:form, :ready_for_live, routing_steps: true)
+    create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", skip_to_end: true)
+    FormDocumentFactoryHelpers.publish_form!(form)
+    form.reload
   end
   let(:forms) { [form_with_all_answer_types, branch_route_form, basic_route_form] }
 
