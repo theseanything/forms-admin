@@ -36,12 +36,12 @@ class FormDocumentOperationsService
     draft
   end
 
-  def publish!
+  def publish!(skip_readiness_check: false)
     if form.draft_form_document.blank?
       form.errors.add(:base, "No draft to publish")
       raise ActiveRecord::RecordInvalid, form
     end
-    unless form.all_ready_for_live?(ignore_missing_welsh: true)
+    unless skip_readiness_check || form.all_ready_for_live?(ignore_missing_welsh: true)
       form.errors.add(:base, "Form is not ready to go live")
       raise ActiveRecord::RecordInvalid, form
     end

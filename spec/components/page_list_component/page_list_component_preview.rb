@@ -5,7 +5,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
   # use - we can remove it once we remove the feature flag column
   def default
     pages = []
-    form = create(:form, :with_group, id: 0, pages:)
+    form = create(:form, :with_group, pages:)
     render(PageListComponent::View.new(pages:, form:))
   end
 
@@ -13,7 +13,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
     pages = [build(:page, id: 1, position: 1, question_text: "Enter your name", routing_conditions: []),
              build(:page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: []),
              build(:page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: [])]
-    form = create(:form, :with_group, id: 0, pages:)
+    form = create(:form, :with_group, pages:)
     render(PageListComponent::View.new(pages:, form:))
   end
 
@@ -22,7 +22,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
     pages = [build(:page, id: 1, position: 1, question_text: "Enter your name", routing_conditions: [condition]),
              build(:page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: []),
              build(:page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: [])]
-    form = create(:form, :with_group, id: 0, pages:)
+    form = create(:form, :with_group, pages:)
 
     # We need to build the records rather than create them so that we don't save them to the database when we view the
     # preview. However, this means that the associations aren't available so we need to manually set the associations
@@ -43,7 +43,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
     pages = [(build :page, id: 1, position: 1, question_text: "Enter your name", routing_conditions: routing_conditions_1),
              (build :page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: routing_conditions_2),
              (build :page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: [])]
-    form = create(:form, :with_group, id: 0, pages:)
+    form = create(:form, :with_group, pages:)
 
     # We need to build the records rather than create them so that we don't save them to the database when we view the
     # preview. However, this means that the associations aren't available so we need to manually set the associations
@@ -67,7 +67,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
     pages = [(build :page, id: 1, position: 1, question_text: "Enter your name", routing_conditions: routing_conditions_1),
              (build :page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: routing_conditions_2),
              (build :page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: [])]
-    form = create(:form, :with_group, id: 1, pages:)
+    form = create(:form, :with_group, pages:)
 
     # We need to build the records rather than create them so that we don't save them to the database when we view the
     # preview. However, this means that the associations aren't available so we need to manually set the associations
@@ -99,7 +99,7 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
       (build :page, id: 5, position: 5, question_text: "What is your favourite colour?", routing_conditions: []),
     ]
 
-    form = create(:form, :with_group, id: 1, pages:)
+    form = create(:form, :with_group, pages:)
     form.group.multiple_branches_enabled = true
 
     (routing_conditions_1 + routing_conditions_2).each do |condition|

@@ -4,8 +4,10 @@ class FormCondition
   include ConditionMethods
 
   attr_accessor :id, :answer_value, :goto_page_id, :check_page_id, :routing_page_id,
-                :skip_to_end, :exit_page_heading, :exit_page_markdown
-  attr_reader :form, :draft_service
+                :skip_to_end, :exit_page_heading, :exit_page_markdown,
+                :routing_page, :goto_page, :check_page
+  attr_accessor :form
+  attr_reader :draft_service
 
   def self.create_and_update_form!(form_id:, routing_page_id:, **attrs)
     form = Form.find(form_id)
@@ -126,11 +128,21 @@ class FormCondition
   end
 
   def routing_page
+    return @routing_page if instance_variable_defined?(:@routing_page) && @routing_page
+
     form.pages.find { |page| page.id.to_s == routing_page_id.to_s }
   end
 
   def check_page
+    return @check_page if instance_variable_defined?(:@check_page) && @check_page
+
     form.pages.find { |page| page.id.to_s == check_page_id.to_s }
+  end
+
+  def goto_page
+    return @goto_page if instance_variable_defined?(:@goto_page) && @goto_page
+
+    form.pages.find { |page| page.id.to_s == goto_page_id.to_s } if goto_page_id.present?
   end
 
   def exit_page_heading_cy

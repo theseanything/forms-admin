@@ -45,6 +45,7 @@ class FormDocument::Condition
   end
 
   def warning_answer_doesnt_exist
+    return nil if secondary_skip?
     return nil if has_precondition? && answer_value.nil?
 
     check_step = find_step(check_page_id)

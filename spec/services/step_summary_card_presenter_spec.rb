@@ -15,14 +15,14 @@ describe StepSummaryCardPresenter do
     end
 
     it "includes a title" do
-      expect(presenter.build_card[:title]).to eq "1. #{step.question_text}"
+      expect(presenter.build_card[:title]).to eq "1. #{step.data.question_text}"
     end
 
     context "when the step is a selection question" do
       let(:step) { build :form_document_step, :with_selection_settings, is_optional: }
 
       it "includes a title without (optional) added to it" do
-        expect(presenter.build_card[:title]).to eq "1. #{step.question_text}"
+        expect(presenter.build_card[:title]).to eq "1. #{step.data.question_text}"
       end
     end
 
@@ -30,14 +30,14 @@ describe StepSummaryCardPresenter do
       let(:is_optional) { "true" }
 
       it "includes a title with (optional) added to it" do
-        expect(presenter.build_card[:title]).to eq "1. #{step.question_text} (optional)"
+        expect(presenter.build_card[:title]).to eq "1. #{step.data.question_text} (optional)"
       end
 
       context "when the step is a selection question" do
         let(:step) { build :form_document_step, :with_selection_settings, is_optional: }
 
         it "includes a title without (optional) added to it" do
-          expect(presenter.build_card[:title]).to eq "1. #{step.question_text}"
+          expect(presenter.build_card[:title]).to eq "1. #{step.data.question_text}"
         end
       end
     end
@@ -46,30 +46,36 @@ describe StepSummaryCardPresenter do
       let(:is_optional) { nil }
 
       it "includes a title" do
-        expect(presenter.build_card[:title]).to eq "1. #{step.question_text}"
+        expect(presenter.build_card[:title]).to eq "1. #{step.data.question_text}"
       end
 
       context "when the step is a selection question" do
         let(:step) { build :form_document_step, :with_selection_settings, is_optional: }
 
         it "includes a title without (optional) added to it" do
-          expect(presenter.build_card[:title]).to eq "1. #{step.question_text}"
+          expect(presenter.build_card[:title]).to eq "1. #{step.data.question_text}"
         end
       end
     end
 
     context "when file upload question contains guidance text" do
-      let(:step) { build :form_document_step, :with_guidance, :with_file_upload_answer_type, is_optional: }
+      let(:page_heading) { "Upload your file" }
+      let(:step) do
+        build :form_document_step, :with_file_upload_answer_type,
+              page_heading:,
+              guidance_markdown: "## Upload guidance",
+              is_optional:
+      end
 
       it "includes the guidance text page heading as title" do
-        expect(presenter.build_card[:title]).to eq "1. #{step.page_heading}"
+        expect(presenter.build_card[:title]).to eq "1. #{page_heading}"
       end
 
       context "when the question is optional" do
         let(:is_optional) { "true" }
 
         it "includes a title with (optional) added to it" do
-          expect(presenter.build_card[:title]).to eq "1. #{step.page_heading} (optional)"
+          expect(presenter.build_card[:title]).to eq "1. #{page_heading} (optional)"
         end
       end
     end

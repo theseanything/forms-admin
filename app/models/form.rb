@@ -107,7 +107,13 @@ class Form < ApplicationRecord
   end
 
   def pages=(page_list)
-    return if page_list.blank?
+    if page_list.blank?
+      hash = draft_content_service.content_hash
+      hash["steps"] = []
+      hash.delete("start_page")
+      FormDocumentOperationsService.new(self).save_draft_content!(hash)
+      return
+    end
 
     page_list.each do |page|
       attrs = if page.is_a?(FormStep)
@@ -430,6 +436,7 @@ class Form < ApplicationRecord
   end
 
   def make_live!
+    self.previous_lifecycle_status = lifecycle_status
     FormDocumentOperationsService.new(self).publish!
   end
 

@@ -1,13 +1,13 @@
 require "factory_bot"
 class MarkCompleteComponent::MarkCompleteComponentPreview < ViewComponent::Preview
   def default
-    form = FactoryBot.create(:form, id: 1)
+    form = FactoryBot.create(:form)
     mark_complete_input = Forms::MarkCompleteInput.new(form:, mark_complete: false)
     render(MarkCompleteComponent::View.new(form_model: mark_complete_input, path: "/", legend: "Have you finished editing your questions?"))
   end
 
   def excluding_form
-    form = FactoryBot.create(:form, id: 1)
+    form = FactoryBot.create(:form)
     mark_complete_input = Forms::MarkCompleteInput.new(form:, mark_complete: false)
     form_builder = GOVUKDesignSystemFormBuilder::FormBuilder.new(:form, mark_complete_input,
                                                                  ActionView::Base.new(ActionView::LookupContext.new(nil), {}, nil), {})

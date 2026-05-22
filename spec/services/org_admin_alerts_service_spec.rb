@@ -17,7 +17,7 @@ RSpec.describe OrgAdminAlertsService do
     let(:form) { create(:form, :ready_for_live, state: previous_state) }
 
     before do
-      form.make_live! unless form.live?
+      form.previous_lifecycle_status = previous_state
     end
 
     context "when the previous state is draft" do

@@ -96,10 +96,11 @@ module ReportHelper
       return I18n.t("reports.form_or_questions_list_table.values.no_follow_up_question")
     end
 
+    follow_up_text = localized_question_text(none_of_the_above_question["question_text"])
     if ActiveRecord::Type::Boolean.new.cast(none_of_the_above_question["is_optional"])
-      I18n.t("step_summary_card.none_of_the_above_question_optional", question_text: none_of_the_above_question["question_text"])
+      I18n.t("step_summary_card.none_of_the_above_question_optional", question_text: follow_up_text)
     else
-      none_of_the_above_question["question_text"]
+      follow_up_text
     end
   end
 
@@ -123,7 +124,7 @@ private
   def report_questions_table_row(question)
     [
       *report_forms_table_row(question["form"]),
-      question["data"]["question_text"],
+      localized_question_text(question.dig("data", "question_text") || question["question_text"]),
     ]
   end
 
@@ -165,6 +166,10 @@ private
       *report_questions_table_row(question),
       none_of_the_above_question_text(question),
     ]
+  end
+
+  def localized_question_text(value)
+    TranslatableString.for_locale(value, locale: :en) || value.to_s
   end
 
   def form_link(form)

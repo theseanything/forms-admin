@@ -15,7 +15,8 @@ module PageListComponent
         # https://trello.com/c/BfkZEIgM/3446-set-route-count-dynamically-instead-of-hard-coding-it
         route_number = condition.secondary_skip? ? I18n.t("errors.page_conditions.route_number_for_any_other_answer") : 1
 
-        interpolation_variables = { question_number: page.position, route_number: }
+        question_number = page&.position || condition.routing_page&.position
+        interpolation_variables = { question_number:, route_number: }
 
         scope = "errors.page_conditions"
         defaults = [:"#{error_name}"]

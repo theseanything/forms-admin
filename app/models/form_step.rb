@@ -150,7 +150,12 @@ class FormStep
 
   def routing_conditions
     Array(@step_data["routing_conditions"]).map do |c|
-      FormCondition.new(form:, condition: c, step_id: id)
+      if c.is_a?(FormCondition)
+        c.form ||= @form
+        c
+      else
+        FormCondition.new(form:, condition: c, step_id: id)
+      end
     end
   end
 

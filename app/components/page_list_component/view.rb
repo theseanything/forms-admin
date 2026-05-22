@@ -42,6 +42,8 @@ module PageListComponent
         I18n.t("page_conditions.condition_group_description_end_of_form")
       else
         goto_page = find_page(group.first.goto_page_id)
+        return I18n.t("page_conditions.condition_group_description_end_of_form") if goto_page.nil?
+
         I18n.t("page_conditions.condition_group_description", goto_page_question_text: goto_page.question_text, goto_page_question_number: goto_page.position)
       end
     end

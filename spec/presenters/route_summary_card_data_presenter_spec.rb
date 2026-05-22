@@ -3,7 +3,11 @@ require "rails_helper"
 describe RouteSummaryCardDataPresenter do
   include Capybara::RSpecMatchers
 
-  subject(:service) { described_class.new(form:, page:) }
+  subject(:service) do
+    reloaded_form = form.reload
+    reloaded_page = reloaded_form.pages.detect { |step| step.id.to_s == page.id.to_s }
+    described_class.new(form: reloaded_form, page: reloaded_page)
+  end
 
   let(:form) { create :form, :ready_for_routing }
   let(:pages) { form.pages }
@@ -16,7 +20,7 @@ describe RouteSummaryCardDataPresenter do
   describe "#summary_card_data" do
     context "with conditional routes" do
       before do
-        pages.each(&:reload)
+        form.reload
       end
 
       context "when there is a valid condition" do
@@ -180,12 +184,12 @@ describe RouteSummaryCardDataPresenter do
 
   describe "#errors" do
     let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Option 1" }
-    let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.last.id }
+    let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "" }
 
     before do
       condition
-      secondary_skip_condition
-      pages.each(&:reload)
+      secondary_skip_condition if secondary_skip_condition
+      form.reload
     end
 
     it "returns an array of errors" do
@@ -193,6 +197,7 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a check error" do
+      let(:secondary_skip_condition) { nil }
       let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "Non-existent-answer" }
 
       it "contains the check error link and message" do
@@ -201,6 +206,7 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a next page error" do
+      let(:secondary_skip_condition) { nil }
       let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "Option 1" }
 
       it "contains the next page error link and message" do
@@ -209,6 +215,7 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a next page error for the secondary skip" do
+      let(:condition) { nil }
       let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.fourth.id, answer_value: "" }
 
       it "contains the secondary skip next page error link and message" do
@@ -217,6 +224,7 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a goto page before routing page error" do
+      let(:secondary_skip_condition) { nil }
       let(:page) { pages.second }
       let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.first.id, answer_value: "Option 1" }
 
@@ -226,6 +234,7 @@ describe RouteSummaryCardDataPresenter do
     end
 
     context "when there is a goto page before routing page error for the secondary skip" do
+      let(:condition) { nil }
       let(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.third.id, check_page_id: page.id, goto_page_id: pages.second.id, answer_value: "" }
 
       it "contains the secondary skip goto page before routing page error link and message" do

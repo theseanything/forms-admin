@@ -77,15 +77,16 @@ module FormDocumentFactoryHelpers
     FormDocumentOperationsService.new(form).save_draft_content!(hash)
   end
 
-  def publish_form!(form)
+  def publish_form!(form, skip_readiness_check: false)
     form.set_task_status_service(
       TaskStatusService.new(form:, current_user: OpenStruct.new(name: "Test", email: "test@example.gov.uk")),
     )
-    FormDocumentOperationsService.new(form).publish!
+    FormDocumentOperationsService.new(form).publish!(skip_readiness_check:)
   end
 
   def create_live_form!(form)
-    publish_form!(form)
+    skip_readiness = !(form.question_section_completed && form.declaration_section_completed && form.share_preview_completed)
+    publish_form!(form, skip_readiness_check: skip_readiness)
     form.reload
   end
 

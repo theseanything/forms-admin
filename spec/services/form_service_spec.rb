@@ -10,9 +10,7 @@ describe FormService do
 
   describe "#path_for_state" do
     context "when form is live" do
-      before do
-        form.state = :live
-      end
+      let(:form) { create(:form, :live, id:) }
 
       it "returns live form path" do
         expect(form_service.path_for_state).to eq "/forms/#{id}/live"
@@ -20,9 +18,7 @@ describe FormService do
     end
 
     context "when form is archived" do
-      before do
-        form.state = :archived
-      end
+      let(:form) { create(:form, :archived, id:) }
 
       it "returns archived form path" do
         expect(form_service.path_for_state).to eq "/forms/#{id}/archived"
@@ -30,10 +26,6 @@ describe FormService do
     end
 
     context "when form is draft" do
-      before do
-        form.state = :draft
-      end
-
       it "returns draft form path" do
         expect(form_service.path_for_state).to eq "/forms/#{id}"
       end

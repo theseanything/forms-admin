@@ -4,7 +4,11 @@ module AxeFeatureHelpers
   end
 
   def expect_component_to_have_no_axe_errors(page)
-    expect(page).to be_axe_clean.within("#main-content").according_to(:wcag2a, :wcag2aa, :wcag21a, :wcag21aa)
+    if page.has_css?("#main-content *", wait: 0)
+      expect(page).to be_axe_clean.within("#main-content").according_to(:wcag2a, :wcag2aa, :wcag21a, :wcag21aa)
+    else
+      expect(page).to be_axe_clean.according_to(:wcag2a, :wcag2aa, :wcag21a, :wcag21aa)
+    end
   end
 end
 
