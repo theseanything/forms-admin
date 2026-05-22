@@ -49,8 +49,11 @@ class FormDocumentOperationsService
     ActiveRecord::Base.transaction do
       previous_live_id = form.live_form_document_id
       live_content = deep_dup_content(form.draft_form_document.content)
-      live_content["live_at"] = Time.current.iso8601
-      form.first_made_live_at ||= Time.current
+      published_at = Time.current
+      live_content["live_at"] = published_at.iso8601
+      live_content["first_made_live_at"] ||= form.first_made_live_at&.iso8601 || published_at.iso8601
+      live_content["created_at"] ||= form.created_at&.iso8601 || published_at.iso8601
+      form.first_made_live_at ||= published_at
 
       live_doc = FormDocument.create!(
         form:,
