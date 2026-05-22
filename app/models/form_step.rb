@@ -32,6 +32,10 @@ class FormStep
     TranslatableString.for_locale(@step_data["question_text"], locale:)
   end
 
+  def question_text=(value)
+    @step_data["question_text"] = TranslatableString.set_for_locale(@step_data["question_text"], locale: :en, string: value)
+  end
+
   def question_text_cy
     question_text(locale: :cy)
   end
@@ -83,12 +87,24 @@ class FormStep
     TranslatableString.for_locale(@step_data["hint_text"], locale:)
   end
 
+  def hint_text=(value)
+    @step_data["hint_text"] = TranslatableString.set_for_locale(@step_data["hint_text"], locale: :en, string: value)
+  end
+
   def page_heading(locale: :en)
     TranslatableString.for_locale(@step_data["page_heading"], locale:)
   end
 
+  def page_heading=(value)
+    @step_data["page_heading"] = TranslatableString.set_for_locale(@step_data["page_heading"], locale: :en, string: value)
+  end
+
   def guidance_markdown(locale: :en)
     TranslatableString.for_locale(@step_data["guidance_markdown"], locale:)
+  end
+
+  def guidance_markdown=(value)
+    @step_data["guidance_markdown"] = TranslatableString.set_for_locale(@step_data["guidance_markdown"], locale: :en, string: value)
   end
 
   def is_optional?
@@ -198,6 +214,7 @@ class FormStep
   end
 
   def save_and_update_form
+    draft_service.update_step!(id, @step_data)
     draft_service.save_question_changes!
     true
   end
