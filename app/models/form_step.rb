@@ -120,8 +120,10 @@ class FormStep
   alias_method :is_optional, :is_optional?
 
   def reload
+    draft_service.instance_variable_set(:@content_hash, nil)
+    draft_service.instance_variable_set(:@content, nil)
     fresh = draft_service.find_step(id)
-    @step_data = fresh.step_data.deep_stringify_keys if fresh
+    @step_data = JSON.parse(JSON.generate(fresh.step_data)) if fresh
     self
   end
 

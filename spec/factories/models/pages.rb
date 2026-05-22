@@ -7,14 +7,19 @@ FactoryBot.define do
       id { nil }
       form { nil }
       question_text { Faker::Lorem.question.truncate(250) }
+      question_text_cy { nil }
       answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
       is_optional { false }
       is_repeatable { false }
       answer_settings { nil }
+      answer_settings_cy { nil }
       hint_text { nil }
+      hint_text_cy { nil }
       position { nil }
       page_heading { nil }
+      page_heading_cy { nil }
       guidance_markdown { nil }
+      guidance_markdown_cy { nil }
       routing_conditions { [] }
     end
 
@@ -25,13 +30,18 @@ FactoryBot.define do
       step = FormDocumentFactoryHelpers.build_step_attrs(
         position:,
         question_text:,
+        question_text_cy:,
         answer_type:,
         is_optional:,
         is_repeatable:,
         answer_settings: normalize_answer_settings(answer_settings),
+        answer_settings_cy:,
         hint_text:,
+        hint_text_cy:,
         page_heading:,
+        page_heading_cy:,
         guidance_markdown:,
+        guidance_markdown_cy:,
         routing_conditions:,
       )
       step["id"] = id.to_s if id.present?

@@ -3,14 +3,26 @@ FactoryBot.define do
     transient do
       sequence(:form_name) { |n| "Form #{n}" }
       name { nil }
+      name_cy { nil }
       submission_email { Faker::Internet.email(domain: "example.gov.uk") }
       submission_type { "email" }
       submission_format { [] }
       privacy_policy_url { Faker::Internet.url(host: "gov.uk") }
+      privacy_policy_url_cy { nil }
       support_email { nil }
+      support_email_cy { nil }
+      support_phone { nil }
+      support_phone_cy { nil }
+      support_url { nil }
+      support_url_cy { nil }
+      support_url_text { nil }
+      support_url_text_cy { nil }
       what_happens_next_markdown { nil }
+      what_happens_next_markdown_cy { nil }
       declaration_markdown { nil }
+      declaration_markdown_cy { nil }
       payment_url { nil }
+      payment_url_cy { nil }
       available_languages { %w[en] }
       pages_count { 0 }
       pages { nil }
@@ -31,14 +43,26 @@ FactoryBot.define do
       FormDocumentFactoryHelpers.apply_form_content!(
         form,
         name: evaluator.name.presence || evaluator.form_name,
+        name_cy: evaluator.name_cy,
         submission_email: evaluator.submission_email,
         submission_type: evaluator.submission_type,
         submission_format: evaluator.submission_format,
         privacy_policy_url: evaluator.privacy_policy_url,
+        privacy_policy_url_cy: evaluator.privacy_policy_url_cy,
         support_email: evaluator.support_email,
+        support_email_cy: evaluator.support_email_cy,
+        support_phone: evaluator.support_phone,
+        support_phone_cy: evaluator.support_phone_cy,
+        support_url: evaluator.support_url,
+        support_url_cy: evaluator.support_url_cy,
+        support_url_text: evaluator.support_url_text,
+        support_url_text_cy: evaluator.support_url_text_cy,
         what_happens_next_markdown: evaluator.what_happens_next_markdown,
+        what_happens_next_markdown_cy: evaluator.what_happens_next_markdown_cy,
         declaration_markdown: evaluator.declaration_markdown,
+        declaration_markdown_cy: evaluator.declaration_markdown_cy,
         payment_url: evaluator.payment_url,
+        payment_url_cy: evaluator.payment_url_cy,
         available_languages: evaluator.available_languages,
         send_copy_of_answers: evaluator.send_copy_of_answers,
       )

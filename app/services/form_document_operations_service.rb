@@ -153,9 +153,6 @@ private
   end
 
   def strip_cy_from_content!(content)
-    TranslatableString::SUPPORTED_LOCALES.each do |_locale|
-      # only strip cy
-    end
     content.each_value do |v|
       v.delete("cy") if v.is_a?(Hash) && v.key?("cy")
     end
@@ -163,6 +160,7 @@ private
       %w[question_text hint_text page_heading guidance_markdown exit_page_heading exit_page_markdown].each do |key|
         step[key]&.delete("cy") if step[key].is_a?(Hash)
       end
+      step.dig("data")&.delete("answer_settings_cy")
       Array(step["routing_conditions"]).each do |c|
         %w[exit_page_heading exit_page_markdown].each do |key|
           c[key]&.delete("cy") if c[key].is_a?(Hash)
