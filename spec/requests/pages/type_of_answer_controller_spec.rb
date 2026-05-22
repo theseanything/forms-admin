@@ -181,8 +181,8 @@ RSpec.describe Pages::TypeOfAnswerController, type: :request do
       end
 
       it "saves the updated answer type to draft_question" do
-        form = assigns(:type_of_answer_input)
-        expect(form.draft_question.answer_type).to eq answer_type
+        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+        expect(reloaded_page.answer_type).to eq answer_type
       end
 
       it "redirects the user to the question details page" do
@@ -198,8 +198,8 @@ RSpec.describe Pages::TypeOfAnswerController, type: :request do
         let(:answer_type) { "selection" }
 
         it "saves the answer type to draft_question" do
-          form = assigns(:type_of_answer_input)
-          expect(form.draft_question.answer_type).to eq "selection"
+          reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+          expect(reloaded_page.answer_type).to eq "selection"
         end
 
         it "redirects the user to the selection type page" do

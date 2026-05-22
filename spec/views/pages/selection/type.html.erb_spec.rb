@@ -70,7 +70,8 @@ describe "pages/selection/type.html.erb", type: :view do
       end
 
       context "when editing an existing question" do
-        let(:form) { create :form, pages: [page] }
+        let(:form) { create(:form, pages_count: 1) }
+        let(:page) { form.pages.first }
 
         context "when no routing conditions set" do
           it "does not display a warning about routes being deleted" do

@@ -48,7 +48,7 @@ class FormDocument::Condition
     return nil if has_precondition? && answer_value.nil?
 
     check_step = find_step(check_page_id)
-    answer_options = check_step&.data&.dig("answer_settings", "selection_options")&.pluck("name")
+    answer_options = check_step&.dig("data", "answer_settings", "selection_options")&.map { |o| o["name"] }
     return nil if answer_options.blank? || answer_options.include?(answer_value)
 
     DataStruct.new(name: "answer_value_doesnt_exist")

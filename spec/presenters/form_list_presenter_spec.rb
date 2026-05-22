@@ -78,10 +78,10 @@ describe FormListPresenter do
       context "when forms with names are random" do
         let(:forms) do
           [
-            build(:form, id: 1, name: "z", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 3, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 4, name: "C", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 1, name: "z", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 3, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 4, name: "C", created_at: "2024-10-08T07:31:15.762Z"),
           ]
         end
         let(:presenter) { described_class.call(forms:, group:, can_admin:) }
@@ -98,10 +98,10 @@ describe FormListPresenter do
       context "when multiple forms have the same name" do
         let(:forms) do
           [
-            build(:form, id: 1, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
-            build(:form, id: 3, name: "a", created_at: "2024-10-08T08:31:15.762Z"),
-            build(:form, id: 4, name: "a", created_at: "2024-10-08T09:31:15.762Z"),
+            create(:form, id: 1, name: "a", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 2, name: "b", created_at: "2024-10-08T07:31:15.762Z"),
+            create(:form, id: 3, name: "a", created_at: "2024-10-08T08:31:15.762Z"),
+            create(:form, id: 4, name: "a", created_at: "2024-10-08T09:31:15.762Z"),
           ]
         end
         let(:presenter) { described_class.call(forms:, group:, can_admin:) }

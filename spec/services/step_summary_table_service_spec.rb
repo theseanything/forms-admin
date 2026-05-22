@@ -5,8 +5,8 @@ describe StepSummaryTableService do
     described_class.new(step: form_document_step, steps: form_document_steps, welsh_steps: welsh_form_document_steps)
   end
 
-  let(:form) { create :form, :with_welsh_translation, :live, id: 1, pages: [page] }
-  let(:page) { create(:page) }
+  let(:form) { create(:form, :with_welsh_translation, :live, pages_count: 1) }
+  let(:page) { form.pages.first }
 
   let(:form_document_content) { FormDocument::Content.from_form_document(form.live_form_document) }
   let(:welsh_form_document_content) { FormDocument::Content.from_form_document(form.live_welsh_form_document) }

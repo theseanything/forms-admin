@@ -55,7 +55,7 @@ RSpec.describe Forms::WelshTranslationInput, type: :model do
       payment_url: "https://www.gov.uk/english-payment",
       payment_url_cy: "https://www.gov.uk/payments/your-welsh-payment-link",
     }
-    build(:form, default_attributes.merge(attributes))
+    create(:form, default_attributes.merge(attributes))
   end
 
   def build_empty_welsh_form
@@ -79,7 +79,7 @@ RSpec.describe Forms::WelshTranslationInput, type: :model do
       payment_url: "https://www.gov.uk/english-payment",
       payment_url_cy: "",
     }
-    build(:form, empty_attributes)
+    create(:form, empty_attributes)
   end
 
   describe "validations" do

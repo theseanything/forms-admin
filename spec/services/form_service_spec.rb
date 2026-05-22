@@ -6,7 +6,7 @@ describe FormService do
   end
 
   let(:id) { 1 }
-  let(:form) { build(:form, id:) }
+  let(:form) { create(:form, id:) }
 
   describe "#path_for_state" do
     context "when form is live" do

@@ -150,6 +150,10 @@ class FormStep
     id
   end
 
+  def form_id
+    form.id
+  end
+
   def next_page
     @step_data["next_step_id"]
   end
@@ -177,13 +181,24 @@ class FormStep
     %w[question_text hint_text page_heading guidance_markdown].each do |key|
       attrs[key] = { "en" => attrs[key] } if attrs[key].is_a?(String)
     end
-    attrs["data"] = {
+    data_attrs = {
       "is_optional" => attrs.delete("is_optional"),
       "is_repeatable" => attrs.delete("is_repeatable"),
       "answer_settings" => attrs.delete("answer_settings"),
     }.compact
+    attrs["data"] = (@step_data["data"] || {}).merge(data_attrs) if data_attrs.present?
     draft_service.update_step!(id, @step_data.merge(attrs))
+    @step_data = draft_service.find_step(id).step_data
     self
+  end
+
+  def answer_type=(value)
+    assign_attributes(answer_type: value)
+  end
+
+  def answer_settings=(value)
+    settings = value.is_a?(DataStruct) ? value.to_h : value
+    assign_attributes(answer_settings: settings)
   end
 
   def update!(attrs)

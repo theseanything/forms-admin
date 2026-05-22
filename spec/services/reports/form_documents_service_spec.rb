@@ -11,16 +11,29 @@ RSpec.describe Reports::FormDocumentsService do
   let(:form_with_welsh_translation) { create :form, welsh_completed: true }
   let(:branch_route_form) do
     form = create(:form, :ready_for_live, routing_steps: true)
-    create(:condition, :with_exit_page, form:, routing_page_id: form.pages[0].id, check_page_id: form.pages[0].id, answer_value: "Option 1")
-    create(:condition, form:, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
-    create(:condition, form:, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, goto_page_id: form.pages[4].id)
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[0].id, check_page_id: form.pages[0].id, answer_value: "Option 1",
+      exit_page_heading: { "en" => "Exit heading" }, exit_page_markdown: { "en" => "Exit body" },
+    )
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id,
+      answer_value: "Option 1", goto_page_id: form.pages[3].id,
+    )
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, goto_page_id: form.pages[4].id,
+    )
+    form.reload
     FormDocumentFactoryHelpers.publish_form!(form)
     form.reload
   end
 
   let(:basic_route_form) do
     form = create(:form, :ready_for_live, routing_steps: true)
-    create(:condition, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Option 1", skip_to_end: true)
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id,
+      answer_value: "Option 1", skip_to_end: true,
+    )
+    form.reload
     FormDocumentFactoryHelpers.publish_form!(form)
     form.reload
   end
@@ -28,10 +41,24 @@ RSpec.describe Reports::FormDocumentsService do
   let(:form_with_2_branch_routes) do
     form = create(:form, :ready_for_live)
     FormDocumentFactoryHelpers.add_steps_to_form!(form, count: 10, answer_type: "selection", answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] })
-    create(:condition, form:, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id, answer_value: "Option 1", goto_page_id: form.pages[3].id)
-    create(:condition, form:, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id, answer_value: "Option 2", goto_page_id: form.pages[4].id)
-    create(:condition, form:, routing_page_id: form.pages[6].id, check_page_id: form.pages[6].id, answer_value: "Option 1", goto_page_id: form.pages[8].id)
-    create(:condition, form:, routing_page_id: form.pages[7].id, check_page_id: form.pages[6].id, answer_value: "Option 2", goto_page_id: form.pages[9].id)
+    form.reload
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[1].id, check_page_id: form.pages[1].id,
+      answer_value: "Option 1", goto_page_id: form.pages[3].id,
+    )
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[2].id, check_page_id: form.pages[1].id,
+      answer_value: "Option 2", goto_page_id: form.pages[4].id,
+    )
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[6].id, check_page_id: form.pages[6].id,
+      answer_value: "Option 1", goto_page_id: form.pages[8].id,
+    )
+    FormCondition.create_and_update_form!(
+      form_id: form.id, routing_page_id: form.pages[7].id, check_page_id: form.pages[6].id,
+      answer_value: "Option 2", goto_page_id: form.pages[9].id,
+    )
+    form.reload
     FormDocumentFactoryHelpers.publish_form!(form)
     form.reload
   end
@@ -219,9 +246,16 @@ RSpec.describe Reports::FormDocumentsService do
 
   describe ".has_add_another_answer?" do
     let(:form) do
-      create(:form, :live, pages: [
-        create(:page, is_repeatable:),
-      ])
+      create(:form, :ready_for_live).tap do |f|
+        hash = f.draft_content_service.content_hash
+        hash["steps"] = [
+          FormDocumentFactoryHelpers.build_step_attrs(is_repeatable:),
+        ]
+        hash["start_page"] = hash["steps"].first["id"]
+        FormDocumentOperationsService.new(f).save_draft_content!(hash)
+        FormDocumentFactoryHelpers.publish_form!(f)
+        f.reload
+      end
     end
     let(:form_document) { form.live_form_document }
 

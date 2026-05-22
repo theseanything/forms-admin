@@ -263,11 +263,19 @@ RSpec.describe Reports::FeatureReportService do
   end
 
   describe "selection questions methods" do
-    let(:page_with_autocomplete) { build(:page, :selection_with_autocomplete) }
-    let(:page_with_radios) { build(:page, :selection_with_radios) }
-    let(:page_with_checkboxes) { build(:page, :selection_with_checkboxes) }
-    let(:not_selection_question) { build :page, answer_type: "name" }
-    let(:form) { create(:form, :live, pages: [page_with_checkboxes, page_with_radios, page_with_autocomplete, not_selection_question]) }
+    let(:form) do
+      f = create(:form, :ready_for_live, pages_count: 0)
+      create(:page, form: f, :selection_with_checkboxes)
+      create(:page, form: f, :selection_with_radios)
+      create(:page, form: f, :selection_with_autocomplete)
+      create(:page, form: f, answer_type: "name")
+      FormDocumentFactoryHelpers.publish_form!(f)
+      f.reload
+    end
+    let(:page_with_autocomplete) { form.pages.find { |p| p.answer_type == "selection" && p.answer_settings.selection_options.length > 30 } }
+    let(:page_with_radios) { form.pages.find { |p| p.answer_type == "selection" && p.only_one_option? } }
+    let(:page_with_checkboxes) { form.pages.find { |p| p.answer_type == "selection" && !p.only_one_option? } }
+    let(:not_selection_question) { form.pages.find { |p| p.answer_type == "name" } }
     let(:forms) { [form] }
 
     describe "#selection_questions_with_autocomplete" do

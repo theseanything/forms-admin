@@ -1,7 +1,7 @@
 require "rails_helper"
 
 describe "forms/welsh_translation/delete.html.erb" do
-  let(:form) { build(:form, id: 1) }
+  let(:form) { create(:form, id: 1) }
   let(:delete_welsh_translation_input) { Forms::DeleteWelshTranslationInput.new(form:, confirm:) }
   let(:confirm) { "true" }
   let(:welsh_translation_path) { "/welsh-translation" }

@@ -126,9 +126,8 @@ RSpec.describe Pages::DateSettingsController, type: :request do
       end
 
       it "loads the updated input type from the page params" do
-        form_instance_variable = assigns(:date_settings_input)
-        expect(form_instance_variable.input_type).to eq "other_date"
-        expect(form_instance_variable.draft_question.answer_settings).to include(input_type: "other_date")
+        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+        expect(reloaded_page.answer_settings.input_type).to eq "other_date"
       end
 
       it "redirects the user to the edit question page" do

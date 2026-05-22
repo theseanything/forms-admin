@@ -33,7 +33,7 @@ describe "forms/welsh_translation/new.html.erb" do
       declaration_markdown: "Declaration markdown", # no welsh version to test nil
       pages: [page, another_page],
     }
-    build(:form, default_attributes.merge(attributes))
+    create(:form, default_attributes.merge(attributes))
   end
 
   before do

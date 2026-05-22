@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Forms::PaymentLinkInput, type: :model do
   describe "Payment URL" do
     let(:form) do
-      build(:form, :live)
+      create(:form, :live)
     end
 
     it_behaves_like "a payment link validator" do

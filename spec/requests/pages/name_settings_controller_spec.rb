@@ -126,11 +126,9 @@ RSpec.describe Pages::NameSettingsController, type: :request do
       end
 
       it "loads the updated input type from the page params" do
-        form_instance_variable = assigns(:name_settings_input)
-        expect(form_instance_variable.input_type).to eq input_type
-        expect(form_instance_variable.title_needed).to eq title_needed
-        expect(form_instance_variable.draft_question.answer_settings)
-          .to include(input_type: "full_name", title_needed: "true")
+        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+        expect(reloaded_page.answer_settings.input_type).to eq input_type
+        expect(reloaded_page.answer_settings.title_needed).to eq title_needed
       end
 
       it "redirects the user to the edit question page" do

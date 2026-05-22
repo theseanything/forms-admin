@@ -42,6 +42,7 @@ FactoryBot.define do
       hash["steps"].each_with_index { |s, i| s["position"] = i + 1; s["next_step_id"] = hash["steps"][i + 1]&.dig("id") }
       hash["start_page"] = hash["steps"].first["id"]
       FormDocumentOperationsService.new(form).save_draft_content!(hash)
+      form.reload
       FormStep.new(form:, step_data: step, draft_service: form.draft_content_service)
     end
 

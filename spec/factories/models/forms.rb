@@ -17,6 +17,7 @@ FactoryBot.define do
       state { nil }
       lifecycle { nil }
       routing_steps { false }
+      send_copy_of_answers { "disabled" }
     end
 
     question_section_completed { false }
@@ -39,7 +40,7 @@ FactoryBot.define do
         declaration_markdown: evaluator.declaration_markdown,
         payment_url: evaluator.payment_url,
         available_languages: evaluator.available_languages,
-        send_copy_of_answers: "disabled",
+        send_copy_of_answers: evaluator.send_copy_of_answers,
       )
 
       if evaluator.routing_steps

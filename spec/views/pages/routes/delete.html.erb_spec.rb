@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe "pages/routes/delete.html.erb" do
-  let(:form) { create :form, pages: [page] }
-  let(:page) { build :page, id: 1, position: 1 }
+  let(:form) { create(:form, pages_count: 1) }
+  let(:page) { form.pages.first }
 
   before do
     render template: "pages/routes/delete", locals: { current_form: form, page:, delete_confirmation_input: Pages::Routes::DeleteConfirmationInput.new }

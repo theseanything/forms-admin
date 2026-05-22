@@ -10,8 +10,9 @@ class FormCondition
   def self.create_and_update_form!(form_id:, routing_page_id:, **attrs)
     form = Form.find(form_id)
     draft_service = form.draft_content_service
-    step = draft_service.find_step(routing_page_id)
-    raise ActiveRecord::RecordNotFound unless step
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == routing_page_id.to_s }
+    raise ActiveRecord::RecordNotFound unless step_data
 
     condition = {
       "id" => next_condition_id(draft_service),
@@ -24,9 +25,9 @@ class FormCondition
       "exit_page_markdown" => TranslatableString.normalize(attrs[:exit_page_markdown]),
     }.compact
 
-    step.step_data["routing_conditions"] ||= []
-    step.step_data["routing_conditions"] << condition
-    draft_service.save_content!(draft_service.content_hash)
+    step_data["routing_conditions"] ||= []
+    step_data["routing_conditions"] << condition
+    draft_service.save_content!(hash)
     new(form:, condition:, step_id: routing_page_id)
   end
 
@@ -50,9 +51,12 @@ class FormCondition
   end
 
   def destroy_and_update_form!
-    step = draft_service.find_step(@step_id)
-    step.step_data["routing_conditions"] = Array(step.step_data["routing_conditions"]).reject { |c| c["id"].to_s == id.to_s }
-    draft_service.save_content!(draft_service.content_hash)
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == @step_id.to_s }
+    return false unless step_data
+
+    step_data["routing_conditions"] = Array(step_data["routing_conditions"]).reject { |c| c["id"].to_s == id.to_s }
+    draft_service.save_content!(hash)
     draft_service.save_question_changes!
     true
   end
@@ -120,8 +124,11 @@ private
   end
 
   def update_in_document
-    step = draft_service.find_step(@step_id)
-    conditions = step.step_data["routing_conditions"] || []
+    hash = draft_service.content_hash
+    step_data = hash["steps"]&.find { |s| s["id"].to_s == @step_id.to_s }
+    return unless step_data
+
+    conditions = step_data["routing_conditions"] || []
     index = conditions.index { |c| c["id"].to_s == id.to_s }
     return unless index
 
@@ -136,8 +143,8 @@ private
       "exit_page_heading" => TranslatableString.normalize(exit_page_heading),
       "exit_page_markdown" => TranslatableString.normalize(exit_page_markdown),
     }.compact
-    step.step_data["routing_conditions"] = conditions
-    draft_service.save_content!(draft_service.content_hash)
+    step_data["routing_conditions"] = conditions
+    draft_service.save_content!(hash)
   end
 
   def condition_model

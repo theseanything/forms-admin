@@ -3,7 +3,7 @@ require "rails_helper"
 describe "forms/batch_submissions/new.html.erb" do
   let(:send_daily_submission_batch) { true }
   let(:send_weekly_submission_batch) { true }
-  let(:form) { build(:form, id: 1, send_daily_submission_batch:, send_weekly_submission_batch:) }
+  let(:form) { create(:form, id: 1, send_daily_submission_batch:, send_weekly_submission_batch:) }
   let(:batch_submissions_input) { Forms::BatchSubmissionsInput.new(form:).assign_form_values }
 
   before do

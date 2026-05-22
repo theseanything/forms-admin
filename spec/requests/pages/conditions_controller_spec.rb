@@ -4,15 +4,17 @@ RSpec.describe Pages::ConditionsController, type: :request do
   let(:form) { create :form, :ready_for_routing }
   let(:pages) { form.pages }
   let(:page) do
-    pages.first.tap do |first_page|
-      first_page.is_optional = false
-      first_page.answer_type = "selection"
-      first_page.answer_settings = DataStruct.new(
-        only_one_option: true,
-        selection_options: [OpenStruct.new(attributes: { name: "Option 1" }),
-                            OpenStruct.new(attributes: { name: "Option 2" })],
-      )
-    end
+    step = pages.first
+    step.update!(
+      answer_type: "selection",
+      is_optional: false,
+      answer_settings: {
+        "only_one_option" => "true",
+        "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }],
+      },
+    )
+    form.save_question_changes!
+    form.reload.pages.first
   end
 
   let(:submit_result) { true }
@@ -51,7 +53,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
 
     context "when the page already has a condition associated with it" do
       before do
-        create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id)
 
         post routing_page_path(form_id: form.id, params:)
       end
@@ -193,7 +195,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
 
     context "when the page already has a condition associated with it" do
       before do
-        create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id)
       end
 
       it "does not create the condition and redirects the user to the question routes page" do
@@ -210,7 +212,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
   end
 
   describe "#edit" do
-    let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.third.id }
+    let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.third.id) }
 
     # Use instance variable to allow asserting instance receives method
     let(:conditions_input) { @conditions_input } # rubocop:disable RSpec/InstanceVariable
@@ -253,7 +255,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
 
   describe "#update" do
     let(:params) { { pages_conditions_input: { routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "England" } } }
-    let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "Wales" }
+    let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "Wales") }
 
     it "redirects to the page list" do
       put update_condition_path(form_id: form.id, page_id: page.id, condition_id: condition.id, params:)
@@ -325,7 +327,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
     end
 
     context "when the condition is already an exit page" do
-      let(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id }
+      let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id) }
 
       context "when changing to a non-exit page" do
         let(:params) { { pages_conditions_input: { routing_page_id: 1, check_page_id: 1, goto_page_id: 3, answer_value: "Wales" } } }
@@ -354,7 +356,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
   end
 
   describe "#delete" do
-    let(:condition) { create :condition, id: 1, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.last.id }
+    let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.last.id) }
 
     before do
       get delete_condition_path(form_id: form.id, page_id: page.id, condition_id: condition.id)
@@ -378,7 +380,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
   end
 
   describe "#destroy" do
-    let(:condition) { create :condition, id: 1, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.last.id }
+    let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Wales", goto_page_id: pages.last.id) }
     let(:confirm) { "yes" }
 
     before do
@@ -438,7 +440,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
   end
 
   describe "#confirm_delete_exit_page" do
-    let(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id }
+    let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id) }
     let(:answer_value) { "Option 1" }
     let(:goto_page_id) { "2" }
 
@@ -470,7 +472,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
   end
 
   describe "#update_change_exit_page" do
-    let(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id }
+    let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id) }
     let(:answer_value) { "Option 1" }
     let(:goto_page_id) { pages.last.id }
     let(:confirm) { "yes" }
@@ -537,7 +539,7 @@ RSpec.describe Pages::ConditionsController, type: :request do
     end
 
     context "when condition is not an exit page" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id }
+      let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id) }
 
       it "redirects to the form pages path" do
         expect(response).to redirect_to form_pages_path(form_id: form.id)

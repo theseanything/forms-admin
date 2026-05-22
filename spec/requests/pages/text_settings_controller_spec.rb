@@ -119,10 +119,8 @@ RSpec.describe Pages::TextSettingsController, type: :request do
       end
 
       it "saves the updated input type to DB" do
-        form_instance_variable = assigns(:text_settings_input)
-        expect(form_instance_variable.input_type).to eq input_type
-        expect(form_instance_variable.draft_question.answer_settings)
-          .to include({ input_type: })
+        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+        expect(reloaded_page.answer_settings.input_type).to eq input_type
       end
 
       it "redirects the user to the edit question page" do
