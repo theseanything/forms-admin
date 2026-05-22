@@ -7,7 +7,7 @@ FactoryBot.define do
     hint_text { nil }
     is_optional { false }
     is_repeatable { false }
-    answer_type { Page::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
+    answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
     page_heading { nil }
     guidance_markdown { nil }
     answer_settings { {} }

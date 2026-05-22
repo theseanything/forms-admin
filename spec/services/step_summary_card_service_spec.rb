@@ -258,7 +258,7 @@ describe StepSummaryCardService do
       end
     end
 
-    Page::ANSWER_TYPES_WITHOUT_SETTINGS.each do |answer_type|
+    FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.each do |answer_type|
       context "with #{answer_type}" do
         let(:page) { create :page, form:, answer_type: }
 

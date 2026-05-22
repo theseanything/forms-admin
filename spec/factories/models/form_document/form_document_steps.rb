@@ -19,7 +19,7 @@ FactoryBot.define do
       is_optional { false }
       page_heading { nil }
       question_text { Faker::Lorem.question.truncate(250) }
-      answer_type { Page::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
+      answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
       answer_settings { nil }
       guidance_markdown { nil }
     end

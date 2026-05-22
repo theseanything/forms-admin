@@ -8,7 +8,8 @@ class Pages::ExitPageInput < BaseInput
   def submit
     return false if invalid?
 
-    Condition.create_and_update_form!(
+    FormCondition.create_and_update_form!(
+      form_id: form.id,
       check_page_id: page.id,
       routing_page_id: page.id,
       answer_value:,

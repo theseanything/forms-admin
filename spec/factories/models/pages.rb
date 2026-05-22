@@ -1,19 +1,46 @@
+# FormStep stand-in for legacy :page factory
 FactoryBot.define do
-  factory :page, class: "Page" do
-    association :form, factory: :form
+  factory :page do
+    skip_create
 
-    question_text { Faker::Lorem.question.truncate(250) }
-    answer_type { Page::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
-    is_optional { false }
-    answer_settings { nil }
-    hint_text { nil }
-    sequence(:position)
-    routing_conditions { [] }
-    check_conditions { [] }
-    goto_conditions { [] }
-    page_heading { nil }
-    guidance_markdown { nil }
-    is_repeatable { false }
+    transient do
+      form { create(:form) }
+      question_text { Faker::Lorem.question.truncate(250) }
+      answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
+      is_optional { false }
+      is_repeatable { false }
+      answer_settings { nil }
+      hint_text { nil }
+      position { nil }
+      page_heading { nil }
+      guidance_markdown { nil }
+      routing_conditions { [] }
+    end
+
+    initialize_with do |evaluator|
+      form = evaluator.form
+      hash = form.draft_content_service.content_hash
+      position = evaluator.position || hash["steps"].length + 1
+      step = FormDocumentFactoryHelpers.build_step_attrs(
+        position:,
+        question_text: evaluator.question_text,
+        answer_type: evaluator.answer_type,
+        is_optional: evaluator.is_optional,
+        is_repeatable: evaluator.is_repeatable,
+        answer_settings: evaluator.answer_settings,
+        hint_text: evaluator.hint_text,
+        page_heading: evaluator.page_heading,
+        guidance_markdown: evaluator.guidance_markdown,
+        routing_conditions: evaluator.routing_conditions,
+      )
+      hash["steps"] ||= []
+      hash["steps"] << step
+      hash["steps"].sort_by! { |s| s["position"] }
+      hash["steps"].each_with_index { |s, i| s["position"] = i + 1; s["next_step_id"] = hash["steps"][i + 1]&.dig("id") }
+      hash["start_page"] = hash["steps"].first["id"]
+      FormDocumentOperationsService.new(form).save_draft_content!(hash)
+      FormStep.new(form:, step_data: step, draft_service: form.draft_content_service)
+    end
 
     trait :with_hints do
       hint_text { Faker::Quote.yoda.truncate(500) }
@@ -24,119 +51,14 @@ FactoryBot.define do
       guidance_markdown { "## List of items \n\n\n #{Faker::Markdown.ordered_list}" }
     end
 
-    trait :with_simple_answer_type do
-      answer_type { Page::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
-    end
-
     trait :with_selection_settings do
-      transient do
-        only_one_option { "true" }
-        selection_options { [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }] }
-      end
-
-      question_text { Faker::Lorem.question }
       answer_type { "selection" }
-      answer_settings { DataStruct.new(only_one_option:, selection_options:) }
-    end
-
-    trait :selection_with_radios do
-      answer_type { "selection" }
-      answer_settings do
-        {
-          only_one_option: "true",
-          selection_options: (1..30).to_a.map { |i| { name: i.to_s, value: i.to_s } },
-        }
-      end
-    end
-
-    trait :selection_with_autocomplete do
-      answer_type { "selection" }
-      answer_settings do
-        {
-          only_one_option: "true",
-          selection_options: (1..31).to_a.map { |i| { name: i.to_s, value: i.to_s } },
-        }
-      end
-    end
-
-    trait :selection_with_checkboxes do
-      answer_type { "selection" }
-      answer_settings do
-        {
-          only_one_option: "false",
-          selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }],
-        }
-      end
-    end
-
-    trait :selection_with_none_of_the_above_question do
-      transient do
-        only_one_option { "true" }
-        selection_options { [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }] }
-        none_of_the_above_question_text { "None of the above question?" }
-        none_of_the_above_question_is_optional { "true" }
-      end
-
-      answer_type { "selection" }
-      is_optional { true }
-      answer_settings do
-        {
-          only_one_option:,
-          selection_options:,
-          none_of_the_above_question: {
-            question_text: none_of_the_above_question_text,
-            is_optional: none_of_the_above_question_is_optional,
-          },
-        }
-      end
+      answer_settings { { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] } }
     end
 
     trait :with_text_settings do
-      transient do
-        input_type { Pages::TextSettingsInput::INPUT_TYPES.sample }
-      end
-
       answer_type { "text" }
-      answer_settings { DataStruct.new(input_type:) }
-    end
-
-    trait :with_single_line_text_settings do
-      answer_type { "text" }
-      answer_settings { DataStruct.new(input_type: "single_line") }
-    end
-
-    trait :with_date_settings do
-      transient do
-        input_type { Pages::DateSettingsInput::INPUT_TYPES.sample }
-      end
-
-      answer_type { "date" }
-      answer_settings { DataStruct.new(input_type:) }
-    end
-
-    trait :with_address_settings do
-      transient do
-        uk_address { "true" }
-        international_address { "true" }
-      end
-
-      answer_type { "address" }
-      answer_settings { DataStruct.new(input_type: DataStruct.new(uk_address:, international_address:)) }
-    end
-
-    trait :with_name_settings do
-      transient do
-        input_type { Pages::NameSettingsInput::INPUT_TYPES.sample }
-        title_needed { Pages::NameSettingsInput::TITLE_NEEDED.sample }
-      end
-
-      answer_type { "name" }
-      answer_settings { DataStruct.new(input_type:, title_needed:) }
-    end
-
-    trait :with_full_name_settings do
-      answer_type { "name" }
-      answer_settings { DataStruct.new(input_type: "full_name", title_needed: false) }
+      answer_settings { { "input_type" => "single_line" } }
     end
 
     trait :with_file_upload_answer_type do

@@ -79,7 +79,7 @@ describe "reports/features.html.erb" do
     end
   end
 
-  Page::ANSWER_TYPES.map(&:to_sym).each do |answer_type|
+  FormStep::ANSWER_TYPES.map(&:to_sym).each do |answer_type|
     it "contains a heading for #{answer_type}" do
       expect(rendered).to have_css("th", text: I18n.t("helpers.label.page.answer_type_options.names.#{answer_type}"))
     end

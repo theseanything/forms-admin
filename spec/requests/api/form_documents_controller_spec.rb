@@ -35,7 +35,7 @@ RSpec.describe Api::FormDocumentsController, type: :request do
 
       context "when the tag is live" do
         let(:live_form_name) { "Live form" }
-        let(:form) { create(:form, :live, name: live_form_name) }
+        let(:form) { create(:form, :live, form_name: live_form_name) }
 
         before do
           # change the form object so we can be sure we're returning the live form document
@@ -59,7 +59,7 @@ RSpec.describe Api::FormDocumentsController, type: :request do
 
       context "when the tag is archived" do
         let(:archived_form_name) { "Archived form" }
-        let(:form) { create(:form, :archived, name: archived_form_name) }
+        let(:form) { create(:form, :archived, form_name: archived_form_name) }
 
         before do
           # change the form object so we can be sure we're returning the archived form document
@@ -120,11 +120,13 @@ RSpec.describe Api::FormDocumentsController, type: :request do
     end
 
     describe "language param" do
-      let(:form) { create :form }
-
-      before do
-        create :form_document, form: form, tag: "live", language: "en", content: { form_id: form.id.to_s, language: "en" }
-        create :form_document, form: form, tag: "live", language: "cy", content: { form_id: form.id.to_s, language: "cy" }
+      let(:form) do
+        f = create(:form, :ready_for_live, available_languages: %w[en cy])
+        hash = f.draft_content_service.content_hash
+        hash["name"] = { "en" => "English name", "cy" => "Welsh name" }
+        FormDocumentOperationsService.new(f).save_draft_content!(hash)
+        FormDocumentFactoryHelpers.create_live_form!(f)
+        f.reload
       end
 
       it "when not given a language, defaults to english returns the live form document in english" do

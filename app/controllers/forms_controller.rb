@@ -6,19 +6,11 @@ class FormsController < WebController
   attr_reader :current_form
 
   def current_live_form
-    @current_live_form ||= FormDocument::Content.from_form_document(current_form.live_form_document)
-  end
-
-  def current_live_welsh_form
-    @current_live_welsh_form ||= FormDocument::Content.from_form_document(current_form.live_welsh_form_document)
+    @current_live_form ||= FormDocument::Content.from_form_document(current_form.live_form_document) if current_form.live_form_document.present?
   end
 
   def current_archived_form
-    @current_archived_form ||= FormDocument::Content.from_form_document(current_form.archived_form_document)
-  end
-
-  def current_archived_welsh_form
-    @current_archived_welsh_form ||= FormDocument::Content.from_form_document(current_form.archived_welsh_form_document)
+    current_live_form if current_form.archived?
   end
 
 private
@@ -26,7 +18,7 @@ private
   def load_form
     @current_form = Form.find(params[:form_id])
     @current_form.set_task_status_service(TaskStatusService.new(form: @current_form, current_user:))
-    @initial_form_state = @current_form.state
+    @initial_form_state = @current_form.lifecycle_status
   end
 
   def alert_org_admins_if_draft_created

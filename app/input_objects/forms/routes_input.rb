@@ -28,7 +28,7 @@ class Forms::RoutesInput < BaseInput
 
   def routes_attributes=(attributes)
     page_ids = attributes.values.map { |attrs| attrs["page_id"] }.compact
-    pages_by_id = form.pages.where(id: page_ids).index_by(&:id)
+    pages_by_id = page_ids.index_with { |id| form.draft_content_service.find_step(id) }.compact
 
     route_build_service = Routes::BuildService.new(form:)
 

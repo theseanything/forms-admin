@@ -10,35 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_234401) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
-
-  create_table "condition_translations", force: :cascade do |t|
-    t.bigint "condition_id", null: false
-    t.datetime "created_at", null: false
-    t.text "exit_page_heading"
-    t.text "exit_page_markdown"
-    t.string "locale", null: false
-    t.datetime "updated_at", null: false
-    t.index ["condition_id", "locale"], name: "index_condition_translations_on_condition_id_and_locale", unique: true
-    t.index ["locale"], name: "index_condition_translations_on_locale"
-  end
-
-  create_table "conditions", force: :cascade do |t|
-    t.string "answer_value"
-    t.bigint "check_page_id", comment: "The question page this condition looks at to compare answers"
-    t.datetime "created_at", null: false
-    t.text "exit_page_heading", comment: "Text for the heading of the exit page"
-    t.text "exit_page_markdown", comment: "When not nil this condition should be treated as an exit page. When set it contains the markdown for the body of the exit page"
-    t.bigint "goto_page_id", comment: "The question page which this conditions will skip forwards to"
-    t.bigint "routing_page_id", comment: "The question page at which this conditional route takes place"
-    t.boolean "skip_to_end", default: false
-    t.datetime "updated_at", null: false
-    t.index ["check_page_id"], name: "index_conditions_on_check_page_id"
-    t.index ["goto_page_id"], name: "index_conditions_on_goto_page_id"
-    t.index ["routing_page_id"], name: "index_conditions_on_routing_page_id"
-  end
 
   create_table "create_form_events", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -75,11 +49,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
     t.jsonb "content", comment: "The JSON which describes the form"
     t.datetime "created_at", null: false
     t.bigint "form_id", comment: "The form this document belongs to"
-    t.string "language", default: "en", null: false
-    t.text "tag", null: false, comment: "The tag for the form, for example: 'live' or 'draft'"
+    t.datetime "published_at"
+    t.bigint "supersedes_id"
     t.datetime "updated_at", null: false
-    t.index ["form_id", "tag", "language"], name: "index_form_documents_on_form_id_tag_and_language", unique: true
     t.index ["form_id"], name: "index_form_documents_on_form_id"
+    t.index ["supersedes_id"], name: "index_form_documents_on_supersedes_id"
   end
 
   create_table "form_submission_emails", force: :cascade do |t|
@@ -95,60 +69,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
     t.index ["form_id"], name: "index_form_submission_emails_on_form_id"
   end
 
-  create_table "form_translations", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "declaration_markdown"
-    t.text "declaration_text"
-    t.bigint "form_id", null: false
-    t.string "locale", null: false
-    t.text "name"
-    t.string "payment_url"
-    t.text "privacy_policy_url"
-    t.text "support_email"
-    t.text "support_phone"
-    t.text "support_url"
-    t.text "support_url_text"
-    t.datetime "updated_at", null: false
-    t.text "what_happens_next_markdown"
-    t.index ["form_id", "locale"], name: "index_form_translations_on_form_id_and_locale", unique: true
-    t.index ["locale"], name: "index_form_translations_on_locale"
-  end
-
   create_table "forms", force: :cascade do |t|
-    t.text "available_languages", default: ["en"], null: false, array: true
+    t.boolean "archived", default: false, null: false
     t.integer "copied_from_id"
     t.datetime "created_at", null: false
     t.bigint "creator_id"
-    t.text "declaration_markdown"
     t.boolean "declaration_section_completed", default: false
-    t.text "declaration_text"
+    t.bigint "draft_form_document_id"
     t.string "external_id"
     t.datetime "first_made_live_at"
-    t.text "form_slug"
     t.string "language", default: "en", null: false
-    t.text "name"
-    t.string "payment_url"
-    t.text "privacy_policy_url"
+    t.bigint "live_form_document_id"
     t.boolean "question_section_completed", default: false
-    t.string "s3_bucket_aws_account_id"
-    t.string "s3_bucket_name"
-    t.string "s3_bucket_region"
-    t.string "send_copy_of_answers", default: "disabled", null: false
-    t.boolean "send_daily_submission_batch", default: false
-    t.boolean "send_weekly_submission_batch", default: false
     t.boolean "share_preview_completed", default: false, null: false
-    t.string "state"
-    t.text "submission_email"
-    t.string "submission_format", default: [], null: false, array: true
-    t.string "submission_type", default: "email", null: false
-    t.text "support_email"
-    t.text "support_phone"
-    t.text "support_url"
-    t.text "support_url_text"
     t.datetime "updated_at", null: false
     t.boolean "welsh_completed", default: false
-    t.text "what_happens_next_markdown"
+    t.index ["draft_form_document_id"], name: "index_forms_on_draft_form_document_id"
     t.index ["external_id"], name: "index_forms_on_external_id", unique: true
+    t.index ["live_form_document_id"], name: "index_forms_on_live_form_document_id"
   end
 
   create_table "groups", force: :cascade do |t|
@@ -211,38 +149,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
     t.index ["slug"], name: "index_organisations_on_slug", unique: true
   end
 
-  create_table "page_translations", force: :cascade do |t|
-    t.jsonb "answer_settings"
-    t.datetime "created_at", null: false
-    t.text "guidance_markdown"
-    t.text "hint_text"
-    t.string "locale", null: false
-    t.text "page_heading"
-    t.bigint "page_id", null: false
-    t.text "question_text"
-    t.datetime "updated_at", null: false
-    t.index ["locale"], name: "index_page_translations_on_locale"
-    t.index ["page_id", "locale"], name: "index_page_translations_on_page_id_and_locale", unique: true
-  end
-
-  create_table "pages", force: :cascade do |t|
-    t.jsonb "answer_settings"
-    t.text "answer_type"
-    t.datetime "created_at", null: false
-    t.string "external_id", null: false
-    t.bigint "form_id"
-    t.text "guidance_markdown"
-    t.text "hint_text"
-    t.boolean "is_optional", null: false
-    t.boolean "is_repeatable", default: false, null: false
-    t.text "page_heading"
-    t.integer "position"
-    t.text "question_text"
-    t.datetime "updated_at", null: false
-    t.index ["external_id"], name: "index_pages_on_external_id", unique: true
-    t.index ["form_id"], name: "index_pages_on_form_id"
-  end
-
   create_table "schema_info", id: false, force: :cascade do |t|
     t.integer "version", default: 0, null: false
   end
@@ -283,12 +189,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
-  add_foreign_key "condition_translations", "conditions"
   add_foreign_key "create_form_events", "groups", on_delete: :cascade
   add_foreign_key "create_form_events", "users", on_delete: :cascade
   add_foreign_key "draft_questions", "users"
+  add_foreign_key "form_documents", "form_documents", column: "supersedes_id"
   add_foreign_key "form_documents", "forms"
-  add_foreign_key "form_translations", "forms"
+  add_foreign_key "forms", "form_documents", column: "draft_form_document_id"
+  add_foreign_key "forms", "form_documents", column: "live_form_document_id"
   add_foreign_key "groups", "users", column: "creator_id"
   add_foreign_key "groups", "users", column: "upgrade_requester_id"
   add_foreign_key "memberships", "groups"
@@ -296,7 +203,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
   add_foreign_key "memberships", "users", column: "added_by_id"
   add_foreign_key "mou_signatures", "organisations"
   add_foreign_key "mou_signatures", "users"
-  add_foreign_key "page_translations", "pages"
-  add_foreign_key "pages", "forms"
   add_foreign_key "users", "organisations"
 end

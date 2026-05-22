@@ -17,7 +17,7 @@ feature "Add/editing a single question", type: :feature do
       when_i_am_viewing_an_existing_form
       and_i_want_to_create_or_edit_a_page
 
-      Page::ANSWER_TYPES.each do |answer_type|
+      FormStep::ANSWER_TYPES.each do |answer_type|
         and_i_select_a_type_of_answer_option(answer_type)
         and_i_provide_a_question_text(answer_type)
 

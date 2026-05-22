@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Pages::ChangeOrderService
   class FormPagesAddedError < StandardError; end
 
@@ -8,20 +10,10 @@ class Pages::ChangeOrderService
 
     new_page_order = []
     (1..page_ids_and_positions.length).each do |position|
-      # Select the first unplaced page with a new_position <= current position
       next_page_index = pages_with_position.index { |page| page[:new_position].to_i <= position }
       next_page = pages_with_position.delete_at(next_page_index) if next_page_index
-
-      # If none, select the first unplaced page without a new_position using the current ordering
-      if next_page.nil?
-        next_page = pages_without_position.shift
-      end
-
-      # If still none, select the next unplaced page with a higher new_position
-      if next_page.nil?
-        next_page = pages_with_position.shift
-      end
-
+      next_page ||= pages_without_position.shift
+      next_page ||= pages_with_position.shift
       new_page_order << next_page[:page_id]
     end
 
@@ -30,15 +22,23 @@ class Pages::ChangeOrderService
 
   def self.update_page_order(form:, page_ids_and_positions:)
     new_page_order = generate_new_page_order(page_ids_and_positions)
+    draft_service = form.draft_content_service
+    step_ids = draft_service.steps.map { |s| s["id"] }
 
-    raise FormPagesAddedError if (form.pages.pluck(:id) - new_page_order).any?
+    raise FormPagesAddedError if (step_ids - new_page_order).any?
 
-    Page.acts_as_list_no_update do
-      form.pages.reorder(nil).in_order_of(:id, new_page_order).each_with_index do |page, index|
-        page.update!(position: index + 1)
-      end
+    ordered_steps = new_page_order.map.with_index do |step_id, index|
+      step = draft_service.steps.find { |s| s["id"] == step_id }
+      step.merge("position" => index + 1)
     end
 
-    form.save_question_changes!
+    ordered_steps.each_with_index do |step, index|
+      step["next_step_id"] = ordered_steps[index + 1]&.dig("id")
+    end
+
+    hash = draft_service.content_hash
+    hash["steps"] = ordered_steps
+    hash["start_page"] = ordered_steps.first&.dig("id")
+    draft_service.save_question_changes!
   end
 end

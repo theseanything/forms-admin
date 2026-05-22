@@ -57,7 +57,7 @@ class Forms::WelshTranslationInput < Forms::MarkCompleteInput
     submitted_page_ids = attributes.values.map { |attrs| attrs["id"] }.compact
 
     # lookup hash for efficiency
-    pages_by_id = form.pages.where(id: submitted_page_ids).includes(:routing_conditions).index_by(&:id)
+    pages_by_id = submitted_page_ids.index_with { |id| form.draft_content_service.find_step(id) }.compact
 
     self.page_translations = attributes.values.map { |page_attrs|
       page_id = page_attrs["id"].to_i

@@ -23,7 +23,8 @@ class Pages::SecondarySkipInput < BaseInput
 
     record.presence&.destroy_and_update_form!
 
-    Condition.create_and_update_form!(
+    FormCondition.create_and_update_form!(
+      form_id: form.id,
       check_page_id: page.id,
       routing_page_id:,
       answer_value: nil,

@@ -1,35 +1,36 @@
+# frozen_string_literal: true
+
 class FormDocument::Content
   include ActiveModel::API
   include ActiveModel::Attributes
 
   attr_reader :steps
 
-  attribute :form_id, :integer
+  attribute :form_id, :string
   attribute :live_at, :datetime
   attribute :first_made_live_at, :datetime
-  attribute :name, :string
-  attribute :available_languages, array: true
-  attribute :language, :string
+  attribute :name, TranslatableStringType.new
+  attribute :available_languages, default: -> { %w[en] }
   attribute :form_slug, :string
   attribute :created_at, :datetime
-  attribute :creator_id, :datetime
-  attribute :start_page, :integer
+  attribute :creator_id, :integer
+  attribute :start_page, :string
   attribute :updated_at, :datetime
-  attribute :payment_url, :string
-  attribute :support_url, :string
-  attribute :support_email, :string
-  attribute :support_phone, :string
+  attribute :payment_url, TranslatableStringType.new
+  attribute :support_url, TranslatableStringType.new
+  attribute :support_email, TranslatableStringType.new
+  attribute :support_phone, TranslatableStringType.new
   attribute :s3_bucket_name, :string
   attribute :submission_type, :string
-  attribute :submission_format, array: true
-  attribute :declaration_text, :string
-  attribute :declaration_markdown, :string
+  attribute :submission_format, default: -> { [] }
+  attribute :declaration_text, TranslatableStringType.new
+  attribute :declaration_markdown, TranslatableStringType.new
   attribute :s3_bucket_region, :string
   attribute :submission_email, :string
-  attribute :support_url_text, :string
-  attribute :privacy_policy_url, :string
+  attribute :support_url_text, TranslatableStringType.new
+  attribute :privacy_policy_url, TranslatableStringType.new
   attribute :s3_bucket_aws_account_id, :string
-  attribute :what_happens_next_markdown, :string
+  attribute :what_happens_next_markdown, TranslatableStringType.new
   attribute :send_daily_submission_batch, :boolean
   attribute :send_weekly_submission_batch, :boolean
   attribute :send_copy_of_answers, :string
@@ -37,9 +38,10 @@ class FormDocument::Content
   alias_attribute :id, :form_id
 
   def initialize(attributes = {})
-    @steps = attributes.fetch("steps", []).map { |step| FormDocument::Step.new(**step) }
-    attributes.slice!(*self.class.attribute_names)
-    super
+    attrs = attributes.stringify_keys
+    @steps = Array(attrs.fetch("steps", [])).map { |step| FormDocument::Step.new(**step) }
+    attrs.slice!(*self.class.attribute_names)
+    super(attrs)
   end
 
   def made_live_date
@@ -52,5 +54,28 @@ class FormDocument::Content
 
   def has_welsh_translation?
     available_languages.present? && available_languages.include?("cy")
+  end
+
+  def name_for(locale = :en)
+    TranslatableString.for_locale(name, locale:)
+  end
+
+  def declaration_markdown_for(locale = :en)
+    TranslatableString.for_locale(declaration_markdown, locale:)
+  end
+
+  def what_happens_next_markdown_for(locale = :en)
+    TranslatableString.for_locale(what_happens_next_markdown, locale:)
+  end
+
+  def payment_url_for(locale = :en)
+    TranslatableString.for_locale(payment_url, locale:)
+  end
+
+  def to_content_hash
+    hash = attributes.stringify_keys
+    hash["steps"] = @steps.map(&:to_content_hash)
+    hash["form_id"] = form_id.to_s
+    hash
   end
 end

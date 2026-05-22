@@ -18,8 +18,11 @@ module Forms
       return redirect_to form_path(@make_language_live_input.form.id) unless @make_language_live_input.confirmed?
       return redirect_to form_path(form_id: current_form.id) unless current_form.can_make_language_live?(language: params[:language])
 
+      previous_status = current_form.lifecycle_status
       @make_form_live_service = MakeFormLiveService.call(current_form:, current_user:, language: params[:language])
       @make_form_live_service.make_language_live
+      current_form.reload
+      current_form.previous_lifecycle_status = previous_status
 
       if current_form.state_previously_changed?
         OrgAdminAlertsService.new(form: current_form, current_user:).form_made_live

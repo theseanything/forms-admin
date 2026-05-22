@@ -14,8 +14,11 @@ module Forms
       return render_new(status: :unprocessable_content) unless @make_live_input.valid?
       return redirect_to form_path(@make_live_input.form.id) unless @make_live_input.confirmed?
 
+      previous_status = current_form.lifecycle_status
       @make_form_live_service = MakeFormLiveService.call(current_form:, current_user:)
       @make_form_live_service.make_live unless current_form.live?
+      current_form.reload
+      current_form.previous_lifecycle_status = previous_status
 
       if current_form.state_previously_changed?
         OrgAdminAlertsService.new(form: current_form, current_user:).form_made_live
@@ -31,7 +34,7 @@ module Forms
     end
 
     def render_new(status: :ok)
-      if current_form.live_welsh_form_document.present? && current_form.all_task_statuses[:welsh_language_status] == :in_progress
+      if current_form.has_welsh_translation? && current_form.live_form_document.present? && current_form.all_task_statuses[:welsh_language_status] == :in_progress
         render "make_your_changes_to_english_live", status:, locals: { current_form: }
       elsif current_form.is_live?
         render "make_your_changes_live", status:, locals: { current_form: }

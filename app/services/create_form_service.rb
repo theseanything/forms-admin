@@ -8,12 +8,8 @@ class CreateFormService
     event = begin
       CreateFormEvent.create!(group:, form_name: name, user: creator, dedup_version: 1)
     rescue ActiveRecord::RecordNotUnique
-      # If a form with the same name in the same group was created by the same
-      # user less than a second ago, assume that this was a duplicate request
-      # and return the form ID of the previously created form
       previous_event = CreateFormEvent.order(created_at: :desc).find_by(group:, form_name: name)
 
-      # We might need to wait for the form to be created by the previous request
       if previous_event.user == creator && previous_event.created_at > 1.second.ago
         timeout_message = "CreateFormService#create! timed out waiting for form to be created by previous invocation: " \
           "did something go wrong with creating form '#{name}' in group #{group.id} by user #{creator.id}?"
@@ -34,7 +30,11 @@ class CreateFormService
     if event.form_id.present?
       form = Form.find(event.form_id)
     else
-      form = Form.create!(creator_id: creator.id, name:)
+      form = Form.create!(creator_id: creator.id)
+      form.draft_content_service.update_content_attributes!(
+        "name" => { "en" => name },
+        "form_slug" => name.parameterize,
+      )
       GroupForm.create!(group:, form_id: form.id)
       event.update!(form_id: form.id)
     end

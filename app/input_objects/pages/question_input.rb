@@ -36,7 +36,7 @@ class Pages::QuestionInput < BaseInput
       attrs[:answer_settings_cy] = answer_settings_cy
     end
 
-    Page.create_and_update_form!(**attrs)
+    FormStep.create_and_update_form!(**attrs)
   end
 
   def update_page(page)

@@ -9,18 +9,18 @@ class MakeFormLiveService
     @current_form = current_form
     @current_form_was_live = current_form.is_live?
     @current_form_was_archived = current_form.is_archived?
-    @current_live_form = FormDocument::Content.from_form_document(current_form.live_form_document) if current_form.is_live?
+    @current_live_form = FormDocument::Content.from_form_document(current_form.live_form_document) if current_form.live_form_document.present?
     @current_user = current_user
     @language = language
   end
 
   def make_live
-    @current_form.make_live!
+    FormDocumentOperationsService.new(@current_form).publish!
 
     if live_form_submission_email_has_changed
       SubmissionEmailMailer.alert_email_change(
         live_email: @current_live_form.submission_email,
-        form_name: @current_live_form.name,
+        form_name: @current_live_form.name_for(:en),
         creator_name: @current_user.name,
         creator_email: @current_user.email,
       ).deliver_now
@@ -28,11 +28,7 @@ class MakeFormLiveService
   end
 
   def make_language_live
-    if @language == "en"
-      make_english_live
-    else
-      make_welsh_live
-    end
+    make_live
   end
 
   def page_title
@@ -56,15 +52,9 @@ class MakeFormLiveService
 
 private
 
-  def make_english_live
-    @current_form.make_english_version_live!
-  end
-
-  def make_welsh_live
-    @current_form.make_welsh_version_live!
-  end
-
   def live_form_submission_email_has_changed
-    @current_form_was_live && @current_live_form.submission_email != @current_form.submission_email
+    return false unless @current_form_was_live && @current_live_form.present?
+
+    @current_live_form.submission_email != @current_form.submission_email
   end
 end

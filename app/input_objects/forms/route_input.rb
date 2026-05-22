@@ -5,7 +5,7 @@ class Forms::RouteInput < BaseInput
   DEFAULT_VALUE = "default".freeze
 
   attribute :id # id of the Condition
-  attribute :page_id, :integer
+  attribute :page_id, :string
   attribute :goto
   attribute :answer_value
 
