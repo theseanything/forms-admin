@@ -260,8 +260,8 @@ RSpec.describe Pages::QuestionsController, type: :request do
           )
           expect(reloaded_page.is_optional?).to be(true)
           expect(reloaded_page.is_repeatable?).to be(true)
-          expect(reloaded_page.answer_settings.to_h.deep_stringify_keys).to eq(
-            draft_question.answer_settings.to_h.deep_stringify_keys,
+          expect(reloaded_page.answer_settings).to eq(
+            DataStruct.recursive_new(draft_question.answer_settings.to_h.deep_stringify_keys),
           )
           expect(reloaded_page.page_heading).to eq(draft_question.page_heading)
           expect(reloaded_page.guidance_markdown).to eq(draft_question.guidance_markdown)

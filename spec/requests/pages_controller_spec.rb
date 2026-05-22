@@ -275,7 +275,8 @@ RSpec.describe PagesController, type: :request do
         end
 
         it "destroys the page" do
-          expect(Page.exists?(page.id)).to be false
+          step_ids = form.reload.draft_form_document.content["steps"].map { |step| step["id"] }
+          expect(step_ids).not_to include(page.id)
         end
 
         it "updates the form document" do
@@ -304,7 +305,8 @@ RSpec.describe PagesController, type: :request do
           end
 
           it "does not destroy the form" do
-            expect(Page.exists?(page.id)).to be true
+            step_ids = form.reload.draft_form_document.content["steps"].map { |step| step["id"] }
+            expect(step_ids).to include(page.id)
           end
         end
       end
@@ -320,7 +322,8 @@ RSpec.describe PagesController, type: :request do
         end
 
         it "does not destroy the form" do
-          expect(Page.exists?(page.id)).to be true
+          step_ids = form.reload.draft_form_document.content["steps"].map { |step| step["id"] }
+          expect(step_ids).to include(page.id)
         end
       end
     end
@@ -344,12 +347,16 @@ RSpec.describe PagesController, type: :request do
       it "moves the page up" do
         expect {
           post move_page_path({ form_id: form.id, move_direction: { up: page.id } })
-        }.to change { page.reload.position }.from(2).to(1)
+        }.to change {
+          form.reload.draft_form_document.content["steps"].find { |step| step["id"] == page.id }["position"]
+        }.from(2).to(1)
       end
 
       it "renders a success banner with the page's new position" do
+        question_text = page.question_text
+        question_number = page.position
         post move_page_path({ form_id: form.id, move_direction: { up: page.id } })
-        expect(flash[:success]).to eq("‘#{pages[1].question_text}’ has moved up to number 1")
+        expect(flash[:success]).to eq("‘#{question_text}’ has moved up to number #{question_number}")
       end
 
       it "updates the form document" do
@@ -384,12 +391,16 @@ RSpec.describe PagesController, type: :request do
       it "moves the page down" do
         expect {
           post move_page_path({ form_id: form.id, move_direction: { down: page.id } })
-        }.to change { page.reload.position }.from(2).to(3)
+        }.to change {
+          form.reload.draft_form_document.content["steps"].find { |step| step["id"] == page.id }["position"]
+        }.from(2).to(3)
       end
 
       it "renders a success banner with the page's new position" do
+        question_text = page.question_text
+        question_number = page.position
         post move_page_path({ form_id: form.id, move_direction: { down: page.id } })
-        expect(flash[:success]).to eq("‘#{pages[1].question_text}’ has moved down to number 3")
+        expect(flash[:success]).to eq("‘#{question_text}’ has moved down to number #{question_number}")
       end
     end
   end
