@@ -29,7 +29,21 @@ class Reports::FormDocumentsService
         json = doc.as_json
         json["content"] = FormDocument::LocaleProjection.project(doc.content, language: "en")
         json["language"] = "en"
+        json["tag"] = document_tag(doc.form, tag)
         json
+      end
+    end
+
+    def document_tag(form, scope_tag)
+      return "archived" if form.archived?
+
+      case scope_tag.to_s
+      when "draft"
+        "draft"
+      when "live", "live-or-archived"
+        "live"
+      else
+        ""
       end
     end
 

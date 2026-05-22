@@ -542,11 +542,17 @@ RSpec.describe ReportsController, type: :request do
   end
 
   describe "#selection_questions_with_none_of_the_above" do
-    let(:page) { build(:page, :with_selection_settings, question_text: "Question with none of the above", is_optional: true) }
-    let(:form) { create(:form, :live, name: "A form", pages: [page]) }
+    let(:form) do
+      f = create(:form, :ready_for_live, name: "A form", pages_count: 0)
+      create(:page, :with_selection_settings, form: f, question_text: "Question with none of the above", is_optional: true)
+      FormDocumentFactoryHelpers.publish_form!(f)
+      f.reload
+    end
     let(:forms) { [form] }
 
     before do
+      group = create(:group)
+      group.group_forms.create!(form:)
       login_as_super_admin_user
       get report_selection_questions_with_none_of_the_above_path(tag: :live)
     end
