@@ -22,7 +22,7 @@
               <%= body.with_row do |row| %>
                 <%= row.with_cell(text: govuk_link_to(form.name, form_url(form.form_id))) %>
                 <%= row.with_cell(text: question.question_text) %>
-                <%= row.with_cell(text: form.state.capitalize.gsub("_", " ")) %>
+                <%= row.with_cell(text: form.lifecycle_status.to_s.capitalize.gsub("_", " ")) %>
               <%end%>
             <%end%>
           <%end%>

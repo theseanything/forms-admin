@@ -1,18 +1,26 @@
 FactoryBot.define do
   factory :form_document do
-    form { association :form }
-    tag { "draft" }
+    association :form
 
-    trait :live do
-      tag { "live" }
+    after(:build) do |doc|
+      doc.content ||= {
+        "form_id" => doc.form_id.to_s,
+        "name" => { "en" => "Test form" },
+        "available_languages" => %w[en],
+        "steps" => [],
+      }
     end
 
-    trait :archived do
-      tag { "archived" }
+    trait :live do
+      after(:create) do |doc|
+        doc.form.update!(live_form_document_id: doc.id)
+      end
     end
 
     trait :draft do
-      tag { "draft" }
+      after(:create) do |doc|
+        doc.form.update!(draft_form_document_id: doc.id)
+      end
     end
   end
 end

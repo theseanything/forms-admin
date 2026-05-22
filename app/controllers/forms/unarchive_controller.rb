@@ -14,8 +14,11 @@ module Forms
       return render "unarchive_form", status: :unprocessable_content, locals: { current_form: } unless @make_live_input.valid?
       return redirect_to archived_form_path(current_form.id) unless @make_live_input.confirmed?
 
+      previous_status = current_form.lifecycle_status
       @make_form_live_service = MakeFormLiveService.call(current_form:, current_user:)
       @make_form_live_service.make_live
+      current_form.reload
+      current_form.previous_lifecycle_status = previous_status
 
       if current_form.state_previously_changed?
         OrgAdminAlertsService.new(form: current_form, current_user:).form_made_live

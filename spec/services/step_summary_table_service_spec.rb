@@ -392,7 +392,7 @@ describe StepSummaryTableService do
       end
     end
 
-    Page::ANSWER_TYPES_WITHOUT_SETTINGS.each do |answer_type_without_settings|
+    FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.each do |answer_type_without_settings|
       context "when the page has answer type #{answer_type_without_settings}" do
         let(:answer_type) { answer_type_without_settings }
         let(:answer_settings) { nil }

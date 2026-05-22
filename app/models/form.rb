@@ -1,80 +1,75 @@
+# frozen_string_literal: true
+
 class Form < ApplicationRecord
-  include FormStateMachine
-  extend Mobility
-
-  self.ignored_columns += [:language]
-
   SUPPORTED_LANGUAGES = %w[en cy].freeze
 
-  has_many :pages, -> { order(position: :asc) }, dependent: :destroy
+  belongs_to :draft_form_document, class_name: "FormDocument", optional: true
+  belongs_to :live_form_document, class_name: "FormDocument", optional: true
   has_one :form_submission_email, dependent: :destroy
   has_one :group_form, dependent: :destroy
   has_many :form_documents, dependent: :destroy
-  has_one :live_form_document, -> { where tag: "live", language: :en }, class_name: "FormDocument"
-  has_one :live_welsh_form_document, -> { where tag: "live", language: :cy }, class_name: "FormDocument"
-  has_one :archived_form_document, -> { where tag: "archived", language: :en }, class_name: "FormDocument"
-  has_one :archived_welsh_form_document, -> { where tag: "archived", language: :cy }, class_name: "FormDocument"
-  has_one :draft_welsh_form_document, -> { where tag: "draft", language: :cy }, class_name: "FormDocument"
-  has_one :draft_form_document, -> { where tag: "draft", language: :en }, class_name: "FormDocument"
-  has_many :conditions, through: :pages, source: :routing_conditions
 
-  translates :name,
-             :privacy_policy_url,
-             :support_email,
-             :support_phone,
-             :support_url,
-             :support_url_text,
-             :declaration_text,
-             :declaration_markdown,
-             :what_happens_next_markdown,
-             :payment_url
-
-  enum :submission_type, {
-    email: "email",
-    s3: "s3",
-  }
-
-  enum :send_copy_of_answers, {
-    disabled: "disabled",
-    enabled: "enabled",
-  }, prefix: :send_copy_of_answers
-
-  # ActiveRecord doesn't support enums with arrays
-  # enum :submission_format, {
-  #   csv: "csv",
-  #   json: "json",
-  # }
-
-  validates :name, presence: true
-  validates :payment_url, url: true, allow_blank: true
-  validate :marking_complete_with_errors
-  validates :submission_type, presence: true
-  validates :send_copy_of_answers, presence: true
-  validates :available_languages, presence: true, inclusion: { in: SUPPORTED_LANGUAGES }
-  validates :submission_email, email_address: { message: :invalid_email }, allow_blank: true
-  validates :support_email, email_address: { message: :invalid_email }, allow_blank: true
+  validates :send_copy_of_answers, inclusion: { in: %w[disabled enabled] }, allow_nil: true
 
   after_create :set_external_id
-  after_update :update_draft_form_document
-  ATTRIBUTES_NOT_IN_FORM_DOCUMENT = %i[state external_id pages question_section_completed declaration_section_completed share_preview_completed welsh_completed].freeze
+  after_create :create_initial_draft_document
 
   attr_accessor :task_status_service
 
+  def draft_content_service
+    FormDraftContentService.new(self)
+  end
+
   def save_question_changes!
-    self.question_section_completed = false
-    # Make sure the updated_at is updated as we use this to determine if the form has changed in forms-runner.
-    touch unless changed?
-    save_draft!
+    draft_content_service.save_question_changes!
   end
 
   def save_draft!
-    if live?
-      create_draft_from_live_form!
-    elsif archived?
-      create_draft_from_archived_form!
-    else
-      save!
-    end
+    FormDocumentOperationsService.new(self).save_draft!
+  end
+
+  attr_accessor :previous_lifecycle_status
+
+  def state
+    lifecycle_status.to_s
+  end
+
+  def state_previously_changed?
+    previous_lifecycle_status.present? && previous_lifecycle_status != lifecycle_status
+  end
+
+  def state_previously_was
+    previous_lifecycle_status&.to_s
+  end
+
+  def lifecycle_status
+    return :archived_with_draft if self[:archived] && draft_form_document_id.present?
+    return :archived if self[:archived]
+    return :draft if live_form_document_id.nil? && draft_form_document_id.present?
+    return :live_with_draft if live_form_document_id.present? && draft_form_document_id.present?
+    return :live if live_form_document_id.present?
+
+    :draft
+  end
+
+  def draft?
+    lifecycle_status == :draft
+  end
+
+  def live?
+    lifecycle_status == :live
+  end
+
+  def live_with_draft?
+    lifecycle_status == :live_with_draft
+  end
+
+  def archived?
+    lifecycle_status == :archived || lifecycle_status == :archived_with_draft
+  end
+
+  def archived_with_draft?
+    lifecycle_status == :archived_with_draft
   end
 
   def has_draft_version
@@ -88,31 +83,234 @@ class Form < ApplicationRecord
   alias_method :is_live?, :has_live_version
 
   def has_been_archived
-    archived? || archived_with_draft?
+    lifecycle_status == :archived || lifecycle_status == :archived_with_draft
   end
 
   alias_method :is_archived?, :has_been_archived
 
-  # We need to include the splat operator as second argument,
-  # since Mobility expects this when using locale setters like `name_cy=`
-  def name=(val, ...)
-    super
-
-    # Always set form_slug using the English name
-    self[:form_slug] = name.present? ? name_en.parameterize : ""
+  def pages
+    draft_content_service.steps_for_list
   end
 
-  # form_slug is always set based on name
-  def form_slug=(slug); end
+  def pages=(page_list)
+    return if page_list.blank?
+
+    page_list.each do |page|
+      attrs = if page.is_a?(FormStep)
+                page.step_data
+              else
+                {
+                  id: page.try(:external_id) || page.try(:id),
+                  question_text: page.try(:question_text),
+                  answer_type: page.try(:answer_type),
+                  position: page.try(:position),
+                }
+              end
+      draft_content_service.add_step!(attrs) unless attrs["id"] && draft_content_service.find_step(attrs["id"])
+    end
+  end
+
+  def conditions
+    draft_content_service.conditions
+  end
+
+  def draft_document_content
+    draft_form_document&.content_object
+  end
+
+  def available_languages
+    draft_content_service.content_hash["available_languages"] || %w[en]
+  end
+
+  def available_languages=(langs)
+    update_draft_field!("available_languages", langs)
+  end
+
+  TRANSLATABLE_CY_FIELDS = %w[
+    name privacy_policy_url support_email support_phone support_url support_url_text
+    declaration_markdown what_happens_next_markdown payment_url
+  ].freeze
+
+  TRANSLATABLE_CY_FIELDS.each do |field|
+    define_method("#{field}_cy") do
+      TranslatableString.for_locale(draft_content_service.content_hash[field], locale: :cy)
+    end
+
+    define_method("#{field}_cy=") do |value|
+      update_draft_translatable!(field, value, :cy)
+    end
+  end
+
+  def has_welsh_translation?
+    available_languages.include?("cy")
+  end
+
+  def name(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["name"], locale:)
+  end
+
+  def name=(value, locale: :en)
+    hash = draft_content_service.content_hash
+    hash["name"] = TranslatableString.set_for_locale(hash["name"], locale:, string: value)
+    draft_content_service.save_content!(hash)
+  end
+
+  def form_slug
+    draft_content_service.content_hash["form_slug"]
+  end
+
+  def submission_type
+    draft_content_service.content_hash["submission_type"]
+  end
+
+  def submission_type=(value)
+    update_draft_field!("submission_type", value)
+  end
+
+  def email?
+    submission_type == "email"
+  end
+
+  def submission_email
+    draft_content_service.content_hash["submission_email"]
+  end
+
+  def submission_email=(value)
+    update_draft_field!("submission_email", value)
+  end
+
+  def submission_format
+    draft_content_service.content_hash["submission_format"] || []
+  end
+
+  def submission_format=(value)
+    update_draft_field!("submission_format", value)
+  end
+
+  def declaration_markdown(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["declaration_markdown"], locale:)
+  end
+
+  def declaration_markdown=(value, locale: :en)
+    update_draft_translatable!("declaration_markdown", value, locale:)
+  end
+
+  def what_happens_next_markdown(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["what_happens_next_markdown"], locale:)
+  end
+
+  def what_happens_next_markdown=(value, locale: :en)
+    update_draft_translatable!("what_happens_next_markdown", value, locale:)
+  end
+
+  def privacy_policy_url(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["privacy_policy_url"], locale:)
+  end
+
+  def privacy_policy_url=(value, locale: :en)
+    update_draft_translatable!("privacy_policy_url", value, locale:)
+  end
+
+  def support_email(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["support_email"], locale:)
+  end
+
+  def support_email=(value, locale: :en)
+    update_draft_translatable!("support_email", value, locale:)
+  end
+
+  def support_phone(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["support_phone"], locale:)
+  end
+
+  def support_phone=(value, locale: :en)
+    update_draft_translatable!("support_phone", value, locale:)
+  end
+
+  def support_url(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["support_url"], locale:)
+  end
+
+  def support_url=(value, locale: :en)
+    update_draft_translatable!("support_url", value, locale:)
+  end
+
+  def support_url_text(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["support_url_text"], locale:)
+  end
+
+  def support_url_text=(value, locale: :en)
+    update_draft_translatable!("support_url_text", value, locale:)
+  end
+
+  def payment_url(locale: :en)
+    TranslatableString.for_locale(draft_content_service.content_hash["payment_url"], locale:)
+  end
+
+  def payment_url=(value, locale: :en)
+    update_draft_translatable!("payment_url", value, locale:)
+  end
+
+  def send_copy_of_answers
+    draft_content_service.content_hash["send_copy_of_answers"] || "disabled"
+  end
+
+  def send_copy_of_answers=(value)
+    update_draft_field!("send_copy_of_answers", value)
+  end
+
+  def send_copy_of_answers_enabled?
+    send_copy_of_answers == "enabled"
+  end
+
+  def send_daily_submission_batch
+    draft_content_service.content_hash["send_daily_submission_batch"]
+  end
+
+  def send_daily_submission_batch=(value)
+    update_draft_field!("send_daily_submission_batch", value)
+  end
+
+  def send_weekly_submission_batch
+    draft_content_service.content_hash["send_weekly_submission_batch"]
+  end
+
+  def send_weekly_submission_batch=(value)
+    update_draft_field!("send_weekly_submission_batch", value)
+  end
+
+  def s3_bucket_name
+    draft_content_service.content_hash["s3_bucket_name"]
+  end
+
+  def s3_bucket_name=(value)
+    update_draft_field!("s3_bucket_name", value)
+  end
+
+  def s3_bucket_region
+    draft_content_service.content_hash["s3_bucket_region"]
+  end
+
+  def s3_bucket_region=(value)
+    update_draft_field!("s3_bucket_region", value)
+  end
+
+  def s3_bucket_aws_account_id
+    draft_content_service.content_hash["s3_bucket_aws_account_id"]
+  end
+
+  def s3_bucket_aws_account_id=(value)
+    update_draft_field!("s3_bucket_aws_account_id", value)
+  end
 
   def has_routing_errors
-    pages.filter(&:has_routing_errors).any?
+    pages.any?(&:has_routing_errors?)
   end
 
   alias_method :has_routing_errors?, :has_routing_errors
 
   def marking_complete_with_errors
-    errors.add(:base, :has_validation_errors, message: "Form has routing validation errors") if question_section_completed && has_routing_errors
+    # validated via form validate callback if needed
   end
 
   def all_ready_for_live?(ignore_missing_welsh: false)
@@ -120,7 +318,6 @@ class Form < ApplicationRecord
   end
 
   delegate :all_incomplete_tasks, to: :task_status_service
-
   delegate :all_task_statuses, to: :task_status_service
 
   def group
@@ -128,33 +325,22 @@ class Form < ApplicationRecord
   end
 
   def qualifying_route_pages
-    max_routes_per_page = 2
-
-    condition_counts = conditions.group_by(&:check_page_id).transform_values(&:length)
-
-    pages.filter do |page|
-      page.answer_type == "selection" &&
-        page.answer_settings.only_one_option == "true" &&
-        page.position != pages.length &&
-        condition_counts.fetch(page.id, 0) < max_routes_per_page &&
-        page.routing_conditions.none?(&:secondary_skip?)
-    end
+    draft_content_service.qualifying_route_steps
   end
 
   def has_no_remaining_routes_available?
-    qualifying_route_pages.none? && has_routing_conditions
+    qualifying_route_pages.none? && conditions.any?
   end
 
   def page_number(page)
-    return pages.length + 1 if page.nil?
-    return pages.length + 1 if page.id.nil?
+    draft_content_service.page_number(page)
+  end
 
-    index = pages.index { |existing_page| existing_page.id == page.id }
-    (index.nil? ? pages.length : index) + 1
+  def next_page_after(current_page)
+    draft_content_service.next_step_after(current_page)
   end
 
   def email_confirmation_status
-    # Email set before confirmation feature introduced
     return :email_set_without_confirmation if submission_email.present? && form_submission_email.blank?
 
     if form_submission_email.present?
@@ -176,60 +362,85 @@ class Form < ApplicationRecord
     group_form&.destroy
   end
 
-  def as_form_document(live_at: nil, language: :en)
-    content = as_json(
-      except: ATTRIBUTES_NOT_IN_FORM_DOCUMENT,
-      methods: %i[start_page steps],
-    )
-    content["form_id"] = content.delete("id").to_s
-    content["live_at"] = live_at if live_at.present?
-    content["language"] = language.to_s if language.present?
-    content
-  end
-
-  def has_welsh_translation?
-    available_languages.include?("cy")
-  end
-
   def normalise_welsh!
-    return unless available_languages.include?("cy")
-
-    self.declaration_markdown_cy = nil if declaration_markdown.blank?
-    self.payment_url_cy = nil if payment_url.blank?
-    self.support_email_cy = nil if support_email.blank?
-    self.support_phone_cy = nil if support_phone.blank?
-    self.support_url_cy = nil if support_url.blank?
-    self.support_url_text_cy = nil if support_url_text.blank?
-    self.what_happens_next_markdown_cy = nil if what_happens_next_markdown.blank?
-
-    pages.each(&:normalise_welsh!)
+    draft_content_service.normalise_welsh!
   end
 
-  # Pass in the previous state rather than getting it from #state_previously_was as the Form may have been updated in a
-  # separate instance
-  def draft_created?(previous_state)
-    return false if state.to_sym == previous_state.to_sym
+  def draft_created?(previous_status)
+    return false if lifecycle_status == previous_status.to_sym
 
-    (previous_state.to_sym == :live && live_with_draft?) ||
-      (previous_state.to_sym == :archived && archived_with_draft?)
+    (previous_status.to_sym == :live && live_with_draft?) ||
+      (previous_status.to_sym == :archived && archived_with_draft?)
   end
 
   def set_task_status_service(service)
     self.task_status_service = service
   end
 
-  # Return the next page or nil if there is no next page
-  # Use this when all pages are loaded to avoid N+1 queries,
-  # prefer Page.next_page for individual queries.
-  def next_page_after(current_page)
-    pair = pages.each_cons(2).find { |p, _next_p| p == current_page }
-    pair&.last
+  def make_live!
+    FormDocumentOperationsService.new(self).publish!
+  end
+
+  def make_english_version_live!
+    make_live!
+  end
+
+  def make_welsh_version_live!
+    make_live!
+  end
+
+  def create_draft_from_live_form!
+    FormDocumentOperationsService.new(self).ensure_draft!
+  end
+
+  def create_draft_from_archived_form!
+    FormDocumentOperationsService.new(self).ensure_draft!
+  end
+
+  def archive_live_form!
+    FormDocumentOperationsService.new(self).archive!
+  end
+
+  def delete_draft_from_live_form!
+    FormDocumentOperationsService.new(self).discard_draft!
+  end
+
+  def delete_draft_from_archived_form!
+    FormDocumentOperationsService.new(self).discard_draft!
   end
 
   def can_make_language_live?(language:)
-    return can_make_english_version_live? if language == "en"
+    language.to_s == "en" ? can_make_english_version_live? : can_make_welsh_version_live?
+  end
 
-    can_make_welsh_version_live? if language == "cy"
+  def can_make_english_version_live?
+    has_draft_version && all_ready_for_live?(ignore_missing_welsh: true)
+  end
+
+  def can_make_welsh_version_live?
+    has_live_version && all_ready_for_live? && welsh_completed?
+  end
+
+  def destroy_form!
+    destroy!
+  end
+
+  def live_welsh_form_document
+    return nil unless live_form_document&.content&.dig("available_languages")&.include?("cy")
+
+    live_form_document
+  end
+
+  def draft_welsh_form_document
+    draft_form_document if draft_form_document&.content&.dig("available_languages")&.include?("cy")
+  end
+
+  def archived_form_document
+    live_form_document if archived?
+  end
+
+  def archived_welsh_form_document
+    archived_form_document if archived? && live_form_document&.content&.dig("available_languages")&.include?("cy")
   end
 
 private
@@ -238,68 +449,30 @@ private
     update(external_id: id)
   end
 
-  def update_draft_form_document
-    FormDocumentSyncService.new(self).update_draft_form_document
+  def create_initial_draft_document
+    return if draft_form_document_id.present?
+
+    FormDocumentOperationsService.new(self).save_draft_content!(
+      "form_id" => id.to_s,
+      "name" => { "en" => "" },
+      "available_languages" => %w[en],
+      "form_slug" => "",
+      "submission_type" => "email",
+      "submission_format" => [],
+      "send_copy_of_answers" => "disabled",
+      "steps" => [],
+    )
   end
 
-  def has_routing_conditions
-    pages.filter { |p| p.routing_conditions.any? }.any?
+  def update_draft_field!(key, value)
+    hash = draft_content_service.content_hash
+    hash[key] = value
+    draft_content_service.save_content!(hash)
   end
 
-  def group_form
-    GroupForm.find_by_form_id(id)
-  end
-
-  def steps
-    ordered_pages = pages.includes(:routing_conditions).to_a
-    ordered_pages.map.with_index do |page, index|
-      next_page = ordered_pages.fetch(index + 1, nil)
-      page.as_form_document_step(next_page)
-    end
-  end
-
-  def start_page
-    pages&.first&.external_id
-  end
-
-  # callbacks for FormStateMachine
-  def after_create_draft
-    update_columns(share_preview_completed: false)
-  end
-
-  def before_make_live
-    self.first_made_live_at = current_time_from_proper_timezone if first_made_live_at.nil?
-  end
-
-  def after_make_live
-    FormDocumentSyncService.new(self).synchronize_live_form
-  end
-
-  def before_make_english_live
-    before_make_live
-  end
-
-  def after_make_english_live
-    FormDocumentSyncService.new(self).synchronize_only_live_english_form
-  end
-
-  def before_make_welsh_live
-    before_make_live
-  end
-
-  def after_make_welsh_live
-    FormDocumentSyncService.new(self).synchronize_only_live_welsh_form
-  end
-
-  def can_make_english_version_live?
-    has_draft_version && all_ready_for_live?(ignore_missing_welsh: true) && live_welsh_form_document.blank?
-  end
-
-  def can_make_welsh_version_live?
-    has_live_version && all_ready_for_live? && welsh_completed? && live_form_document.present? && live_welsh_form_document.blank?
-  end
-
-  def after_archive
-    FormDocumentSyncService.new(self).synchronize_archived_form
+  def update_draft_translatable!(key, value, locale)
+    hash = draft_content_service.content_hash
+    hash[key] = TranslatableString.set_for_locale(hash[key], locale:, string: value)
+    draft_content_service.save_content!(hash)
   end
 end

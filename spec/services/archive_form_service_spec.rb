@@ -21,7 +21,7 @@ describe ArchiveFormService do
     it "archives the form" do
       expect {
         archive_form_service.archive
-      }.to change(form, :state).to("archived")
+      }.to change { form.reload.archived }.from(false).to(true)
     end
 
     it "sends an email to the submission email address" do
@@ -36,15 +36,19 @@ describe ArchiveFormService do
   end
 
   describe "#archive_welsh_only" do
-    let!(:form) { create(:form, :live, :with_welsh_translation) }
-    let!(:welsh_form_document) { FormDocument.find_by(form:, tag: "live", language: "cy") }
+    let!(:form) do
+      f = create(:form, :ready_for_live, available_languages: %w[en cy], welsh_completed: true)
+      hash = f.draft_content_service.content_hash
+      hash["available_languages"] = %w[en cy]
+      hash["name"] = { "en" => f.name, "cy" => "Welsh #{f.name}" }
+      FormDocumentOperationsService.new(f).save_draft_content!(hash)
+      FormDocumentFactoryHelpers.create_live_form!(f)
+      f.reload
+    end
 
-    context "when the form has a welsh form document" do
-      it "archives the welsh form document" do
-        expect {
-          archive_form_service.archive_welsh_only
-        }.to change { welsh_form_document.reload.tag }.from("live").to("archived")
-      end
+    it "removes welsh from available languages" do
+      archive_form_service.archive_welsh_only
+      expect(form.reload.available_languages).to eq(%w[en])
     end
   end
 end

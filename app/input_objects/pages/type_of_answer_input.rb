@@ -4,7 +4,7 @@ class Pages::TypeOfAnswerInput < BaseInput
   SELECTION_DEFAULT_OPTIONS = { selection_options: [{ name: "" }, { name: "" }] }.freeze
 
   validates :draft_question, presence: true
-  validates :answer_type, presence: true, inclusion: { in: Page::ANSWER_TYPES }
+  validates :answer_type, presence: true, inclusion: { in: FormStep::ANSWER_TYPES }
   validate :not_more_than_4_file_upload_questions
 
   def submit

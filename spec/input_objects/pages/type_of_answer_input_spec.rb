@@ -22,7 +22,7 @@ RSpec.describe Pages::TypeOfAnswerInput, type: :model do
     end
 
     it "is valid if answer type is a valid page answer type" do
-      Page::ANSWER_TYPES.each do |answer_type|
+      FormStep::ANSWER_TYPES.each do |answer_type|
         type_of_answer_input.answer_type = answer_type
         expect(type_of_answer_input).to be_valid "#{answer_type} is not a Page answer type"
       end

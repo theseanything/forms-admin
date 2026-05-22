@@ -48,7 +48,7 @@ describe "pages/type_of_answer.html.erb", type: :view do
   end
 
   it "has radio buttons for each answer_type" do
-    Page::ANSWER_TYPES.each do |type|
+    FormStep::ANSWER_TYPES.each do |type|
       expect(rendered).to have_field("pages_type_of_answer_input[answer_type]", with: type)
     end
   end

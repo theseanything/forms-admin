@@ -28,7 +28,7 @@ class OrgAdminAlertsService
 private
 
   def form_made_live_email(to_email:)
-    previous_state = @form.state_previously_was.to_sym
+    previous_state = (@form.state_previously_was || @form.previous_lifecycle_status).to_s.to_sym
 
     case previous_state
     when :draft
@@ -61,13 +61,13 @@ private
   end
 
   def draft_of_existing_form_created_email(to_email:)
-    case @form.state.to_sym
+    case @form.lifecycle_status
     when :live_with_draft
       AdminAlerts::DraftCreatedMailer.new_live_form_draft_created(form: @form, user: @current_user, to_email:)
     when :archived_with_draft
       AdminAlerts::DraftCreatedMailer.new_archived_form_draft_created(form: @form, user: @current_user, to_email:)
     else
-      raise StandardError, "Unexpected form state: #{@form.state}"
+      raise StandardError, "Unexpected form state: #{@form.lifecycle_status}"
     end
   end
 

@@ -72,7 +72,7 @@ class PagesController < FormsController
   end
 
   def move_page
-    page = current_form.pages.find(move_params[:page_id])
+    page = current_form.draft_content_service.find_step(move_params[:page_id])
     page.move_page(move_params[:direction])
 
     success_message = t("banner.success.form.page_moved",
@@ -121,7 +121,8 @@ private
   end
 
   def page
-    @page ||= current_form.pages.find(page_id)
+    @page ||= current_form.draft_content_service.find_step(page_id) ||
+              raise(ActiveRecord::RecordNotFound)
   end
 
   def draft_question
@@ -145,7 +146,7 @@ private
   end
 
   def setup_draft_question_for_existing_page
-    edit_draft_question = DraftQuestion.find_or_initialize_by(form_id: current_form.id, user_id: current_user.id, page_id: page.id)
+    edit_draft_question = DraftQuestion.find_or_initialize_by(form_id: current_form.id, user_id: current_user.id, page_id: page.id.to_s)
 
     if edit_draft_question.new_record?
       attributes = page.attributes

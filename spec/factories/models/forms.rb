@@ -1,26 +1,44 @@
 FactoryBot.define do
   factory :form, class: "Form" do
-    sequence(:name) { |n| "Form #{n}" }
-    submission_email { Faker::Internet.email(domain: "example.gov.uk") }
-    submission_type { "email" }
-    submission_format { [] }
-    privacy_policy_url { Faker::Internet.url(host: "gov.uk") }
-    support_email { nil }
-    support_phone { nil }
-    support_url { nil }
-    support_url_text { nil }
-    what_happens_next_markdown { nil }
-    declaration_markdown { nil }
+    transient do
+      sequence(:form_name) { |n| "Form #{n}" }
+      name { nil }
+      submission_email { Faker::Internet.email(domain: "example.gov.uk") }
+      submission_type { "email" }
+      submission_format { [] }
+      privacy_policy_url { Faker::Internet.url(host: "gov.uk") }
+      support_email { nil }
+      what_happens_next_markdown { nil }
+      declaration_markdown { nil }
+      payment_url { nil }
+      available_languages { %w[en] }
+      pages_count { 0 }
+    end
+
     question_section_completed { false }
     declaration_section_completed { false }
     share_preview_completed { false }
     creator_id { nil }
-    state { :draft }
-    payment_url { nil }
     external_id { nil }
-    send_daily_submission_batch { false }
-    send_weekly_submission_batch { false }
-    send_copy_of_answers { "disabled" }
+    welsh_completed { false }
+
+    after(:create) do |form, evaluator|
+      FormDocumentFactoryHelpers.apply_form_content!(
+        form,
+        name: evaluator.name.presence || evaluator.form_name,
+        submission_email: evaluator.submission_email,
+        submission_type: evaluator.submission_type,
+        submission_format: evaluator.submission_format,
+        privacy_policy_url: evaluator.privacy_policy_url,
+        support_email: evaluator.support_email,
+        what_happens_next_markdown: evaluator.what_happens_next_markdown,
+        declaration_markdown: evaluator.declaration_markdown,
+        payment_url: evaluator.payment_url,
+        available_languages: evaluator.available_languages,
+        send_copy_of_answers: "disabled",
+      )
+      FormDocumentFactoryHelpers.add_steps_to_form!(form, count: evaluator.pages_count) if evaluator.pages_count.positive?
+    end
 
     trait :with_group do
       transient do
@@ -42,8 +60,7 @@ FactoryBot.define do
     trait :new_form do
       submission_email { "" }
       privacy_policy_url { "" }
-      pages { [] }
-      state { :draft }
+      pages_count { 0 }
     end
 
     trait :with_id do
@@ -51,31 +68,23 @@ FactoryBot.define do
     end
 
     trait :with_pages do
-      transient do
-        pages_count { 5 }
-      end
-
-      pages do
-        Array.new(pages_count) { association(:page) }
-      end
-
-      after(:build) do |form|
-        link_pages_list(form.pages) if form.pages.present?
-        add_welsh_translations_to_pages(form.pages) if form.available_languages.include?("cy")
-      end
-
-      after(:stub) do |form|
-        link_pages_list(form.pages) if form.pages.present?
-        stub_conditions(form) if form.pages.present?
-        add_welsh_translations_to_pages(form.pages) if form.available_languages.include?("cy")
-      end
-
+      pages_count { 5 }
       question_section_completed { true }
     end
 
     trait :with_text_page do
-      pages do
-        Array.new(1) { association(:page, answer_type: "text", answer_settings: { input_type: %w[single_line long_text].sample }) }
+      pages_count { 1 }
+
+      after(:create) do |form, _evaluator|
+        hash = form.draft_content_service.content_hash
+        hash["steps"] = [
+          FormDocumentFactoryHelpers.build_step_attrs(
+            answer_type: "text",
+            answer_settings: { input_type: %w[single_line long_text].sample },
+          ),
+        ]
+        hash["start_page"] = hash["steps"].first["id"]
+        FormDocumentOperationsService.new(form).save_draft_content!(hash)
       end
 
       question_section_completed { true }
@@ -96,100 +105,78 @@ FactoryBot.define do
 
     trait :live do
       ready_for_live
-      state { :live }
       first_made_live_at { Time.zone.now }
-      after(:create) do |form|
-        form.available_languages.each do |language|
-          Mobility.with_locale(language) do
-            FormDocument.create(form:, tag: "live", content: form.as_form_document(live_at: form.updated_at), language:)
-          end
-        end
+
+      after(:create) do |form, _evaluator|
+        FormDocumentFactoryHelpers.create_live_form!(form)
       end
     end
 
     trait :live_with_draft do
       live
-      state { :live_with_draft }
+
+      after(:create) do |form, _evaluator|
+        FormDocumentFactoryHelpers.create_live_with_draft!(form)
+      end
     end
 
     trait :archived do
       ready_for_live
-      state { :archived }
       first_made_live_at { Time.zone.now }
-      after(:create) do |form|
-        form.available_languages.each do |language|
-          Mobility.with_locale(language) do
-            FormDocument.create(form:, tag: "archived", content: form.as_form_document(live_at: form.updated_at), language:)
-          end
-        end
+
+      after(:create) do |form, _evaluator|
+        FormDocumentFactoryHelpers.create_live_form!(form)
+        FormDocumentFactoryHelpers.archive_form!(form)
       end
     end
 
     trait :archived_with_draft do
       archived
-      state { :archived_with_draft }
+
+      after(:create) do |form, _evaluator|
+        FormDocumentOperationsService.new(form).ensure_draft!
+      end
     end
 
     trait :with_support do
       support_email { Faker::Internet.email(domain: "example.gov.uk") }
-      support_phone { Faker::Lorem.paragraph(sentence_count: 2, supplemental: true, random_sentences_to_add: 4) }
-      support_url { Faker::Internet.url(host: "gov.uk") }
-      support_url_text { Faker::Lorem.sentence(word_count: 1, random_words_to_add: 4) }
     end
 
     trait :ready_for_routing do
-      transient do
-        pages_count { 5 }
-      end
+      pages_count { 5 }
 
-      pages do
-        Array.new(pages_count) { association(:page, :with_selection_settings) }
-      end
-
-      after(:build) do |form|
-        link_pages_list(form.pages) if form.pages.present?
+      after(:create) do |form, _evaluator|
+        steps = (1..5).map do |i|
+          FormDocumentFactoryHelpers.build_step_attrs(
+            position: i,
+            answer_type: "selection",
+            answer_settings: { "only_one_option" => "true", "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }] },
+          )
+        end
+        steps.each_with_index { |s, i| s["next_step_id"] = steps[i + 1]&.dig("id") }
+        hash = form.draft_content_service.content_hash
+        hash["steps"] = steps
+        hash["start_page"] = steps.first["id"]
+        FormDocumentOperationsService.new(form).save_draft_content!(hash)
       end
     end
 
     trait :missing_pages do
       ready_for_live
       question_section_completed { false }
+      pages_count { 0 }
     end
 
     trait :with_welsh_translation do
       available_languages { %w[en cy] }
       welsh_completed { true }
 
-      name_cy { name.prepend("Welsh ") }
-      privacy_policy_url_cy { "#{privacy_policy_url}/cy" }
-      support_email_cy { support_email }
-      what_happens_next_markdown_cy { "Fel arfer, rydym yn ymateb i geisiadau o fewn 10 diwrnod gwaith." }
+      after(:create) do |form, evaluator|
+        hash = form.draft_content_service.content_hash
+        hash["name"]["cy"] = "Welsh #{evaluator.form_name}"
+        hash["available_languages"] = %w[en cy]
+        FormDocumentOperationsService.new(form).save_draft_content!(hash)
+      end
     end
   end
-end
-
-def link_pages_list(pages)
-  pages.to_enum.with_index(1).each do |page, index|
-    page.position = index
-  end
-
-  pages
-end
-
-def stub_conditions(form)
-  form.instance_eval do
-    def conditions
-      pages.flat_map(&:routing_conditions)
-    end
-  end
-end
-
-def add_welsh_translations_to_pages(pages)
-  pages.each do |page|
-    if page.question_text_cy.blank?
-      page.question_text_cy = "Welsh #{page.question_text}"
-    end
-  end
-
-  pages
 end

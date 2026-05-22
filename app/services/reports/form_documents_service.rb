@@ -1,17 +1,33 @@
+# frozen_string_literal: true
+
 class Reports::FormDocumentsService
   class << self
     def form_documents(tag:)
-      form_document_tags = tag == "live-or-archived" ? %w[live archived] : tag
-      form_documents = FormDocument.joins(form: { group_form: { group: :organisation } })
-                  .where(tag: form_document_tags, language: "en")
-                  .where.not(organisation: { "internal": true })
-                  .select("form_documents.*", "organisation.name AS organisation_name", "organisation.id AS organisation_id", "groups.external_id AS group_external_id", "groups.name AS group_name", "welsh_completed AS welsh_completed")
+      scope = FormDocument.joins(form: { group_form: { group: :organisation } })
+        .where.not(organisation: { internal: true })
+        .select(
+          "form_documents.*",
+          "organisation.name AS organisation_name",
+          "organisation.id AS organisation_id",
+          "groups.external_id AS group_external_id",
+          "groups.name AS group_name",
+          "forms.welsh_completed AS welsh_completed",
+        )
 
-      if tag == "draft"
-        form_documents = form_documents.where(form: { "state": %w[draft live_with_draft archived_with_draft] })
+      scope = case tag.to_s
+              when "draft"
+                scope.joins(:form).where("form_documents.id = forms.draft_form_document_id")
+              when "live-or-archived"
+                scope.joins(:form).where("form_documents.id = forms.live_form_document_id")
+              else
+                scope.none
+              end
+
+      scope.find_each(batch_size: 100).lazy.map do |doc|
+        json = doc.as_json
+        json["content"] = FormDocument::LocaleProjection.project(doc.content, language: "en")
+        json
       end
-
-      form_documents.find_each(batch_size: 100).lazy.map(&:as_json)
     end
 
     def has_routes?(form_document)
@@ -33,11 +49,12 @@ class Reports::FormDocumentsService
     end
 
     def has_add_another_answer?(form_document)
-      form_document["content"]["steps"].any? { |step| step["data"]["is_repeatable"] }
+      form_document["content"]["steps"].any? { |step| step.dig("data", "is_repeatable") }
     end
 
     def has_payments?(form_document)
-      form_document["content"]["payment_url"].present?
+      payment_url = form_document["content"]["payment_url"]
+      payment_url.present?
     end
 
     def has_csv_submission_email_attachments(form_document)
@@ -69,7 +86,7 @@ class Reports::FormDocumentsService
     end
 
     def is_copy?(form_document)
-      form_document["content"]["copied_from_id"].present?
+      form_document.dig("content", "copied_from_id").present?
     end
 
     def has_welsh_translation(form_document)

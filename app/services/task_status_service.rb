@@ -144,7 +144,7 @@ private
     # and show the make live task and link. In this case, we will show a warning
     # message on the make live page asking the user to update the Welsh before
     # the form can be made live.
-    ignore_missing_welsh = @form.live_welsh_form_document.present?
+    ignore_missing_welsh = @form.live_form_document&.content&.dig("available_languages")&.include?("cy")
     mandatory_tasks_completed?(ignore_missing_welsh:) ? :not_started : :cannot_start
   end
 

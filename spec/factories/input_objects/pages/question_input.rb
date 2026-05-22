@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :question_input, class: "Pages::QuestionInput" do
-    answer_type { Page::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
+    answer_type { FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample }
     question_text { Faker::Lorem.question }
     hint_text { nil }
     is_optional { "false" }
