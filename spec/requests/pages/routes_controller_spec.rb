@@ -4,15 +4,17 @@ describe Pages::RoutesController, type: :request do
   let(:form) { create :form, :ready_for_routing }
   let(:pages) { form.pages }
   let(:page) do
-    pages.first.tap do |first_page|
-      first_page.is_optional = false
-      first_page.answer_type = "selection"
-      first_page.answer_settings = DataStruct.new(
-        only_one_option: true,
-        selection_options: [OpenStruct.new(attributes: { name: "Option 1" }),
-                            OpenStruct.new(attributes: { name: "Option 2" })],
-      )
-    end
+    step = pages.first
+    step.update!(
+      answer_type: "selection",
+      is_optional: false,
+      answer_settings: {
+        "only_one_option" => "true",
+        "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }],
+      },
+    )
+    form.save_question_changes!
+    form.reload.pages.first
   end
 
   let(:group) { create(:group, organisation: standard_user.organisation) }
@@ -35,15 +37,17 @@ describe Pages::RoutesController, type: :request do
 
     context "when the page is at the end of the form" do
       let(:page) do
-        pages.last.tap do |last_page|
-          last_page.is_optional = false
-          last_page.answer_type = "selection"
-          last_page.answer_settings = DataStruct.new(
-            only_one_option: true,
-            selection_options: [OpenStruct.new(attributes: { name: "Option 1" }),
-                                OpenStruct.new(attributes: { name: "Option 2" })],
-          )
-        end
+        step = pages.last
+        step.update!(
+          answer_type: "selection",
+          is_optional: false,
+          answer_settings: {
+            "only_one_option" => "true",
+            "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }],
+          },
+        )
+        form.save_question_changes!
+        form.reload.pages.last
       end
 
       it "renders the routing page template" do
@@ -64,9 +68,9 @@ describe Pages::RoutesController, type: :request do
   end
 
   describe "#destroy" do
-    let!(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "Option 1" }
-    let(:secondary_skip_page) { form.pages[2] }
-    let!(:secondary_skip) { create :condition, routing_page_id: secondary_skip_page.id, check_page_id: page.id, goto_page_id: pages[3].id }
+    let!(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: "Option 1" }
+    let(:secondary_skip_page) { form.reload.pages[2] }
+    let!(:secondary_skip) { create :condition, form:, routing_page_id: secondary_skip_page.id, check_page_id: page.id, goto_page_id: pages[3].id }
 
     context "when confirmed" do
       it "redirects to page list" do
@@ -76,8 +80,9 @@ describe Pages::RoutesController, type: :request do
 
       it "destroys the conditions" do
         delete destroy_routes_path(form_id: form.id, page_id: page.id, pages_routes_delete_confirmation_input: { confirm: "yes" })
-        expect(Condition.exists?(condition.id)).to be false
-        expect(Condition.exists?(secondary_skip.id)).to be false
+        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+        expect(reloaded_page.routing_conditions).to be_empty
+        expect(form.reload.draft_content_service.conditions.map(&:id)).not_to include(secondary_skip.id.to_s)
       end
 
       context "but one of the routes is already deleted" do
@@ -105,8 +110,8 @@ describe Pages::RoutesController, type: :request do
 
       it "does not destroy the conditions" do
         delete destroy_routes_path(form_id: form.id, page_id: page.id, pages_routes_delete_confirmation_input: { confirm: "no" })
-        expect(Condition.exists?(condition.id)).to be true
-        expect(Condition.exists?(secondary_skip.id)).to be true
+        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+        expect(reloaded_page.routing_conditions).not_to be_empty
       end
     end
   end

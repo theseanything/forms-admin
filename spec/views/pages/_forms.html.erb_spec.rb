@@ -1,7 +1,8 @@
 require "rails_helper"
 
 describe "pages/_form.html.erb", type: :view do
-  let(:page) { build :page, :with_hints, :with_simple_answer_type, id: 2, form_id: form.id }
+  let(:form) { create(:form) }
+  let(:page) { create(:page, :with_hints, :with_simple_answer_type, form:, id: 2) }
   let(:draft_question) { question_input.draft_question }
   let(:question_input) do
     build :question_input,
@@ -10,7 +11,6 @@ describe "pages/_form.html.erb", type: :view do
           hint_text: page.hint_text,
           answer_settings: page.answer_settings
   end
-  let(:form) { create :form }
   let(:group) { create :group }
   let(:is_new_page) { true }
   let(:locals) do
@@ -53,7 +53,7 @@ describe "pages/_form.html.erb", type: :view do
   end
 
   context "when the question is an only one option selection" do
-    let(:page) { build :page, :with_selection_settings, id: 2, form_id: form.id }
+    let(:page) { create(:page, :with_selection_settings, form:, id: 2) }
 
     it "does not have the radio input for repeatable" do
       expect(rendered).not_to have_field("pages_question_input[is_repeatable]", type: :radio)
@@ -61,7 +61,7 @@ describe "pages/_form.html.erb", type: :view do
   end
 
   context "when the question is an only more than one option selection" do
-    let(:page) { build :page, :with_selection_settings, only_one_option: false, id: 2, form_id: form.id }
+    let(:page) { create(:page, :with_selection_settings, only_one_option: false, form:, id: 2) }
 
     it "does not have the radio input for repeatable" do
       expect(rendered).not_to have_field("pages_question_input[is_repeatable]", type: :radio)
@@ -136,7 +136,7 @@ describe "pages/_form.html.erb", type: :view do
   end
 
   context "when the answer type is file" do
-    let(:page) { build :page, :with_hints, answer_type: "file", id: 2, form_id: form.id }
+    let(:page) { create(:page, :with_hints, answer_type: "file", form:, id: 2) }
     let(:draft_question) { build :draft_question, answer_type: "file" }
     let(:question_input) do
       build :question_input,

@@ -7,7 +7,7 @@ RSpec.describe FormDocument, type: :model do
   end
 
   it "is invalid without a form" do
-    form_document = create(:form_document, form: nil)
+    form_document = build(:form_document, form: nil)
     expect(form_document).not_to be_valid
   end
 

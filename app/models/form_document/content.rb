@@ -57,23 +57,55 @@ class FormDocument::Content
   end
 
   def name(locale = :en)
-    TranslatableString.for_locale(self[:name], locale:)
+    translatable_string_for("name", locale:)
   end
 
   def name_for(locale = :en)
     name(locale)
   end
 
+  def declaration_markdown(locale = :en)
+    translatable_string_for("declaration_markdown", locale:)
+  end
+
   def declaration_markdown_for(locale = :en)
-    TranslatableString.for_locale(declaration_markdown, locale:)
+    declaration_markdown(locale)
+  end
+
+  def what_happens_next_markdown(locale = :en)
+    translatable_string_for("what_happens_next_markdown", locale:)
   end
 
   def what_happens_next_markdown_for(locale = :en)
-    TranslatableString.for_locale(what_happens_next_markdown, locale:)
+    what_happens_next_markdown(locale)
+  end
+
+  def payment_url(locale = :en)
+    translatable_string_for("payment_url", locale:)
   end
 
   def payment_url_for(locale = :en)
-    TranslatableString.for_locale(payment_url, locale:)
+    payment_url(locale)
+  end
+
+  def privacy_policy_url(locale = :en)
+    translatable_string_for("privacy_policy_url", locale:)
+  end
+
+  def support_email(locale = :en)
+    translatable_string_for("support_email", locale:)
+  end
+
+  def support_phone(locale = :en)
+    translatable_string_for("support_phone", locale:)
+  end
+
+  def support_url(locale = :en)
+    translatable_string_for("support_url", locale:)
+  end
+
+  def support_url_text(locale = :en)
+    translatable_string_for("support_url_text", locale:)
   end
 
   def to_content_hash
@@ -81,5 +113,11 @@ class FormDocument::Content
     hash["steps"] = @steps.map(&:to_content_hash)
     hash["form_id"] = form_id.to_s
     hash
+  end
+
+private
+
+  def translatable_string_for(attribute, locale:)
+    TranslatableString.for_locale(attributes[attribute], locale:)
   end
 end

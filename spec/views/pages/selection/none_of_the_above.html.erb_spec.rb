@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe "pages/selection/none_of_the_above.html.erb", type: :view do
-  let(:form) { create :form }
-  let(:page) { build :page }
+  let(:form) { create :form, pages_count: 1 }
+  let(:page) { form.pages.first }
   let(:selection_options) { [{ name: "Option 1" }, { name: "Option 2" }] }
   let(:answer_settings) { { selection_options: } }
   let(:draft_question) { build :draft_question, answer_type: "selection", answer_settings: }

@@ -25,10 +25,10 @@ class Pages::ChangeOrderService
     draft_service = form.draft_content_service
     step_ids = draft_service.steps.map { |s| s["id"] }
 
-    raise FormPagesAddedError if (step_ids - new_page_order).any?
+    raise FormPagesAddedError if (step_ids.map(&:to_s) - new_page_order.map(&:to_s)).any?
 
     ordered_steps = new_page_order.map.with_index do |step_id, index|
-      step = draft_service.steps.find { |s| s["id"] == step_id }
+      step = draft_service.steps.find { |s| s["id"].to_s == step_id.to_s }
       step.merge("position" => index + 1)
     end
 

@@ -6,6 +6,8 @@ describe "pages/secondary_skip/new.html.erb" do
   let(:secondary_skip_input) { Pages::SecondarySkipInput.new(form:, page:) }
 
   before do
+    create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: form.pages.third.id)
+    page.reload
     render template: "pages/secondary_skip/new", locals: { back_link_url: "/back", secondary_skip_input: }
   end
 

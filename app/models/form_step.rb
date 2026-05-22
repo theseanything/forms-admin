@@ -135,11 +135,22 @@ class FormStep
   end
 
   def check_conditions
-    draft_service.conditions.select { |c| c.check_page_id == id }
+    conditions_for_step(check_page_id: id)
   end
 
   def goto_conditions
-    draft_service.conditions.select { |c| c.goto_page_id == id }
+    conditions_for_step(goto_page_id: id)
+  end
+
+  def conditions_for_step(**filters)
+    filter_key, filter_value = filters.first
+    draft_service.content_hash["steps"].flat_map do |step|
+      Array(step["routing_conditions"]).filter_map do |c|
+        next unless c[filter_key.to_s].to_s == filter_value.to_s
+
+        FormCondition.new(form:, condition: c, step_id: step["id"])
+      end
+    end
   end
 
   def only_one_option?
@@ -227,12 +238,22 @@ class FormStep
     check_conditions.find { |c| c.answer_value.blank? && c.check_page_id != c.routing_page_id }
   end
 
+  def find_routing_condition(condition_id)
+    routing_conditions.find { |c| c.id.to_s == condition_id.to_s }
+  end
+
   def as_json(options = {})
+    settings = data["answer_settings"]
+    settings = settings.to_h if settings.is_a?(DataStruct)
     {
       id:,
       position:,
       question_text: question_text,
+      hint_text: hint_text,
+      page_heading: page_heading,
+      guidance_markdown: guidance_markdown,
       answer_type:,
+      answer_settings: settings,
       is_optional: is_optional?,
       is_repeatable: is_repeatable?,
       routing_conditions: routing_conditions.map(&:as_json),

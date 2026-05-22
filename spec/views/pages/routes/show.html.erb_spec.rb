@@ -65,7 +65,7 @@ describe "pages/routes/show.html.erb" do
     let(:route_summary_card_data_service) { RouteSummaryCardDataPresenter.new form:, page: }
 
     before do
-      create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id
+      create(:condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id)
       pages.each(&:reload)
 
       render template: "pages/routes/show", locals: { current_form: form, page:, back_link_url: "/back", route_summary_card_data_presenter: route_summary_card_data_service }
@@ -96,7 +96,7 @@ describe "pages/routes/show.html.erb" do
         let(:page) { pages.last }
 
         before do
-          create :condition, routing_page_id: pages.last.id, check_page_id: pages.last.id, answer_value: "Option 1", goto_page_id: nil, skip_to_end: true
+          create(:condition, form:, routing_page_id: pages.last.id, check_page_id: pages.last.id, answer_value: "Option 1", goto_page_id: nil, skip_to_end: true)
           pages.each(&:reload)
         end
 
@@ -117,7 +117,7 @@ describe "pages/routes/show.html.erb" do
 
   context "when the page has a route that leads to an exit page" do
     before do
-      create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1"
+      create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1")
       pages.each(&:reload)
 
       render template: "pages/routes/show", locals: { current_form: form, page:, back_link_url: "/back", route_summary_card_data_presenter: route_summary_card_data_service }
@@ -136,8 +136,8 @@ describe "pages/routes/show.html.erb" do
     let(:route_summary_card_data_service) { RouteSummaryCardDataPresenter.new form:, page: }
 
     before do
-      create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id
-      create :condition, routing_page_id: pages.second.id, check_page_id: pages.first.id, goto_page_id: pages.fourth.id
+      create(:condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id)
+      create(:condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, goto_page_id: pages.fourth.id)
       pages.each(&:reload)
 
       render template: "pages/routes/show", locals: { current_form: form, page:, back_link_url: "/back", route_summary_card_data_presenter: route_summary_card_data_service }

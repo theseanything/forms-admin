@@ -4,22 +4,24 @@ RSpec.describe Pages::ExitPageController, type: :request do
   let(:form) { create :form, :ready_for_routing, id: 1 }
   let(:pages) { form.pages }
   let(:page) do
-    pages.first.tap do |first_page|
-      first_page.is_optional = false
-      first_page.answer_type = "selection"
-      first_page.answer_settings = DataStruct.new(
-        only_one_option: true,
-        selection_options: [OpenStruct.new(attributes: { name: answer_value }),
-                            OpenStruct.new(attributes: { name: "Option 2" })],
-      )
-    end
+    step = pages.first
+    step.update!(
+      answer_type: "selection",
+      is_optional: false,
+      answer_settings: {
+        "only_one_option" => "true",
+        "selection_options" => [{ "name" => answer_value }, { "name" => "Option 2" }],
+      },
+    )
+    form.save_question_changes!
+    form.reload.pages.first
   end
   let(:selected_page) { page }
   let(:answer_value) { "Option 1" }
 
   let(:group) { create(:group, organisation: standard_user.organisation) }
   let(:user) { standard_user }
-  let(:condition) { create(:condition, :with_exit_page, routing_page_id: selected_page.id) }
+  let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: selected_page.id, check_page_id: selected_page.id) }
 
   before do
     Membership.create!(group_id: group.id, user: standard_user, added_by: standard_user)
@@ -37,8 +39,8 @@ RSpec.describe Pages::ExitPageController, type: :request do
     end
 
     context "when user should not be allowed to add routes to pages" do
-      let(:form) { create :form, id: 1 }
-      let(:pages) { [create(:page)] }
+      let(:form) { create :form, pages_count: 1 }
+      let(:user) { build :user }
 
       it "Renders the forbidden page" do
         expect(response.status).to eq(403)
@@ -86,8 +88,8 @@ RSpec.describe Pages::ExitPageController, type: :request do
     end
 
     context "when user should not be allowed to add routes to pages" do
-      let(:form) { create :form, id: 1 }
-      let(:pages) { [create(:page)] }
+      let(:form) { create :form, pages_count: 1 }
+      let(:user) { build :user }
 
       it "Renders the forbidden page" do
         expect(response.status).to eq(403)
@@ -138,13 +140,13 @@ RSpec.describe Pages::ExitPageController, type: :request do
 
     it "renders the delete exit page template with the correct assignments" do
       expect(response).to render_template("pages/exit_page/delete")
-      expect(assigns(:exit_page)).to eq(condition)
+      expect(assigns(:exit_page).id).to eq(condition.id)
       expect(assigns(:delete_exit_page_input)).to be_a(Pages::DeleteExitPageInput)
     end
 
     context "when user should not be allowed to add/delete routes to pages" do
-      let(:form) { create :form, id: 1 }
-      let(:pages) { [create(:page)] }
+      let(:form) { create :form, pages_count: 1 }
+      let(:user) { build :user }
 
       it "Renders the forbidden page" do
         expect(response.status).to eq(403)
@@ -164,7 +166,8 @@ RSpec.describe Pages::ExitPageController, type: :request do
       expect(response).to redirect_to(new_condition_path(form.id, selected_page.id))
       follow_redirect!
       expect(response.body).to include(I18n.t("banner.success.exit_page_deleted"))
-      expect(Condition.exists?(condition.id)).to be false
+      reloaded_page = form.reload.pages.find { |p| p.id == selected_page.id }
+      expect(reloaded_page.routing_conditions.map(&:id)).not_to include(condition.id.to_s)
     end
 
     context "when confirmation is not provided" do
@@ -180,12 +183,13 @@ RSpec.describe Pages::ExitPageController, type: :request do
 
       it "redirects to form pages path without deleting the exit page" do
         expect(response).to redirect_to(edit_exit_page_path(form.id, page.id, condition.id))
-        expect(Condition.exists?(condition.id)).to be true
+        reloaded_page = form.reload.pages.find { |p| p.id == selected_page.id }
+        expect(reloaded_page.routing_conditions.map { |c| c.id.to_s }).to include(condition.id.to_s)
       end
     end
 
     context "when the condition is not an exit page" do
-      let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, skip_to_end: true }
+      let(:condition) { create :condition, form:, routing_page_id: page.id, check_page_id: page.id, skip_to_end: true }
 
       before do
         allow(condition).to receive(:exit_page?).and_return(false)
@@ -198,8 +202,8 @@ RSpec.describe Pages::ExitPageController, type: :request do
     end
 
     context "when user should not be allowed to add/delete routes to pages" do
-      let(:form) { create :form, id: 1 }
-      let(:pages) { [create(:page)] }
+      let(:form) { create :form, pages_count: 1 }
+      let(:user) { build :user }
 
       it "Renders the forbidden page" do
         expect(response.status).to eq(403)

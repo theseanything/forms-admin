@@ -20,7 +20,7 @@ end
 
 RSpec.shared_examples "an edit question page that expects a certain answer type" do |expected_answer_type|
   let(:answer_type) { expected_answer_type == "text" ? "name" : "text" }
-  let(:draft_question) { create :draft_question, answer_type:, user:, form_id: form.id, page_id: page.id }
+  let(:draft_question) { create :draft_question, answer_type:, user:, form_id: form.id, page_id: page.id.to_s }
 
   it "redirects to the edit question page" do
     expect(response).to redirect_to edit_question_path(form.id, page.id)

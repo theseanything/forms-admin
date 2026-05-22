@@ -106,6 +106,10 @@ class FormCondition
     is_exit_page?
   end
 
+  def skip_to_end?
+    skip_to_end == true
+  end
+
   def secondary_skip?
     answer_value.blank? && check_page_id != routing_page_id
   end

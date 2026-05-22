@@ -81,7 +81,7 @@ RSpec.describe Pages::TextSettingsController, type: :request do
              answer_type: "text",
              user:,
              form_id: form.id,
-             page_id: page.id,
+             page_id: page.id.to_s,
              answer_settings: {
                input_type: "single_line",
              }

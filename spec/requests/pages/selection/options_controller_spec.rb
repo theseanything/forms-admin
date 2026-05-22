@@ -1,8 +1,8 @@
 require "rails_helper"
 
 describe Pages::Selection::OptionsController, type: :request do
-  let(:form) { create :form }
-  let(:pages) { build_list :page, 5, form_id: form.id }
+  let(:form) { create :form, :with_pages }
+  let(:pages) { form.pages }
   let(:page) { pages.first }
 
   let(:user) { standard_user }

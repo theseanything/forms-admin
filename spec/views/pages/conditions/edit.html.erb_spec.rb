@@ -6,12 +6,11 @@ describe "pages/conditions/edit.html.erb" do
   let(:group) { build :group }
   let(:pages) { form.pages }
   let(:page) { pages.first }
-  let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages.third.id }
+  let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages.third.id) }
   let(:secondary_skip) { false }
 
   before do
     pages.each(&:reload)
-    page.position = 1
     allow(form).to receive_messages(group: group, qualifying_route_pages: pages)
     allow(condition_input).to receive(:secondary_skip?).and_return(secondary_skip)
     condition_input.check_errors_from_api
@@ -41,7 +40,7 @@ describe "pages/conditions/edit.html.erb" do
   end
 
   context "with a validation error" do
-    let(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.third.id }
+    let(:condition) { create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.third.id) }
 
     it "has an error link that matches the field with errors" do
       field_id = "pages-conditions-input-answer-value-field-error"
@@ -59,7 +58,7 @@ describe "pages/conditions/edit.html.erb" do
   end
 
   context "when the condition has an exit page" do
-    let(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1" }
+    let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1") }
 
     it "has the exit page heading" do
       expect(rendered).to have_content(condition.exit_page_heading)

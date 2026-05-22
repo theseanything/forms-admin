@@ -81,7 +81,7 @@ RSpec.describe Pages::NameSettingsController, type: :request do
              answer_type: "name",
              user:,
              form_id: form.id,
-             page_id: page.id,
+             page_id: page.id.to_s,
              answer_settings: {
                input_type: "first_middle_and_last_name",
                title_needed: "true",
@@ -126,9 +126,9 @@ RSpec.describe Pages::NameSettingsController, type: :request do
       end
 
       it "loads the updated input type from the page params" do
-        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
-        expect(reloaded_page.answer_settings.input_type).to eq input_type
-        expect(reloaded_page.answer_settings.title_needed).to eq title_needed
+        draft_question = DraftQuestion.find_by!(form_id: form.id, user_id: user.id, page_id: page.id.to_s)
+        expect(draft_question.answer_settings[:input_type]).to eq input_type
+        expect(draft_question.answer_settings[:title_needed]).to eq title_needed
       end
 
       it "redirects the user to the edit question page" do

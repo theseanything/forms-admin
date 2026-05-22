@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Pages::QuestionsController, type: :request do
   let(:form) { create :form }
   let(:draft_question) { create :draft_question_for_new_page, user: standard_user, form_id: form.id }
-  let(:page) { create(:page, form_id: form.id) }
+  let(:page) { create(:page, form:) }
   let(:pages) do
     [page]
   end
@@ -88,12 +88,12 @@ RSpec.describe Pages::QuestionsController, type: :request do
         it "creates a page" do
           expect {
             post(create_question_path(form.id), params:)
-          }.to change(Page, :count).by(1)
+          }.to change { form.reload.pages.size }.by(1)
         end
 
         it "Redirects you to edit page for new question" do
           post(create_question_path(form.id), params:)
-          expect(response).to redirect_to(edit_question_path(form_id: form.id, page_id: Page.last.id))
+          expect(response).to redirect_to(edit_question_path(form_id: form.id, page_id: form.reload.pages.last.id))
         end
 
         it "displays a notification banner with call to action links" do
@@ -164,7 +164,7 @@ RSpec.describe Pages::QuestionsController, type: :request do
       it "does not create a page" do
         expect {
           post(create_question_path(form.id), params:)
-        }.not_to change(Page, :count)
+        }.not_to(change { form.reload.pages.size })
       end
 
       it "updates the draft question in the database" do
@@ -186,7 +186,7 @@ RSpec.describe Pages::QuestionsController, type: :request do
 
   describe "#edit" do
     describe "Given a page" do
-      let(:page) { create :page, id: 99_999_999, form_id: form.id }
+      let(:page) { create :page, form: }
 
       before do
         # Setup a draft_question so that edit question action doesn't need to create a completely new records
@@ -211,14 +211,14 @@ RSpec.describe Pages::QuestionsController, type: :request do
 
   describe "#update" do
     let!(:draft_question) do
-      create(:address_draft_question, :with_guidance, page_id: page.id, user: standard_user, form_id: form.id)
+      create(:address_draft_question, :with_guidance, page_id: page.id.to_s, user: standard_user, form_id: form.id)
     end
     let(:update_path) { update_question_path(form_id: form.id, page_id: page.id) }
 
     let(:page) do
       create(
         :page,
-        form_id: form.id,
+        form:,
         question_text: "Old question text",
         hint_text: "Old hint text",
         answer_type: "email",
@@ -252,16 +252,19 @@ RSpec.describe Pages::QuestionsController, type: :request do
         end
 
         it "Updates the page" do
-          expect(page.reload).to have_attributes(
+          reloaded_page = form.reload.pages.find { |p| p.id == page.id }
+          expect(reloaded_page).to have_attributes(
             question_text: "What is your home address?",
             hint_text: "This should be the location stated in your contract.",
-            is_optional: true,
-            is_repeatable: true,
             answer_type: "address",
-            answer_settings: DataStruct.recursive_new(draft_question.answer_settings),
-            page_heading: draft_question.page_heading,
-            guidance_markdown: draft_question.guidance_markdown,
           )
+          expect(reloaded_page.is_optional?).to be(true)
+          expect(reloaded_page.is_repeatable?).to be(true)
+          expect(reloaded_page.answer_settings.to_h.deep_stringify_keys).to eq(
+            draft_question.answer_settings.deep_stringify_keys,
+          )
+          expect(reloaded_page.page_heading).to eq(draft_question.page_heading)
+          expect(reloaded_page.guidance_markdown).to eq(draft_question.guidance_markdown)
         end
 
         it "Redirects you to edit page for question that was updated" do
@@ -282,7 +285,7 @@ RSpec.describe Pages::QuestionsController, type: :request do
         end
 
         context "when question being updated has a question after it" do
-          let!(:next_page) { create(:page, form_id: form.id) }
+          let!(:next_page) { create(:page, form:) }
 
           let(:params) do
             { pages_question_input: {
@@ -344,9 +347,13 @@ RSpec.describe Pages::QuestionsController, type: :request do
       let(:hint_text) { "a" * 501 } # invalid hint text to ensure validation is skipped
 
       it "does not update the page" do
+        original_question_text = page.question_text
         expect {
           post(update_path, params:)
-        }.not_to(change { page.reload.attributes })
+        }.not_to(change {
+          form.reload.pages.find { |p| p.id == page.id }.question_text
+        })
+        expect(form.reload.pages.find { |p| p.id == page.id }.question_text).to eq(original_question_text)
       end
 
       it "updates the draft question in the database" do

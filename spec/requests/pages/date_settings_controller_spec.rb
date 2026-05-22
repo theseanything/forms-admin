@@ -82,7 +82,7 @@ RSpec.describe Pages::DateSettingsController, type: :request do
              answer_type: "date",
              user:,
              form_id: form.id,
-             page_id: page.id,
+             page_id: page.id.to_s,
              answer_settings: {
                input_type: "date_of_birth",
              }
@@ -126,8 +126,8 @@ RSpec.describe Pages::DateSettingsController, type: :request do
       end
 
       it "loads the updated input type from the page params" do
-        reloaded_page = form.reload.pages.find { |p| p.id == page.id }
-        expect(reloaded_page.answer_settings.input_type).to eq "other_date"
+        draft_question = DraftQuestion.find_by!(form_id: form.id, user_id: user.id, page_id: page.id.to_s)
+        expect(draft_question.answer_settings[:input_type]).to eq "other_date"
       end
 
       it "redirects the user to the edit question page" do

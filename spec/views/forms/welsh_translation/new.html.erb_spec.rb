@@ -2,9 +2,9 @@ require "rails_helper"
 
 describe "forms/welsh_translation/new.html.erb" do
   let(:form) { build_form }
-  let(:page) { create :page, position: 1 }
-  let(:another_page) { create :page, position: 2 }
-  let(:condition) { create :condition, :with_exit_page, routing_page_id: page.id }
+  let(:page) { form.pages.first }
+  let(:another_page) { form.pages.second }
+  let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: page.id, check_page_id: page.id) }
   let(:welsh_condition_translation_input) { Forms::WelshConditionTranslationInput.new(condition:).assign_condition_values }
   let(:welsh_page_translation_input) { Forms::WelshPageTranslationInput.new(page:).assign_page_values }
   let(:another_welsh_page_translation_input) { Forms::WelshPageTranslationInput.new(page: another_page).assign_page_values }
@@ -31,7 +31,7 @@ describe "forms/welsh_translation/new.html.erb" do
       support_url: "https://www.gov.uk/support",
       support_url_text: "Support URL text",
       declaration_markdown: "Declaration markdown", # no welsh version to test nil
-      pages: [page, another_page],
+      pages_count: 2,
     }
     create(:form, default_attributes.merge(attributes))
   end
@@ -228,7 +228,7 @@ describe "forms/welsh_translation/new.html.erb" do
     end
 
     context "when the form does not have any pages" do
-      let(:form) { build_form(pages: []) }
+      let(:form) { build_form(pages_count: 0) }
       let(:welsh_translation_input) { Forms::WelshTranslationInput.new(form:, page_translations: []).assign_form_values }
 
       it "does not render any page translation content" do
@@ -247,8 +247,8 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has hint text" do
-        let(:page) { create :page, hint_text: "Choose 'Yes' if you already have a valid licence." }
-        let(:another_page) { create :page, hint_text: nil }
+        let(:page) { create(:page, form:, hint_text: "Choose 'Yes' if you already have a valid licence.") }
+        let(:another_page) { create(:page, form:, hint_text: nil) }
 
         it "shows the English text and Welsh field for pages with English hint text" do
           expect(rendered).to have_css("td", text: page.hint_text)
@@ -261,8 +261,8 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has a page heading and guidance markdown" do
-        let(:page) { create :page, guidance_markdown: nil, page_heading: nil }
-        let(:another_page) { create :page, guidance_markdown: "This part of the form concerns licencing.", page_heading: "Licencing" }
+        let(:page) { create(:page, form:, guidance_markdown: nil, page_heading: nil) }
+        let(:another_page) { create(:page, form:, guidance_markdown: "This part of the form concerns licencing.", page_heading: "Licencing") }
 
         it "shows the English text and Welsh fields for pages with English page heading and guidance markdown" do
           expect(rendered).to have_css("td", text: another_page.page_heading)
@@ -278,7 +278,7 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has a selection question" do
-        let(:page) { create :page, :with_selection_settings }
+        let(:page) { create(:page, :with_selection_settings, form:) }
 
         it "shows the selection heading" do
           expect(rendered).to have_css("caption", text: t("forms.welsh_translation.new.section_headings.selection_options", question_number: page.position))
@@ -294,7 +294,7 @@ describe "forms/welsh_translation/new.html.erb" do
       end
 
       context "when a page has a selection question with none of the above" do
-        let(:page) { create :page, :selection_with_none_of_the_above_question }
+        let(:page) { create(:page, :selection_with_none_of_the_above_question, form:) }
 
         it "has row for the none of the above question text" do
           expect(rendered).to have_css("th", text: t("forms.welsh_translation.new.none_of_the_above_question"))
@@ -308,8 +308,8 @@ describe "forms/welsh_translation/new.html.erb" do
 
       context "when at least one page has routing conditions" do
         context "when the condition has an exit page" do
-          let(:page) { create :page, position: 1, routing_conditions: [condition] }
-          let(:condition) { create :condition, :with_exit_page }
+          let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id) }
+          let(:page) { form.pages.first.tap(&:reload) }
 
           it "shows a caption with the page the condition applies to" do
             expect(rendered).to have_css("caption", text: t("forms.welsh_translation.new.condition.heading", question_number: condition.routing_page.position))
@@ -378,8 +378,8 @@ describe "forms/welsh_translation/new.html.erb" do
   end
 
   context "when a condition translation has validation errors" do
-    let(:page) { create :page, position: 1, routing_conditions: [condition] }
-    let(:condition) { create :condition, :with_exit_page, answer_value: "Yes" }
+    let(:condition) { create(:condition, :with_exit_page, form:, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, answer_value: "Yes") }
+    let(:page) { form.pages.first.tap(&:reload) }
 
     before do
       welsh_condition_translation_input.exit_page_heading_cy = nil

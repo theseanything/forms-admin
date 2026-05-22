@@ -4,15 +4,17 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
   let(:form) { create :form, :with_pages }
   let(:pages) { form.pages }
   let(:page) do
-    pages.first.tap do |first_page|
-      first_page.is_optional = false
-      first_page.answer_type = "selection"
-      first_page.answer_settings = DataStruct.new(
-        only_one_option: true,
-        selection_options: [OpenStruct.new(attributes: { name: "Option 1" }),
-                            OpenStruct.new(attributes: { name: "Option 2" })],
-      )
-    end
+    step = pages.first
+    step.update!(
+      answer_type: "selection",
+      is_optional: false,
+      answer_settings: {
+        "only_one_option" => "true",
+        "selection_options" => [{ "name" => "Option 1" }, { "name" => "Option 2" }],
+      },
+    )
+    form.save_question_changes!
+    form.reload.pages.first
   end
 
   let(:group) { create(:group, organisation: standard_user.organisation) }
@@ -39,7 +41,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
     context "when a condition exists on the page" do
       before do
-        create(:condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
       end
 
       it "returns 200" do
@@ -49,7 +51,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
       context "when a secondary skip condition already exists on the page" do
         before do
-          create(:condition, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id)
+          create(:condition, form:, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id, answer_value: nil)
         end
 
         it "redirects to the show routes page" do
@@ -80,7 +82,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
     context "when a condition exists on the page" do
       before do
-        create(:condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
       end
 
       context "when the submission is successful" do
@@ -92,7 +94,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
       context "when a secondary skip condition already exists on the page" do
         before do
-          create(:condition, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id)
+          create(:condition, form:, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id, answer_value: nil)
         end
 
         it "redirects to the show routes page" do
@@ -133,7 +135,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
     context "when a condition exists on the page" do
       before do
-        create(:condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
       end
 
       context "when no secondary_skip exists on the page" do
@@ -145,7 +147,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
       context "when a secondary_skip exists on the page" do
         before do
-          create(:condition, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id)
+          create(:condition, form:, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id, answer_value: nil)
         end
 
         it "renders the edit template" do
@@ -177,7 +179,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
     context "when a condition exists on the page" do
       before do
-        create(:condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
       end
 
       context "when no secondary_skip exists on the page" do
@@ -189,7 +191,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
       context "when a secondary_skip exists on the page" do
         before do
-          create(:condition, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id)
+          create(:condition, form:, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id, answer_value: nil)
         end
 
         context "when the submission is successful without changing the routing_page_id" do
@@ -251,7 +253,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
     context "when a condition exists on the page" do
       before do
-        create(:condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
       end
 
       context "when no secondary_skip exists on the page" do
@@ -263,7 +265,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
       context "when a secondary_skip exists on the page" do
         before do
-          create(:condition, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id)
+          create(:condition, form:, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id, answer_value: nil)
         end
 
         it "returns 200" do
@@ -289,7 +291,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
     context "when a condition exists on the page" do
       before do
-        create(:condition, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
+        create(:condition, form:, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1", goto_page_id: pages[2].id, skip_to_end: false)
       end
 
       context "when no secondary_skip exists on the page" do
@@ -301,7 +303,7 @@ RSpec.describe Pages::SecondarySkipController, type: :request do
 
       context "when a secondary_skip exists on the page" do
         before do
-          create(:condition, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id)
+          create(:condition, form:, routing_page_id: pages[1].id, check_page_id: page.id, goto_page_id: pages[4].id, answer_value: nil)
         end
 
         context "when the submission is successful and deletes the secondary skip condition" do

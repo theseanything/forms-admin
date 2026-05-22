@@ -3,7 +3,15 @@ require "rails_helper"
 describe "forms/make_language_live/confirmation.html.erb" do
   let(:can_make_welsh_version_live) { false }
   let(:go_to_make_welsh_live_input) { Forms::GoToMakeWelshLiveInput.new }
-  let(:current_form) { build :form, id: 1, name: "Form 1", name_cy: "Ffurflen 1", form_slug: "form-1" }
+  let(:current_form) do
+    create(:form, :with_welsh_translation, name: "Form 1").tap do |f|
+      hash = f.draft_content_service.content_hash
+      hash["name"]["cy"] = "Ffurflen 1"
+      hash["form_slug"] = "form-1"
+      FormDocumentOperationsService.new(f).save_draft_content!(hash)
+      f.reload
+    end
+  end
   let(:language) { "en" }
 
   before do
@@ -18,11 +26,11 @@ describe "forms/make_language_live/confirmation.html.erb" do
     end
 
     it "contains the URL of the live form" do
-      expect(rendered).to have_text("runner-host/form/1/form-1")
+      expect(rendered).to have_text("runner-host/form/#{current_form.id}/form-1")
     end
 
     it "contains a link to the live form details" do
-      expect(rendered).to have_link("Continue to the live form’s details", href: live_form_path(1))
+      expect(rendered).to have_link("Continue to the live form’s details", href: live_form_path(current_form.id))
     end
 
     it "displays form name as plain text" do
@@ -55,11 +63,11 @@ describe "forms/make_language_live/confirmation.html.erb" do
     end
 
     it "contains the URL of the live form" do
-      expect(rendered).to have_text("runner-host/form/1/form-1.cy")
+      expect(rendered).to have_text("runner-host/form/#{current_form.id}/form-1.cy")
     end
 
     it "contains a link to the live form details" do
-      expect(rendered).to have_link("Continue to the live form’s details", href: live_form_path(1))
+      expect(rendered).to have_link("Continue to the live form’s details", href: live_form_path(current_form.id))
     end
 
     it "displays form name as plain text" do

@@ -1,8 +1,9 @@
 require "rails_helper"
 
 describe "pages/index.html.erb", feature_multiple_branches: false do
-  let(:form) { create :form, pages: }
-  let(:pages) { [] }
+  let(:form) { create(:form, pages_count:) }
+  let(:pages_count) { 0 }
+  let(:pages) { form.pages }
   let(:mark_complete_input) { Forms::MarkPagesSectionCompleteInput.new(form:).assign_form_values }
 
   before do
@@ -31,7 +32,7 @@ describe "pages/index.html.erb", feature_multiple_branches: false do
   end
 
   describe "when there are more than one page to display" do
-    let(:pages) { [(build :page, id: 1, position: 1, form_id: 1), (build :page, id: 2, position: 2, form_id: 1), (build :page, id: 3, position: 3, form_id: 1)] }
+    let(:pages_count) { 3 }
 
     it "does contain a summary list entry each page" do
       expect(rendered).to have_text I18n.t("forms.form_overview.your_questions")

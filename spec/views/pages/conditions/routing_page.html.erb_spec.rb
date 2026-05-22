@@ -55,7 +55,7 @@ describe "pages/conditions/routing_page.html.erb" do
   end
 
   context "with 10 options" do
-    let(:form) { create :form, :ready_for_routing, pages_count: 10 }
+    let(:form) { create(:form, pages_count: 10) }
 
     it "contains a fieldset legend asking a user to select a question page" do
       expect(rendered).to have_css(".govuk-fieldset__legend", text: t("routing_page.legend_text"))
@@ -70,7 +70,7 @@ describe "pages/conditions/routing_page.html.erb" do
   end
 
   context "with more than 10 options" do
-    let(:form) { create :form, :ready_for_routing, pages_count: 11 }
+    let(:form) { create(:form, pages_count: 11) }
 
     it "contains a fieldset legend asking a user to select a question page" do
       expect(rendered).to have_css(".govuk-label", text: t("routing_page.legend_text"))

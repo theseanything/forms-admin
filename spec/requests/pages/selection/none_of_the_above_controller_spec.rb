@@ -10,7 +10,7 @@ describe Pages::Selection::NoneOfTheAboveController, type: :request do
   let(:draft_question) do
     create :draft_question,
            answer_type: "selection",
-           page_id: page.id,
+           page_id: page.id.to_s,
            user:,
            form_id: form.id,
            is_optional: false,
