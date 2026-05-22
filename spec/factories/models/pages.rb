@@ -18,32 +18,31 @@ FactoryBot.define do
       routing_conditions { [] }
     end
 
-    initialize_with do |evaluator, *_args|
-      evaluator ||= OpenStruct.new
-      form = evaluator.form || create(:form)
-      hash = form.draft_content_service.content_hash
-      position = evaluator.position || hash["steps"].length + 1
+    initialize_with do
+      target_form = form || create(:form)
+      hash = target_form.draft_content_service.content_hash
+      position = self.position || hash["steps"].length + 1
       step = FormDocumentFactoryHelpers.build_step_attrs(
         position:,
-        question_text: evaluator.question_text,
-        answer_type: evaluator.answer_type,
-        is_optional: evaluator.is_optional,
-        is_repeatable: evaluator.is_repeatable,
-        answer_settings: normalize_answer_settings(evaluator.answer_settings),
-        hint_text: evaluator.hint_text,
-        page_heading: evaluator.page_heading,
-        guidance_markdown: evaluator.guidance_markdown,
-        routing_conditions: evaluator.routing_conditions,
+        question_text:,
+        answer_type:,
+        is_optional:,
+        is_repeatable:,
+        answer_settings: normalize_answer_settings(answer_settings),
+        hint_text:,
+        page_heading:,
+        guidance_markdown:,
+        routing_conditions:,
       )
-      step["id"] = evaluator.id.to_s if evaluator.id.present?
+      step["id"] = id.to_s if id.present?
       hash["steps"] ||= []
       hash["steps"] << step
       hash["steps"].sort_by! { |s| s["position"] }
       hash["steps"].each_with_index { |s, i| s["position"] = i + 1; s["next_step_id"] = hash["steps"][i + 1]&.dig("id") }
       hash["start_page"] = hash["steps"].first["id"]
-      FormDocumentOperationsService.new(form).save_draft_content!(hash)
-      form.reload
-      FormStep.new(form:, step_data: step, draft_service: form.draft_content_service)
+      FormDocumentOperationsService.new(target_form).save_draft_content!(hash)
+      target_form.reload
+      FormStep.new(form: target_form, step_data: step, draft_service: target_form.draft_content_service)
     end
 
     trait :with_hints do

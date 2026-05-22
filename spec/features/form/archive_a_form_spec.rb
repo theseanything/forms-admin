@@ -1,10 +1,11 @@
 require "rails_helper"
 
 feature "Archive a form", type: :feature do
-  let(:form) { create(:form, :live) }
+  let(:form) { create(:form, :ready_for_live) }
   let(:group) { create(:group, organisation: standard_user.organisation) }
 
   before do
+    FormDocumentFactoryHelpers.publish_form!(form)
     GroupForm.create! group:, form_id: form.id
     create(:membership, group:, user: standard_user, added_by: standard_user)
 

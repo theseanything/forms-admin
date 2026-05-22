@@ -1,14 +1,14 @@
 require "rails_helper"
 
 feature "Make changes live", type: :feature do
-  let(:form) { create :form, :live, name: "Apply for a juggling license" }
-  let(:pages) { build_list :page, 5, form_id: form.id }
+  let(:form) { create(:form, :ready_for_live, name: "Apply for a juggling license") }
   let(:organisation) { build :organisation, id: 1 }
   let(:user) { create :user, organisation: }
   let(:group) { create(:group, name: "Group 1", organisation:, status: "active") }
   let(:updated_name) { "Another form of juggling" }
 
   before do
+    FormDocumentFactoryHelpers.publish_form!(form)
     GroupForm.create!(form_id: form.id, group_id: group.id)
     Membership.create!(user:, group:, added_by: user, role: :group_admin)
 

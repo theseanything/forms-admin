@@ -59,8 +59,7 @@ private
     select first_answer_value, from: "pages_conditions_input[answer_value]"
     select form.pages.last.question_text, from: "pages_conditions_input[goto_page_id]"
 
-    create(:condition, check_page_id: form.pages.first.id, routing_page_id: form.pages.first.id, goto_page_id: form.pages.last.id, answer_value: first_answer_value)
-    form.pages.each(&:reload)
+    create(:condition, form:, check_page_id: form.pages.first.id, routing_page_id: form.pages.first.id, goto_page_id: form.pages.last.id, answer_value: first_answer_value)
 
     click_on "Save and continue"
   end
@@ -88,8 +87,7 @@ private
     select form.pages[3].question_text, from: "pages_secondary_skip_input[routing_page_id]"
     select "End of the form", from: "pages_secondary_skip_input[goto_page_id]"
 
-    create(:condition, id: 2, check_page_id: form.pages.first.id, routing_page_id: form.pages[3].id, goto_page_id: nil, skip_to_end: true)
-    form.pages.each(&:reload)
+    create(:condition, form:, check_page_id: form.pages.first.id, routing_page_id: form.pages[3].id, goto_page_id: nil, skip_to_end: true)
 
     click_on "Save and continue"
   end

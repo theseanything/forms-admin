@@ -11,7 +11,7 @@ feature "Create a form with a welsh version", type: :feature do
   end
 
   context "when a form has existing pages" do
-    let(:form) { create :form, :with_pages }
+    let(:form) { create :form, pages_count: 5 }
 
     scenario "create a Welsh version of the form" do
       when_i_am_viewing_an_existing_form
