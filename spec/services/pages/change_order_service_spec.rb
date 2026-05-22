@@ -101,7 +101,7 @@ RSpec.describe Pages::ChangeOrderService do
         expected_order = page_ids_and_positions.map { it[:page_id] }
 
         described_class.update_page_order(form:, page_ids_and_positions:)
-        expect(pages.reload.map(&:id)).to eq(expected_order)
+        expect(form.reload.pages.map(&:id)).to eq(expected_order)
       end
 
       context "when the form's question_section_completed is true" do
@@ -148,7 +148,7 @@ RSpec.describe Pages::ChangeOrderService do
         expected_order = [pages[1].id, pages[4].id, pages[3].id, pages[0].id, pages[2].id]
 
         described_class.update_page_order(form:, page_ids_and_positions:)
-        expect(pages.reload.map(&:id)).to eq(expected_order)
+        expect(form.reload.pages.map(&:id)).to eq(expected_order)
       end
     end
 
@@ -169,7 +169,7 @@ RSpec.describe Pages::ChangeOrderService do
     end
 
     context "when a page exists in the input array that has been deleted from the form" do
-      let(:non_existent_page_id) { pages.last.id + 1 }
+      let(:non_existent_page_id) { "non-existent-page-id" }
       let(:page_ids_and_positions) do
         [
           { page_id: pages[1].id, new_position: nil },
@@ -185,12 +185,12 @@ RSpec.describe Pages::ChangeOrderService do
         expected_order = [pages[1].id, pages[4].id, pages[3].id, pages[0].id, pages[2].id]
 
         described_class.update_page_order(form:, page_ids_and_positions:)
-        expect(pages.reload.map(&:id)).to eq(expected_order)
+        expect(form.reload.pages.map(&:id)).to eq(expected_order)
       end
     end
 
     context "when a page has been added and another page has been deleted from the form" do
-      let(:non_existent_page_id) { pages.last.id + 1 }
+      let(:non_existent_page_id) { "non-existent-page-id" }
       let(:page_ids_and_positions) do
         [
           { page_id: pages[1].id, new_position: nil },

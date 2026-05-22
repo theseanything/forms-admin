@@ -134,6 +134,15 @@ module FormDocumentFactoryHelpers
     end
   end
 
+  def set_copied_from_on_documents!(form, copied_from_id)
+    form.update!(copied_from_id:)
+    hash = form.draft_content_service.content_hash
+    hash["copied_from_id"] = copied_from_id
+    FormDocumentOperationsService.new(form).save_draft_content!(hash)
+    FormDocumentOperationsService.new(form).publish! if form.live_form_document_id.present?
+    form.reload
+  end
+
   def apply_lifecycle_state!(form, state)
     case state.to_s.to_sym
     when :live

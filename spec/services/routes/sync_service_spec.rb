@@ -80,7 +80,7 @@ RSpec.describe Routes::SyncService do
 
       it "destroys the condition that is now a default route" do
         expect { service.sync_conditions_from_routes }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(-1)
-        expect(Condition.exists?(stale_condition.id)).to be false
+        expect(form.draft_content_service.conditions.map(&:id)).not_to include(stale_condition.id)
       end
     end
 
@@ -103,7 +103,7 @@ RSpec.describe Routes::SyncService do
         existing_condition.update!(answer_value: nil) # Simulate how it's stored in the DB.
 
         expect { service.sync_conditions_from_routes }.to change { Form.find(form.id).draft_content_service.conditions.count }.by(-1)
-        expect(Condition.exists?(existing_condition.id)).to be false
+        expect(form.draft_content_service.conditions.map(&:id)).not_to include(existing_condition.id)
       end
     end
 
@@ -141,7 +141,7 @@ RSpec.describe Routes::SyncService do
         expect(condition_to_update.reload.goto_page_id).to eq(pages.third.id)
 
         # 2. Deletion was successful
-        expect(Condition.exists?(condition_to_delete.id)).to be false
+        expect(form.draft_content_service.conditions.map(&:id)).not_to include(condition_to_delete.id)
 
         # 3. Creation was successful
         new_condition = form.conditions.find_by(routing_page_id: pages.second.id, answer_value: "Option B")
@@ -174,7 +174,7 @@ RSpec.describe Routes::SyncService do
         expect { service.sync_conditions_from_routes }.to raise_error(ActiveRecord::RecordInvalid)
 
         expect(condition_to_delete.reload).to be_present
-        expect(Condition.exists?(condition_to_delete.id)).to be true
+        expect(form.draft_content_service.conditions.map(&:id)).to include(condition_to_delete.id)
       end
     end
   end
