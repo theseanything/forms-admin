@@ -197,8 +197,24 @@ FactoryBot.define do
 
       after(:create) do |form, evaluator|
         hash = form.draft_content_service.content_hash
-        hash["name"]["cy"] = "Welsh #{evaluator.form_name}"
+        hash["name"] ||= { "en" => evaluator.name.presence || evaluator.form_name }
+        hash["name"]["cy"] = "Welsh #{hash['name']['en']}"
         hash["available_languages"] = %w[en cy]
+
+        %w[privacy_policy_url support_email support_phone support_url support_url_text declaration_markdown what_happens_next_markdown payment_url].each do |field|
+          next unless hash[field].is_a?(Hash) && hash[field]["en"].present?
+
+          hash[field]["cy"] = FormDocumentFactoryHelpers.welsh_value_for_field(field, hash[field]["en"])
+        end
+
+        Array(hash["steps"]).each do |step|
+          %w[question_text hint_text page_heading guidance_markdown].each do |key|
+            next unless step[key].is_a?(Hash) && step[key]["en"].present?
+
+            step[key]["cy"] = "Welsh #{step[key]['en']}"
+          end
+        end
+
         FormDocumentOperationsService.new(form).save_draft_content!(hash)
       end
     end

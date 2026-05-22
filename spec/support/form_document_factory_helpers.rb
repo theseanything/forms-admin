@@ -9,10 +9,10 @@ module FormDocumentFactoryHelpers
       "id" => id,
       "type" => "question",
       "position" => overrides[:position] || 1,
-      "question_text" => translatable_field(overrides[:question_text], overrides[:question_text_cy]),
-      "hint_text" => translatable_field(overrides[:hint_text], overrides[:hint_text_cy]),
-      "page_heading" => translatable_field(overrides[:page_heading], overrides[:page_heading_cy]),
-      "guidance_markdown" => translatable_field(overrides[:guidance_markdown], overrides[:guidance_markdown_cy]),
+      "question_text" => translatable_step_field(overrides[:question_text] || Faker::Lorem.question.truncate(250), overrides[:question_text_cy]),
+      "hint_text" => translatable_step_field(overrides[:hint_text] || "", overrides[:hint_text_cy]),
+      "page_heading" => translatable_step_field(overrides[:page_heading] || "", overrides[:page_heading_cy]),
+      "guidance_markdown" => translatable_step_field(overrides[:guidance_markdown] || "", overrides[:guidance_markdown_cy]),
       "answer_type" => overrides[:answer_type] || FormStep::ANSWER_TYPES_WITHOUT_SETTINGS.sample,
       "data" => {
         "is_optional" => overrides.fetch(:is_optional, false),
@@ -22,6 +22,12 @@ module FormDocumentFactoryHelpers
       }.compact,
       "routing_conditions" => overrides[:routing_conditions] || [],
     }
+  end
+
+  def translatable_step_field(en_value, cy_value = nil)
+    result = { "en" => en_value }
+    result["cy"] = cy_value if cy_value.present?
+    result
   end
 
   def translatable_field(en_value, cy_value = nil)
@@ -106,6 +112,16 @@ module FormDocumentFactoryHelpers
     json["tag"] = tag
     json["content"] = FormDocument::LocaleProjection.project(doc.content, language: "en")
     json.merge(extra.stringify_keys)
+  end
+
+  def welsh_value_for_field(field, en_value)
+    case field
+    when "privacy_policy_url" then "https://www.gov.uk/welsh-privacy"
+    when "support_email" then "welsh-support@example.gov.uk"
+    when "support_url" then "https://www.gov.uk/welsh-support"
+    when "payment_url" then "https://www.gov.uk/welsh-payment"
+    else "Welsh #{en_value}"
+    end
   end
 
   def apply_lifecycle_state!(form, state)

@@ -59,15 +59,13 @@ class Forms::WelshTranslationInput < Forms::MarkCompleteInput
     # lookup hash for efficiency
     pages_by_id = submitted_page_ids.index_with { |id| form.draft_content_service.find_step(id) }.compact
 
-    self.page_translations = attributes.values.map { |page_attrs|
-      page_id = page_attrs["id"].to_i
-      page_object = pages_by_id[page_id]
+    self.page_translations = attributes.values.filter_map { |page_attrs|
+      page_object = pages_by_id[page_attrs["id"].to_s]
 
-      # skip the page if it doesn't belong to the form
       next unless page_object
 
       Forms::WelshPageTranslationInput.new(page_attrs.symbolize_keys.merge(page: page_object))
-    }.compact
+    }
   end
 
   def submit

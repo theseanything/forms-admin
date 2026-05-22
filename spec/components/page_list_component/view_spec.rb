@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe PageListComponent::View, type: :component do
   let(:form) { create :form }
   let(:pages) { form.reload.pages }
-  let(:page_list_component) { described_class.new(pages:, form:) }
+  let(:page_list_component) { described_class.new(pages: form.reload.pages, form:) }
 
   describe "rendering component", feature_multiple_branches: false do
     context "when there are no pages" do

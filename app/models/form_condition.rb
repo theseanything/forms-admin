@@ -65,6 +65,12 @@ class FormCondition
     condition_model.validation_errors
   end
 
+  def has_routing_errors
+    condition_model.has_routing_errors
+  end
+
+  alias_method :has_routing_errors?, :has_routing_errors
+
   def errors_with_fields
     condition_model.errors_with_fields
   end

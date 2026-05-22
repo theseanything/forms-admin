@@ -25,7 +25,7 @@ RSpec.describe Forms::RouteInput, type: :model do
   describe "attributes" do
     it "can be initialized with a hash of attributes" do
       expect(route_input.id).to eq(1)
-      expect(route_input.page_id).to eq(2)
+      expect(route_input.page_id).to eq("2")
       expect(route_input.goto).to eq(3)
       expect(route_input.answer_value).to eq("Yes")
       expect(route_input.page).to eq(page)
