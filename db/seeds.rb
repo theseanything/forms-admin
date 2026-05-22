@@ -135,7 +135,7 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
   Membership.create! user: default_user, group: end_to_end_group, added_by: default_user, role: :group_admin
 
   submission_email = ENV["EMAIL"] || `git config --get user.email`.strip
-  require_relative "seed_forms_helper"
+  require Rails.root.join("db/seed_forms_helper")
 
   common_form_attrs = {
     submission_email:,
