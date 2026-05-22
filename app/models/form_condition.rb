@@ -21,8 +21,8 @@ class FormCondition
       "answer_value" => attrs[:answer_value],
       "goto_page_id" => attrs[:goto_page_id]&.to_s,
       "skip_to_end" => attrs[:skip_to_end] || false,
-      "exit_page_heading" => TranslatableString.normalize(attrs[:exit_page_heading]),
-      "exit_page_markdown" => TranslatableString.normalize(attrs[:exit_page_markdown]),
+      "exit_page_heading" => translatable_field_if_present(attrs[:exit_page_heading]),
+      "exit_page_markdown" => translatable_field_if_present(attrs[:exit_page_markdown]),
     }.compact
 
     step_data["routing_conditions"] ||= []
@@ -34,6 +34,11 @@ class FormCondition
   def self.next_condition_id(draft_service)
     ids = draft_service.conditions.map { |c| c.id.to_i }
     (ids.max || 0) + 1
+  end
+
+  def self.translatable_field_if_present(value)
+    normalized = TranslatableString.normalize(value)
+    normalized.values.any?(&:present?) ? normalized : nil
   end
 
   def initialize(form:, condition:, step_id:)
@@ -200,12 +205,11 @@ private
       "id" => id,
       "routing_page_id" => routing_page_id.to_s,
       "check_page_id" => check_page_id.to_s,
-      "routing_page_id" => routing_page_id.to_s,
       "answer_value" => answer_value,
       "goto_page_id" => goto_page_id&.to_s,
       "skip_to_end" => skip_to_end,
-      "exit_page_heading" => TranslatableString.normalize(@exit_page_heading),
-      "exit_page_markdown" => TranslatableString.normalize(@exit_page_markdown),
+      "exit_page_heading" => self.class.translatable_field_if_present(@exit_page_heading),
+      "exit_page_markdown" => self.class.translatable_field_if_present(@exit_page_markdown),
     }.compact
     step_data["routing_conditions"] = conditions
     draft_service.save_content!(hash)
