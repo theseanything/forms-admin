@@ -14,6 +14,8 @@ FactoryBot.define do
       skip_to_end { false }
       exit_page_heading { nil }
       exit_page_markdown { nil }
+      exit_page_heading_cy { nil }
+      exit_page_markdown_cy { nil }
     end
 
     initialize_with do
@@ -32,6 +34,14 @@ FactoryBot.define do
         exit_page_heading:,
         exit_page_markdown:,
       )
+      if exit_page_heading_cy.present?
+        condition.exit_page_heading_cy = exit_page_heading_cy
+      end
+      if exit_page_markdown_cy.present?
+        condition.exit_page_markdown_cy = exit_page_markdown_cy
+      end
+      condition.save_and_update_form if exit_page_heading_cy.present? || exit_page_markdown_cy.present?
+      condition.reload if exit_page_heading_cy.present? || exit_page_markdown_cy.present?
       target_form.reload
       condition
     end

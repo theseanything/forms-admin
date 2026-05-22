@@ -83,7 +83,7 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:edit_condition_path) { "/forms/0/pages/1/conditions/1" }
 
         context "when the page has a single condition" do
-          let!(:condition) { create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id }
+          let!(:condition) { create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id }
 
           before do
             render_inline(page_list_component)
@@ -112,7 +112,7 @@ RSpec.describe PageListComponent::View, type: :component do
         end
 
         context "when the condition has an exit page heading" do
-          let!(:condition) { create :condition, :with_exit_page, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1" }
+          let!(:condition) { create :condition, :with_exit_page, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1" }
 
           before do
             render_inline(page_list_component)
@@ -125,7 +125,7 @@ RSpec.describe PageListComponent::View, type: :component do
 
         context "when the page has a condition with multiple errors" do
           before do
-            create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: nil
+            create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: nil
 
             render_inline(page_list_component)
           end
@@ -145,10 +145,10 @@ RSpec.describe PageListComponent::View, type: :component do
 
       context "when the form has a valid branch route" do
         let(:form) { create :form, :ready_for_routing }
-        let!(:secondary_skip_condition) { create :condition, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.fourth.id }
+        let!(:secondary_skip_condition) { create :condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.fourth.id }
 
         before do
-          create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id
+          create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id
           pages.each(&:reload)
 
           render_inline(page_list_component)
@@ -167,8 +167,8 @@ RSpec.describe PageListComponent::View, type: :component do
         let(:form) { create :form, :ready_for_routing }
 
         before do
-          create :condition, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id
-          create :condition, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.third.id
+          create :condition, form:, routing_page_id: pages.first.id, check_page_id: pages.first.id, answer_value: "Option 1", goto_page_id: pages.third.id
+          create :condition, form:, routing_page_id: pages.second.id, check_page_id: pages.first.id, answer_value: nil, goto_page_id: pages.third.id
           pages.each(&:reload)
 
           render_inline(page_list_component)
@@ -189,7 +189,7 @@ RSpec.describe PageListComponent::View, type: :component do
     let(:fourth_page) { form.pages.fourth }
 
     context "when the page has a single condition" do
-      let!(:condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
+      let!(:condition) { create :condition, form:, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
 
       before do
         render_inline(page_list_component)
@@ -213,8 +213,8 @@ RSpec.describe PageListComponent::View, type: :component do
     end
 
     context "when the page has branching conditions" do
-      let!(:first_condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
-      let!(:second_condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 2", goto_page_id: fourth_page.id }
+      let!(:first_condition) { create :condition, form:, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
+      let!(:second_condition) { create :condition, form:, routing_page_id: first_page.id, answer_value: "Option 2", goto_page_id: fourth_page.id }
 
       before do
         render_inline(page_list_component)
@@ -238,8 +238,8 @@ RSpec.describe PageListComponent::View, type: :component do
     end
 
     context "when the page has multiple conditions to the same route" do
-      let!(:first_condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
-      let!(:second_condition) { create :condition, routing_page_id: first_page.id, answer_value: "Option 2", goto_page_id: third_page.id }
+      let!(:first_condition) { create :condition, form:, routing_page_id: first_page.id, answer_value: "Option 1", goto_page_id: third_page.id }
+      let!(:second_condition) { create :condition, form:, routing_page_id: first_page.id, answer_value: "Option 2", goto_page_id: third_page.id }
 
       before do
         render_inline(page_list_component)
@@ -259,7 +259,7 @@ RSpec.describe PageListComponent::View, type: :component do
     context "when the page has an unconditional route" do
       context "when the route is to another page" do
         before do
-          create :condition, routing_page_id: first_page.id, goto_page_id: third_page.id
+          create :condition, form:, routing_page_id: first_page.id, goto_page_id: third_page.id
 
           render_inline(page_list_component)
         end
@@ -273,7 +273,7 @@ RSpec.describe PageListComponent::View, type: :component do
 
       context "when the route skips to the end" do
         before do
-          create :condition, routing_page_id: first_page.id, goto_page_id: nil, skip_to_end: true
+          create :condition, form:, routing_page_id: first_page.id, goto_page_id: nil, skip_to_end: true
 
           render_inline(page_list_component)
         end

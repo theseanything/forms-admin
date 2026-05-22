@@ -11,29 +11,27 @@ RSpec.describe Reports::FormsCsvReportService do
   let(:group_external_id) { Faker::Alphanumeric.alphanumeric(number: 8) }
   let(:form_documents) do
     forms.map do |form|
-      # FormDocumentsService adds in the organisation and group details as part of the database query
-      form.live_form_document.as_json
-          .merge({
-            "organisation_name" => organisation_name,
-            "organisation_id" => organisation_id,
-            "group_name" => group_name,
-            "group_external_id" => group_external_id,
-          })
+      FormDocumentFactoryHelpers.report_form_document_json(form).merge(
+        "organisation_name" => organisation_name,
+        "organisation_id" => organisation_id,
+        "group_name" => group_name,
+        "group_external_id" => group_external_id,
+      )
     end
   end
   let(:form) do
-    f = create(:form, :ready_for_live, :with_support, submission_type: "email", submission_format: %w[csv json],
+    f = create(:form, :ready_for_live, :with_support, pages_count: 0, submission_type: "email", submission_format: %w[csv json],
                                                        payment_url: "https://www.gov.uk/payments/organisation/service", send_daily_submission_batch: true,
                                                        send_weekly_submission_batch: true)
-    create(:page, form: f, :with_address_settings, is_repeatable: true)
-    create(:page, form: f, :with_date_settings)
+    create(:page, :with_address_settings, form: f, is_repeatable: true)
+    create(:page, :with_date_settings, form: f)
     create(:page, form: f, answer_type: "email")
-    create(:page, form: f, :with_full_name_settings)
+    create(:page, :with_full_name_settings, form: f)
     create(:page, form: f, answer_type: "national_insurance_number")
     create(:page, form: f, answer_type: "number")
     create(:page, form: f, answer_type: "phone_number")
-    create(:page, form: f, :with_selection_settings, is_optional: true)
-    create(:page, form: f, :with_single_line_text_settings, is_repeatable: true)
+    create(:page, :with_selection_settings, form: f, is_optional: true)
+    create(:page, :with_single_line_text_settings, form: f, is_repeatable: true)
     FormDocumentFactoryHelpers.publish_form!(f)
     f.reload
   end

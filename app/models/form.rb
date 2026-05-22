@@ -153,7 +153,7 @@ class Form < ApplicationRecord
     end
 
     define_method("#{field}_cy=") do |value|
-      update_draft_translatable!(field, value, :cy)
+      update_draft_translatable!(field, value, locale: :cy)
     end
   end
 
@@ -424,6 +424,12 @@ class Form < ApplicationRecord
     make_live!
   end
 
+  def reload(*)
+    draft_content_service.instance_variable_set(:@content_hash, nil)
+    draft_content_service.instance_variable_set(:@content, nil)
+    super
+  end
+
   def create_draft_from_live_form!
     FormDocumentOperationsService.new(self).ensure_draft!
   end
@@ -511,7 +517,7 @@ private
     draft_content_service.save_content!(hash)
   end
 
-  def update_draft_translatable!(key, value, locale)
+  def update_draft_translatable!(key, value, locale: :en)
     hash = draft_content_service.content_hash
     hash[key] = TranslatableString.set_for_locale(hash[key], locale:, string: value)
     draft_content_service.save_content!(hash)

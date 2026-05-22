@@ -249,8 +249,8 @@ RSpec.describe "WelshCsvService" do
       let(:form) do
         create(:form, pages_count: 0).tap do |f|
           create(:page,
-                 form: f,
                  :selection_with_none_of_the_above_question,
+                 form: f,
                  none_of_the_above_question_text: "None of the above question?")
           f.reload.pages.first.tap do |page|
             page.answer_settings_cy = {
@@ -280,9 +280,9 @@ RSpec.describe "WelshCsvService" do
         f = create(:form, pages_count: 1)
         page = f.pages.first
         create(:condition,
+               :with_exit_page,
                form: f,
                routing_page: page,
-               :with_exit_page,
                exit_page_heading: "Exit page heading",
                exit_page_markdown: "Exit page markdown",
                exit_page_heading_cy: "Welsh exit page heading",
@@ -322,8 +322,8 @@ RSpec.describe "WelshCsvService" do
         f.save_question_changes!
 
         page = create(:page,
-                      form: f,
                       :selection_with_none_of_the_above_question,
+                      form: f,
                       question_text: "None of the above question?",
                       none_of_the_above_question_text: "None of the above question?")
         page.question_text_cy = "Welsh None of the above question?"
@@ -335,9 +335,9 @@ RSpec.describe "WelshCsvService" do
         page.save_and_update_form
 
         create(:condition,
+               :with_exit_page,
                form: f,
                routing_page: page,
-               :with_exit_page,
                exit_page_heading: "Exit page heading",
                exit_page_markdown: "Exit page markdown",
                exit_page_heading_cy: "Welsh exit page heading",

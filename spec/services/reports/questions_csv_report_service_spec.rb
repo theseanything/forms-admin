@@ -13,27 +13,25 @@ RSpec.describe Reports::QuestionsCsvReportService do
   let(:question_page_documents) { Reports::FeatureReportService.new(form_documents).questions }
   let(:form_documents) do
     forms.map do |form|
-      # FormDocumentsService adds in the organisation and group details as part of the database query
-      form.live_form_document.as_json
-          .merge({
-            "organisation_name" => organisation_name,
-            "organisation_id" => organisation_id,
-            "group_name" => group_name,
-            "group_external_id" => group_external_id,
-          })
+      FormDocumentFactoryHelpers.report_form_document_json(form).merge(
+        "organisation_name" => organisation_name,
+        "organisation_id" => organisation_id,
+        "group_name" => group_name,
+        "group_external_id" => group_external_id,
+      )
     end
   end
   let(:form_with_all_answer_types) do
-    form = create(:form, :ready_for_live, :with_support, submission_type: "email", payment_url: "https://www.gov.uk/payments/organisation/service")
-    create(:page, form:, :with_address_settings, is_repeatable: true)
-    create(:page, form:, :with_date_settings)
+    form = create(:form, :ready_for_live, :with_support, pages_count: 0, submission_type: "email", payment_url: "https://www.gov.uk/payments/organisation/service")
+    create(:page, :with_address_settings, form:, is_repeatable: true)
+    create(:page, :with_date_settings, form:)
     create(:page, form:, answer_type: "email")
-    create(:page, form:, :with_full_name_settings)
+    create(:page, :with_full_name_settings, form:)
     create(:page, form:, answer_type: "national_insurance_number")
     create(:page, form:, answer_type: "number")
     create(:page, form:, answer_type: "phone_number")
-    create(:page, form:, :selection_with_none_of_the_above_question, none_of_the_above_question_text: "A follow-up question", none_of_the_above_question_is_optional: "true")
-    create(:page, form:, :with_single_line_text_settings, is_repeatable: true)
+    create(:page, :selection_with_none_of_the_above_question, form:, none_of_the_above_question_text: "A follow-up question", none_of_the_above_question_is_optional: "true")
+    create(:page, :with_single_line_text_settings, form:, is_repeatable: true)
     FormDocumentFactoryHelpers.publish_form!(form)
     form.reload
   end

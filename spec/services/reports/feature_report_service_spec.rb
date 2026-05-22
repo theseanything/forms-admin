@@ -13,27 +13,25 @@ RSpec.describe Reports::FeatureReportService do
   end
   let(:form_documents) do
     forms.map do |form|
-      # FormDocumentsService adds in the welsh_completed details as part of the database query
-      form.live_form_document.as_json
-          .merge({
-            "welsh_completed" => form.welsh_completed,
-          })
+      FormDocumentFactoryHelpers.report_form_document_json(form).merge(
+        "welsh_completed" => form.welsh_completed,
+      )
     end
   end
   let(:group) { create(:group) }
 
   let(:form_with_all_answer_types) do
-    form = create(:form, :ready_for_live, :with_support, submission_type: "email", submission_format: %w[csv], payment_url: "https://www.gov.uk/payments/organisation/service")
+    form = create(:form, :ready_for_live, :with_support, pages_count: 0, submission_type: "email", submission_format: %w[csv], payment_url: "https://www.gov.uk/payments/organisation/service")
     [
-      create(:page, form:, :with_address_settings, is_repeatable: true),
-      create(:page, form:, :with_date_settings),
+      create(:page, :with_address_settings, form:, is_repeatable: true),
+      create(:page, :with_date_settings, form:),
       create(:page, form:, answer_type: "email"),
-      create(:page, form:, :with_full_name_settings),
+      create(:page, :with_full_name_settings, form:),
       create(:page, form:, answer_type: "national_insurance_number"),
       create(:page, form:, answer_type: "number"),
       create(:page, form:, answer_type: "phone_number"),
-      create(:page, form:, :with_selection_settings, is_optional: true),
-      create(:page, form:, :with_single_line_text_settings, is_repeatable: true),
+      create(:page, :with_selection_settings, form:, is_optional: true),
+      create(:page, :with_single_line_text_settings, form:, is_repeatable: true),
     ]
     FormDocumentFactoryHelpers.publish_form!(form)
     form.reload
@@ -265,9 +263,9 @@ RSpec.describe Reports::FeatureReportService do
   describe "selection questions methods" do
     let(:form) do
       f = create(:form, :ready_for_live, pages_count: 0)
-      create(:page, form: f, :selection_with_checkboxes)
-      create(:page, form: f, :selection_with_radios)
-      create(:page, form: f, :selection_with_autocomplete)
+      create(:page, :selection_with_checkboxes, form: f)
+      create(:page, :selection_with_radios, form: f)
+      create(:page, :selection_with_autocomplete, form: f)
       create(:page, form: f, answer_type: "name")
       FormDocumentFactoryHelpers.publish_form!(f)
       f.reload

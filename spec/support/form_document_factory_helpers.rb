@@ -77,6 +77,14 @@ module FormDocumentFactoryHelpers
     form.reload
   end
 
+  def report_form_document_json(form, tag: "live", **extra)
+    doc = form.live_form_document
+    json = doc.as_json
+    json["tag"] = tag
+    json["content"] = FormDocument::LocaleProjection.project(doc.content, language: "en")
+    json.merge(extra.stringify_keys)
+  end
+
   def apply_lifecycle_state!(form, state)
     case state.to_s.to_sym
     when :live

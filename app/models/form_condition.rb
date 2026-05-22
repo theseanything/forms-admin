@@ -194,8 +194,8 @@ private
       "answer_value" => answer_value,
       "goto_page_id" => goto_page_id&.to_s,
       "skip_to_end" => skip_to_end,
-      "exit_page_heading" => TranslatableString.normalize(exit_page_heading),
-      "exit_page_markdown" => TranslatableString.normalize(exit_page_markdown),
+      "exit_page_heading" => TranslatableString.normalize(@exit_page_heading),
+      "exit_page_markdown" => TranslatableString.normalize(@exit_page_markdown),
     }.compact
     step_data["routing_conditions"] = conditions
     draft_service.save_content!(hash)
