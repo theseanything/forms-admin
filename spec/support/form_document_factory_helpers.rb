@@ -32,13 +32,7 @@ module FormDocumentFactoryHelpers
 
   def translatable_field(en_value, cy_value = nil)
     result = {}
-    if en_value.present?
-      result["en"] = en_value
-    elsif cy_value.present?
-      result["en"] = "English"
-    else
-      result["en"] = ""
-    end
+    result["en"] = en_value if en_value.present?
     result["cy"] = cy_value if cy_value.present?
     result
   end

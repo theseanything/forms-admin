@@ -54,6 +54,7 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
                  support_url_text_cy: "New Welsh Support",
                  privacy_policy_url: "https://www.gov.uk/english-privacy",
                  privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
+                 payment_url: "https://www.gov.uk/english-payment",
                  payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
                  available_languages: %w[en cy],
                  welsh_completed: true)
@@ -198,6 +199,7 @@ RSpec.describe Forms::DeleteWelshTranslationInput, type: :model do
                  support_url_text_cy: "New Welsh Support",
                  privacy_policy_url: "https://www.gov.uk/english-privacy",
                  privacy_policy_url_cy: "https://www.gov.uk/new-welsh-privacy",
+                 payment_url: "https://www.gov.uk/english-payment",
                  payment_url_cy: "https://www.gov.uk/payments/new-welsh-payment-link",
                  available_languages: %w[en cy],
                  welsh_completed: true)
