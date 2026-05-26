@@ -137,7 +137,7 @@ private
                                       .with_content(formatted_list)
                                       .call
     else
-      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length), class: "govuk-body-s")
+      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length))
       safe_join([caption, formatted_list])
     end
   end
@@ -155,7 +155,7 @@ private
                                       .with_content(formatted_list)
                                       .call
     else
-      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length), class: "govuk-body-s")
+      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length))
       safe_join([caption, formatted_list])
     end
   end

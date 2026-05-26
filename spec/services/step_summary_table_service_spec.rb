@@ -128,8 +128,8 @@ describe StepSummaryTableService do
       end
 
       it "includes a row for the selection options" do
-        selection_list = "<p class=\"govuk-body-s\">#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Yes</li><li>No</li></ul>"
-        selection_list_cy = "<p class=\"govuk-body-s\">#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Ydy</li><li>Nac ydy</li></ul>"
+        selection_list = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Yes</li><li>No</li></ul>"
+        selection_list_cy = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Ydy</li><li>Nac ydy</li></ul>"
         expect(step_summary_table_service.values_with_welsh_content).to include [I18n.t("step_summary_card.options_title"), selection_list, selection_list_cy]
       end
 
