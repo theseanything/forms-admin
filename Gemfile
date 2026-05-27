@@ -55,7 +55,7 @@ gem "govuk-forms-markdown", require: "govuk_forms_markdown", github: "govuk-form
 gem "lograge"
 
 # For distributed tracing and telemetry
-gem "opentelemetry-exporter-otlp", "~> 0.33.0"
+gem "opentelemetry-exporter-otlp", "~> 0.34.0"
 gem "opentelemetry-instrumentation-all", "~> 0.93.0"
 gem "opentelemetry-propagator-xray", "~> 0.27.0"
 gem "opentelemetry-sdk", "~> 1.12"
