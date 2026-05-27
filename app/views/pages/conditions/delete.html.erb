@@ -28,7 +28,7 @@
         end;
         summary_list.with_row do |row|
           row.with_key(text: t(".answered_as_key"))
-          row.with_value { delete_condition_input.answer_value }
+          row.with_value { delete_condition_input.answer_value == Condition::NONE_OF_THE_ABOVE ? t(".none_of_the_above") : delete_condition_input.answer_value }
         end;
         summary_list.with_row do |row|
           row.with_key(text: t(".skip_to_key"))
