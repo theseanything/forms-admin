@@ -2099,8 +2099,6 @@ en:
     name_type:
       title_not_selected: Title not needed
       title_selected: Title needed
-    none_of_the_above:
-      cy: Dim un o’r uchod
     none_of_the_above_question_optional: "%{question_text} (optional)"
     none_of_the_above_question_title: If ‘None of the above’ is selected
     options_title: Options
@@ -2108,7 +2106,9 @@ en:
     question_text: Question text
     selection_type:
       default: Selection from a list
-      none_of_the_above: None of the above
+      none_of_the_above:
+        cy: Dim un o’r uchod
+        en: None of the above
       only_one_option: Selection from a list, one option only
   task_statuses:
     cannot_start: Cannot start yet

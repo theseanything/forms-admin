@@ -118,6 +118,7 @@ describe StepSummaryTableService do
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                answer_type: "selection",
+               is_optional: true,
                answer_settings: {
                  "only_one_option" => "true",
                  "selection_options" => [{ name: "Yes", value: "Yes" }, { name: "No", value: "No" }],
@@ -129,8 +130,8 @@ describe StepSummaryTableService do
       end
 
       it "includes a row for the selection options" do
-        selection_list = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Yes</li><li>No</li></ul>"
-        selection_list_cy = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Ydy</li><li>Nac ydy</li></ul>"
+        selection_list = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 3)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Yes</li><li>No</li><li>None of the above</li></ul>"
+        selection_list_cy = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 3)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Ydy</li><li>Nac ydy</li><li>Dim un o’r uchod</li></ul>"
         expect(step_summary_table_service.values_with_welsh_content).to include [I18n.t("step_summary_card.options_title"), selection_list, selection_list_cy]
       end
 
@@ -772,6 +773,20 @@ describe StepSummaryTableService do
                      ],
                    ),
                  ),
+                 create(
+                   :page,
+                   :with_selection_settings,
+                   question_text: "Question with none of the above",
+                   question_text_cy: "Question with none of the above (Welsh)",
+                   is_optional: true,
+                   answer_settings: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }]),
+                   answer_settings_cy: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Option 1 (Welsh)", value: "Option 1" }, { name: "Option 2 (Welsh)", value: "Option 2" }]),
+                 ),
+                 create(
+                   :page,
+                   question_text: "Question",
+                   question_text_cy: "Question (Welsh)",
+                 ),
                ]
       end
 
@@ -834,6 +849,14 @@ describe StepSummaryTableService do
           exit_page_markdown_cy: "Exit page markdown (Welsh)",
         )
 
+        create(
+          :condition,
+          answer_value: "none_of_the_above",
+          check_page_id: pages[13].id,
+          routing_page_id: pages[13].id,
+          skip_to_end: true,
+        )
+
         pages.each(&:reload)
         form.save_draft!
         form.make_live!
@@ -878,6 +901,10 @@ describe StepSummaryTableService do
 
       let(:page_with_exit_page) do
         pages_with_routing[12]
+      end
+
+      let(:page_with_none_of_the_above) do
+        pages_with_routing[13]
       end
 
       let(:exit_page) do
@@ -993,6 +1020,27 @@ describe StepSummaryTableService do
                                                                     routing_page: "13. Exit page question",
                                                                     routing_page_cy: "13. Exit page question (Welsh)",
                                                                     secondary_skip: false }]
+        end
+      end
+
+      context "when a page has a route based on a none of the above answer" do
+        let(:page) { page_with_none_of_the_above }
+
+        it "returns an array containing the none of the above answer" do
+          expect(step_summary_table_service.route_content).to eq [{ answer_value: "None of the above",
+                                                                    answer_value_cy: "Dim un o’r uchod",
+                                                                    goto_page: "End of the form",
+                                                                    goto_page_cy: "End of the form",
+                                                                    routing_page: "14. Question with none of the above",
+                                                                    routing_page_cy: "14. Question with none of the above (Welsh)",
+                                                                    check_page: "14. Question with none of the above",
+                                                                    check_page_cy: "14. Question with none of the above (Welsh)",
+                                                                    secondary_skip: false,
+                                                                    exit_page: false,
+                                                                    exit_page_heading: nil,
+                                                                    exit_page_heading_cy: nil,
+                                                                    exit_page_markdown: nil,
+                                                                    exit_page_markdown_cy: nil }]
         end
       end
     end

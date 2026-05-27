@@ -50,7 +50,7 @@ class StepSummaryTableService
     conditions_for_step.map do |condition|
       welsh_condition = welsh_condition_from_id(condition.id)
       condition_data = {
-        answer_value: condition.answer_value,
+        answer_value: format_answer_value(condition.answer_value),
         answer_value_cy: welsh_answer_value(welsh_condition),
         goto_page: print_goto_page(condition, @steps),
         goto_page_cy: print_goto_page(welsh_condition, @welsh_steps),
@@ -250,7 +250,7 @@ private
     return @step.show_selection_options unless @step.answer_settings.selection_options.length >= 1
 
     options = @step.answer_settings.selection_options.map(&:name)
-    options << I18n.t("step_summary_card.selection_type.none_of_the_above") if @step.is_optional?
+    options << I18n.t("step_summary_card.selection_type.none_of_the_above.en") if @step.is_optional?
     formatted_list = html_unordered_list(options)
 
     if options.length > 10
@@ -268,7 +268,7 @@ private
     return welsh_step.show_selection_options unless welsh_step.answer_settings.selection_options.length >= 1
 
     options = welsh_step.answer_settings.selection_options.map(&:name)
-    options << I18n.t("step_summary_card.selection_type.none_of_the_above") if welsh_step.is_optional?
+    options << I18n.t("step_summary_card.selection_type.none_of_the_above.cy") if welsh_step.is_optional?
     formatted_list = html_unordered_list(options)
 
     if options.length > 10
@@ -419,13 +419,15 @@ private
   def welsh_answer_value(welsh_condition)
     return nil if welsh_condition.answer_value.blank?
 
+    return I18n.t("step_summary_card.selection_type.none_of_the_above.cy") if welsh_condition.answer_value == "none_of_the_above"
+
     @welsh_steps.find { |step| step.id == welsh_condition.check_page_id }.answer_settings.selection_options.find { |option| option.value == welsh_condition.answer_value }.name
   end
 
   def welsh_answer_value2(welsh_condition)
     return nil if welsh_condition.answer_value.blank?
 
-    return I18n.t("step_summary_card.none_of_the_above.cy") if welsh_condition.answer_value == "none_of_the_above"
+    return I18n.t("step_summary_card.selection_type.none_of_the_above.cy") if welsh_condition.answer_value == "none_of_the_above"
 
     @welsh_steps.find { |step| step.id == welsh_condition.routing_page_id }.answer_settings.selection_options.find { |option| option.value == welsh_condition.answer_value }.name
   end
