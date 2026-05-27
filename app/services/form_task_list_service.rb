@@ -193,14 +193,20 @@ private
 
   def make_form_live_section_tasks
     [
-      {
-        task_name: share_preview_task_name,
-        path: share_preview_path(@form.id),
-        status: @task_statuses[:share_preview_status],
-        active: @form.pages.any?,
-      },
-      make_live_task,
-    ]
+      share_preview_task,
+      (make_live_task unless display_make_languages_live_tasks?),
+      (make_only_english_live_task if display_make_languages_live_tasks?),
+      (make_only_welsh_live_task if display_make_languages_live_tasks?),
+    ].compact
+  end
+
+  def share_preview_task
+    {
+      task_name: share_preview_task_name,
+      path: share_preview_path(@form.id),
+      status: @task_statuses[:share_preview_status],
+      active: @form.pages.any?,
+    }
   end
 
   def make_live_task
@@ -213,6 +219,34 @@ private
       status: status,
       active: can_make_form_live,
     }
+  end
+
+  def make_only_english_live_task
+    status = @task_statuses[:make_only_english_live_status]
+    can_make_form_live = status == :not_started
+
+    {
+      task_name: I18n.t("forms.task_list_create.make_form_live_section.make_english_form_live"),
+      path: can_make_form_live ? make_language_live_path(@form.id, language: "en") : "",
+      status:,
+      active: can_make_form_live,
+    }
+  end
+
+  def make_only_welsh_live_task
+    status = @task_statuses[:make_only_welsh_live_status]
+    can_make_form_live = status == :not_started
+
+    {
+      task_name: I18n.t("forms.task_list_create.make_form_live_section.make_welsh_form_live"),
+      path: can_make_form_live ? make_language_live_path(@form.id, language: "cy") : "",
+      status:,
+      active: can_make_form_live,
+    }
+  end
+
+  def display_make_languages_live_tasks?
+    @form.live_welsh_form_document.blank? && @form.has_welsh_translation?
   end
 
   def live_title_name
