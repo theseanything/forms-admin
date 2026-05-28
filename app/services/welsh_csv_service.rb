@@ -38,12 +38,12 @@ private
 
   def add_page_content(csv)
     form.pages.each do |page|
+      add_page_heading(csv, page)
+      add_guidance_text(csv, page)
       add_question_content(csv, page)
       add_selection_options(csv, page) if page.answer_type == "selection"
       add_none_of_above_question(csv, page) if has_none_of_the_above?(page)
       add_routing_conditions(csv, page)
-      add_page_heading(csv, page)
-      add_guidance_text(csv, page)
     end
   end
 
