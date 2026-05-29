@@ -1644,13 +1644,43 @@ RSpec.describe Form, type: :model do
             context "when the Welsh task is still in progress" do
               let(:form) { create :form, :ready_for_live, :with_welsh_translation, state: "live", welsh_completed: false }
 
-              it "returns true" do
+              it "returns false" do
                 expect(form.can_make_language_live?(language:)).to be false
               end
             end
 
             context "when the Welsh task is complete" do
               let(:form) { create :form, :ready_for_live, :with_welsh_translation, state: "live" }
+
+              it "returns true" do
+                expect(form.can_make_language_live?(language:)).to be true
+              end
+
+              context "when there are changes which have not yet been made live on the English version" do
+                before do
+                  form.name = "A new form name"
+                  form.save_draft!
+
+                  form.share_preview_completed = true
+                  form.save_draft!
+                end
+
+                it "returns false" do
+                  expect(form.can_make_language_live?(language:)).to be false
+                end
+              end
+            end
+
+            context "when the Welsh task has been completed since the English form was made live" do
+              let(:form) { create :form, :ready_for_live, :with_welsh_translation, state: "live", welsh_completed: false }
+
+              before do
+                form.welsh_completed = true
+                form.save_draft!
+
+                form.share_preview_completed = true
+                form.save_draft!
+              end
 
               it "returns true" do
                 expect(form.can_make_language_live?(language:)).to be true

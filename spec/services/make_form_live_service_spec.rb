@@ -80,10 +80,10 @@ describe MakeFormLiveService do
       let(:language) { "cy" }
 
       context "when the form has a live English version" do
-        let(:current_form) { create :form, :ready_for_live, :with_welsh_translation, state: "live" }
+        let(:current_form) { create :form, :ready_for_live, :with_welsh_translation}
 
         before do
-          create :form_document, :live, form: current_form, language: "en", content: current_form.as_form_document
+          current_form.make_english_version_live!
         end
 
         it "makes the Welsh form live" do

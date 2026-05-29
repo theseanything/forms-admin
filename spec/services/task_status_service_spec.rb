@@ -399,11 +399,13 @@ describe TaskStatusService do
     describe "make_only_english_live_status" do
       let(:can_make_english_live) { false }
       let(:can_make_welsh_live) { false }
+      let(:changed_from_live_version) { false }
 
       let(:form) { build(:form, :with_group, group:) }
 
       before do
         allow(form).to receive(:can_make_language_live?).with(language: "en").and_return(can_make_english_live)
+        allow(form).to receive(:changed_from_live_version?).with(language: "en").and_return(changed_from_live_version)
         allow(form).to receive(:can_make_language_live?).with(language: "cy").and_return(can_make_welsh_live)
       end
 
@@ -434,16 +436,28 @@ describe TaskStatusService do
           end
         end
 
-        context "when the form is a draft" do
-          let(:form) { build(:form, :ready_for_live, :with_group, group:) }
+        context "when the form is live with draft" do
+          let(:form) { build(:form, :live_with_draft, :with_group, group:) }
 
-          it "returns cannot_start" do
-            expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+          context "when there are changes from the English form document" do
+            let(:changed_from_live_version) { true }
+
+            it "returns cannot_start" do
+              expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+            end
+          end
+
+          context "when there are no changes from the English form document" do
+            let(:changed_from_live_version) { false }
+
+            it "returns completed" do
+              expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :completed
+            end
           end
         end
 
-        context "when the form is live with draft" do
-          let(:form) { build(:form, :live_with_draft, :with_group, group:) }
+        context "when the form is a draft" do
+          let(:form) { build(:form, :ready_for_live, :with_group, group:) }
 
           it "returns cannot_start" do
             expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start

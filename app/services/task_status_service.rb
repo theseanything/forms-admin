@@ -142,8 +142,8 @@ private
   end
 
   def make_only_english_live_status
+    return :completed if @form.has_live_version && !@form.changed_from_live_version?(language: "en")
     return :not_started if @form.can_make_language_live?(language: "en")
-    return :completed if @form.state == "live"
 
     :cannot_start
   end

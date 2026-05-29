@@ -232,6 +232,16 @@ class Form < ApplicationRecord
     can_make_welsh_version_live? if language == "cy"
   end
 
+  def changed_from_live_version?(language:)
+    live_document = language == "cy" ? live_welsh_form_document : live_form_document
+    return false if live_document.blank?
+
+    ignored_keys = %w[live_at available_languages updated_at]
+    return false if live_document.content.except(*ignored_keys) == as_form_document(language:).except(*ignored_keys)
+
+    true
+  end
+
 private
 
   def set_external_id
@@ -296,7 +306,15 @@ private
   end
 
   def can_make_welsh_version_live?
-    has_live_version && all_ready_for_live? && welsh_completed? && live_form_document.present? && live_welsh_form_document.blank?
+    english_version_has_been_made_live? && !changed_from_live_version?(language: "en") && welsh_version_ready? && live_welsh_form_document.blank?
+  end
+
+  def english_version_has_been_made_live?
+    has_live_version && live_form_document.present?
+  end
+
+  def welsh_version_ready?
+    all_ready_for_live? && welsh_completed?
   end
 
   def after_archive
