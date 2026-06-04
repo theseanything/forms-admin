@@ -41,13 +41,13 @@ RSpec.describe ReportsController, type: :request do
         expect(response).to render_template("reports/index")
         expect(response.body).to include "Reports"
         reports_list = [
-          "Feature and answer type usage in live or archived forms",
           "Feature and answer type usage in live forms",
           "Feature and answer type usage in live or archived forms",
           "Feature and answer type usage in draft forms",
+          "Download data about all live or archived forms",
+          "Download all questions in live or archived forms",
           "Number of users per organisation",
           "When users last signed in",
-          "Download form data as a CSV file",
           "Users interested in research",
         ]
         expect(response.body).to include(*reports_list)

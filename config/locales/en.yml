@@ -1812,8 +1812,8 @@ en:
         name: Name
       title: Users interested in research
     csv_downloads:
-      forms: Download data about all live or archived forms as a CSV file
-      questions: Download all questions in live or archived forms as a CSV file
+      forms: Download data about all live or archived forms
+      questions: Download all questions in live or archived forms
       title: Download form data as a CSV file
     features:
       answer_types:
@@ -1898,6 +1898,9 @@ en:
       heading: "%{tag} forms with a Welsh translation"
     index:
       title: Reports
+      feature_and_answer_type_usage: Feature and answer type usage
+      download_form_data_as_a_csv_file: Download form data as a CSV file
+      user_reports: User reports
     last_signed_in_at:
       heading: When users last signed in
       not_since: People who last signed in before %{since}
