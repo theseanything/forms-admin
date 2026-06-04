@@ -177,8 +177,6 @@ class ReportsController < WebController
     questions_feature_report(tag, params[:action], questions, type: :selection_questions_with_none_of_the_above)
   end
 
-  def csv_downloads; end
-
   def live_forms_csv
     forms = Reports::FormDocumentsService.form_documents(tag: "live-or-archived")
 

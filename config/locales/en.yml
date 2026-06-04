@@ -1814,7 +1814,6 @@ en:
     csv_downloads:
       forms: Download data about all live or archived forms
       questions: Download all questions in live or archived forms
-      title: Download form data as a CSV file
     features:
       answer_types:
         heading: Answer type usage
@@ -1897,9 +1896,9 @@ en:
       empty: There are no %{tag} forms with a Welsh translation
       heading: "%{tag} forms with a Welsh translation"
     index:
-      title: Reports
-      feature_and_answer_type_usage: Feature and answer type usage
       download_form_data_as_a_csv_file: Download form data as a CSV file
+      feature_and_answer_type_usage: Feature and answer type usage
+      title: Reports
       user_reports: User reports
     last_signed_in_at:
       heading: When users last signed in

@@ -275,7 +275,6 @@ Rails.application.routes.draw do
     get "users", to: "reports#users", as: :report_users
     get "add_another_answer", to: "reports#add_another_answer", as: :report_add_another_answer
     get "last-signed-in-at", to: "reports#last_signed_in_at", as: :report_last_signed_in_at
-    get "csv-downloads", to: "reports#csv_downloads", as: :report_csv_downloads
     get "live-forms-csv", to: "reports#live_forms_csv", as: :report_live_forms_csv
     get "live-questions-csv", to: "reports#live_questions_csv", as: :report_live_questions_csv
     get "contact-for-research", to: "reports#contact_for_research", as: :report_contact_for_research
