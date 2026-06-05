@@ -246,6 +246,8 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
     submission_type: "s3",
     submission_format: %w[csv],
     s3_bucket_region: "eu-west-2",
+    s3_bucket_name: "govuk-forms-submissions-to-s3-test",
+    s3_bucket_aws_account_id: "711966560482",
   )
   e2e_s3_forms.set_task_status_service(TaskStatusService.new(form: e2e_s3_forms, current_user: craig))
   e2e_s3_forms.make_live!
