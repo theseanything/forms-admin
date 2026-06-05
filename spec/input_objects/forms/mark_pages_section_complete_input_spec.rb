@@ -32,9 +32,50 @@ RSpec.describe Forms::MarkPagesSectionCompleteInput, type: :model do
         end
       end
     end
+
+    context "when form has routing validation errors that can be fixed by normalisation" do
+      let(:form) { create :form, :ready_for_routing }
+
+      before do
+        create :condition, routing_page_id: form.pages.first.id, check_page_id: form.pages.first.id, goto_page_id: form.pages.second.id, answer_value: "Option 1"
+        form.reload
+      end
+
+      context "when mark_complete is true" do
+        let(:mark_complete) { "true" }
+
+        it "normalises the routing conditions" do
+          normalise_conditions_service = NormaliseConditionsService.new(form:)
+          allow(NormaliseConditionsService).to receive(:new).with(form:).and_return(normalise_conditions_service)
+          allow(normalise_conditions_service).to receive(:normalise_conditions).and_call_original
+
+          mark_complete_input.validate
+
+          expect(normalise_conditions_service).to have_received(:normalise_conditions)
+        end
+
+        it "is valid" do
+          expect(mark_complete_input).to be_valid
+        end
+      end
+
+      context "when mark_complete is false" do
+        let(:mark_complete) { "false" }
+
+        it "is valid" do
+          expect(mark_complete_input).to be_valid
+        end
+
+        it "does not normalise the routing conditions" do
+          expect(NormaliseConditionsService).not_to receive(:new)
+
+          mark_complete_input.validate
+        end
+      end
+    end
   end
 
-  describe "#save" do
+  describe "#submit" do
     context "when mark_complete_input is valid" do
       before do
         allow(mark_complete_input).to receive_messages(invalid?: false, form:)

@@ -14,6 +14,7 @@ class Forms::MarkPagesSectionCompleteInput < Forms::MarkCompleteInput
   end
 
   def has_routing_errors
+    NormaliseConditionsService.new(form:).normalise_conditions
     errors.add :base, :has_routing_errors if form.has_routing_errors?
   end
 end
