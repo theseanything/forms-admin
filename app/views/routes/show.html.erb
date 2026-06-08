@@ -33,7 +33,13 @@
                           route_form.hidden_field(:id) +
                             route_form.hidden_field(:page_id) +
                             route_form.hidden_field(:answer_value) +
-                            route_form.govuk_select(:goto, options_for_select(route_form.object.goto_options, route_form.object.goto), label: route_form.object.label, id: route_form.field_id(:goto))
+                            route_form.govuk_select(
+                              :goto,
+                              options_for_select(route_form.object.goto_options, route_form.object.goto),
+                              label: route_form.object.label,
+                              id: route_form.field_id(:goto),
+                              class: ["govuk-!-width-full"],
+                            )
                         end %>
                       </li>
                     <% end %>
