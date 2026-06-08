@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_08_112508) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -158,6 +158,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_08_112814) do
     t.boolean "multiple_branches_enabled", default: false
     t.string "name"
     t.bigint "organisation_id"
+    t.boolean "send_filler_answers_enabled", default: false
     t.string "status", default: "trial"
     t.datetime "updated_at", null: false
     t.bigint "upgrade_requester_id"
