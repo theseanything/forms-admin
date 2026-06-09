@@ -111,6 +111,37 @@ describe "routes/show.html.erb" do
       end
     end
 
+    context "when the route goes to the next page" do
+      let(:pages) do
+        [
+          build_stubbed(
+            :page,
+            id: 101,
+            routing_conditions: [
+              build_stubbed(
+                :condition,
+                routing_page_id: 101,
+                goto_page_id: 102,
+                answer_value: nil,
+              ),
+            ],
+          ),
+          build_stubbed(:page, id: 102),
+          build_stubbed(:page, id: 103),
+        ]
+      end
+
+      it "shows the selected goto page for the route" do
+        render_page
+
+        expect(rendered).to have_css('.govuk-select[name="forms_routes_input[routes_attributes][0][goto]"]') do |field|
+          expect(field).to have_css("option", count: 3)
+          expect(field).not_to have_css("option[selected]") # if no option is has the selected attribute, the first option will be selected by default
+          expect(field.first("option")["value"]).to eq "default"
+        end
+      end
+    end
+
     context "when the route goes to a page before the routing page" do
       let(:pages) do
         [

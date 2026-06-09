@@ -43,11 +43,11 @@ class Routes::BuildService
       _, value = option
 
       if drop
-        if selected && value == selected
-          option
-        elsif value == next_page_id
+        if value == next_page_id
           drop = false
           ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+        elsif selected && value == selected
+          option
         end
         # return nil
       else

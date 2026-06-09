@@ -69,6 +69,22 @@ RSpec.describe Routes::BuildService do
             expect(route_for_page1.goto).to eq(Forms::RouteInput::END_OF_FORM_VALUE)
           end
         end
+
+        context "when a condition goes to the next page" do
+          before do
+            create(:condition, form:, routing_page: pages.first, goto_page: pages.second, answer_value: nil)
+          end
+
+          it "sets the goto value to the next page ID" do
+            route_for_page1 = service.build_routes.first
+            expect(route_for_page1.goto).to eq(pages.second.id)
+          end
+
+          it "has a goto option for each page after" do
+            route_for_page1 = service.build_routes.first
+            expect(route_for_page1.goto_options.length).to eq 3
+          end
+        end
       end
 
       context "with a selection page (radios)" do
