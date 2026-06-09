@@ -71,16 +71,31 @@ RSpec.describe Routes::SyncService do
         create(:condition, routing_page_id: pages.first.id, answer_value: "Yes", goto_page_id: pages.second.id)
       end
 
+      # Create a condition that shouldn't be removed
+      let!(:healthy_condition) do
+        create(:condition, routing_page_id: pages.second.id, answer_value: "Yes", goto_page_id: pages.third.id)
+      end
+
       # Provide a route that matches the stale condition's key, but is now a "default" route.
       let(:routes) do
         [
+          # Route for the first page, which is default so conditions are removed
           build(:route_input, :default, page: pages.first, answer_value: "Yes"),
+          # Two routes for the second page, which should not be removed
+          build(:route_input, page: pages.second, goto: pages.third.id, answer_value: "Yes"),
+          # This is default but has no conditions to remove
+          build(:route_input, :default, page: pages.second, answer_value: "No"),
         ]
       end
 
       it "destroys the condition that is now a default route" do
         expect { service.sync_conditions_from_routes }.to change(Condition, :count).by(-1)
         expect(Condition.exists?(stale_condition.id)).to be false
+      end
+
+      it "does not destroy other page's conditions with the same answer value" do
+        service.sync_conditions_from_routes
+        expect(Condition.exists?(healthy_condition.id)).to be true
       end
     end
 
