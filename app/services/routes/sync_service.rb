@@ -30,6 +30,7 @@ private
       condition.assign_attributes(
         route.condition_attributes,
       )
+
       condition.save!
     end
   end
@@ -40,10 +41,14 @@ private
     # If there are no routes marked as default, there's nothing to destroy.
     return if default_routes.none?
 
+    stale_route_pairs = default_routes.map do |route|
+      [route.page_id, route.answer_value.presence]
+    end
+
     stale_conditions = form.conditions.where(
-      routing_page_id: default_routes.map(&:page_id),
-      answer_value: default_routes.map { |r| r.answer_value.presence },
+      %i[routing_page_id answer_value] => stale_route_pairs,
     )
+
     stale_conditions.destroy_all
   end
 end
