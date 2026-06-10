@@ -9,7 +9,7 @@ class Forms::RouteInput < BaseInput
   attribute :goto
   attribute :answer_value
 
-  attr_accessor :page, :goto_options, :label
+  attr_accessor :page, :goto_page, :goto_options, :label
 
   def goes_to_default_next_page?
     goto == DEFAULT_VALUE

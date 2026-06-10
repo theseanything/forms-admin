@@ -40,9 +40,12 @@ class Forms::RoutesInput < BaseInput
       page = pages_by_id[route_attrs["page_id"].to_i]
       next unless page # Skip if page not found or doesn't belong to form
 
+      goto_page = pages_by_id[route_attrs["goto"].to_i]
+
       Forms::RouteInput.new(
         route_attrs.symbolize_keys.merge(
           page:,
+          goto_page:,
           goto_options: route_build_service.options_for_goto_page(page, route_attrs["goto"]),
         ),
       )

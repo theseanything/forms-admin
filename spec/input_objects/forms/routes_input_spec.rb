@@ -89,12 +89,14 @@ RSpec.describe Forms::RoutesInput do
 
         expect(Forms::RouteInput).to have_received(:new).with(
           page_id: pages.first.id.to_s,
+          goto_page: pages.second,
           goto: pages.second.id.to_s,
           page: pages.first,
           goto_options:,
         )
         expect(Forms::RouteInput).to have_received(:new).with(
           page_id: pages.second.id.to_s,
+          goto_page: nil,
           goto: "1",
           page: pages.second,
           goto_options:,
@@ -124,6 +126,7 @@ RSpec.describe Forms::RoutesInput do
         expect(Forms::RouteInput).to have_received(:new).with(
           page_id: pages.first.id.to_s,
           page: pages.first,
+          goto_page: nil,
           goto_options:,
         )
       end

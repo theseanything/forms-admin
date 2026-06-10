@@ -7,14 +7,16 @@ RSpec.describe Forms::RouteInput, type: :model do
   let(:default_value) { described_class::DEFAULT_VALUE }
 
   let(:page) { build_stubbed(:page) }
+  let(:goto_page) { build_stubbed(:page) }
 
   let(:attributes) do
     {
       id: 1,
       page_id: 2,
-      goto: 3,
+      goto: goto_page.id,
       answer_value: "Yes",
       page: page,
+      goto_page: goto_page,
     }
   end
 
@@ -26,7 +28,7 @@ RSpec.describe Forms::RouteInput, type: :model do
     it "can be initialized with a hash of attributes" do
       expect(route_input.id).to eq(1)
       expect(route_input.page_id).to eq(2)
-      expect(route_input.goto).to eq(3)
+      expect(route_input.goto).to eq(goto_page.id)
       expect(route_input.answer_value).to eq("Yes")
       expect(route_input.page).to eq(page)
     end
