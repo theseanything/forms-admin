@@ -5,6 +5,7 @@ class RoutesController < FormsController
   def show
     authorize current_form, :can_view_form?
     @routes_input = Forms::RoutesInput.new(form: form_with_pages_and_conditions).assign_form_values
+    @routes_input.validate
   end
 
   def create
