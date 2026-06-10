@@ -242,7 +242,7 @@ RSpec.describe Routes::BuildService do
       options = service.options_for_goto_page(pages.first)
       default_option = options.find { |opt| opt[1] == Forms::RouteInput::DEFAULT_VALUE }
 
-      expect(default_option).to eq(["Go to question 2", Forms::RouteInput::DEFAULT_VALUE])
+      expect(default_option).to eq(["2. #{pages.second.question_text}", Forms::RouteInput::DEFAULT_VALUE])
     end
 
     it "does not include the current page in the options" do
@@ -256,7 +256,7 @@ RSpec.describe Routes::BuildService do
       options = service.options_for_goto_page(pages.second)
 
       expect(options).to eq [
-        ["Go to question 3", Forms::RouteInput::DEFAULT_VALUE],
+        ["3. #{pages.third.question_text}", Forms::RouteInput::DEFAULT_VALUE],
         ["End of the form", "end_of_form"],
       ]
     end
@@ -267,7 +267,7 @@ RSpec.describe Routes::BuildService do
 
         expect(options).to eq [
           ["1. #{pages.first.question_text}", pages.first.id],
-          ["Go to question 3", Forms::RouteInput::DEFAULT_VALUE],
+          ["3. #{pages.third.question_text}", Forms::RouteInput::DEFAULT_VALUE],
           ["End of the form", "end_of_form"],
         ]
       end

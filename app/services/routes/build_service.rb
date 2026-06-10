@@ -45,7 +45,7 @@ class Routes::BuildService
       if drop
         if value == next_page_id
           drop = false
-          ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+          ["#{page.position.next}. #{next_page.question_text}", Forms::RouteInput::DEFAULT_VALUE]
         elsif selected && value == selected
           option
         end
