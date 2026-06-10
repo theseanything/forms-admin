@@ -38,7 +38,7 @@ RSpec.describe Routes::BuildService do
 
         it "sets the label correctly for a generic page" do
           route_for_page1 = service.build_routes.first
-          expect(route_for_page1.label).to eq({ text: "Go to", hidden: true })
+          expect(route_for_page1.label).to eq({ text: "After question #{pages.first.position}, go to:" })
         end
 
         context "when a condition exists for the generic page" do
@@ -117,10 +117,10 @@ RSpec.describe Routes::BuildService do
           route_for_no = routes_for_page1.find { |r| r.answer_value == "No" }
 
           expect(route_for_yes.goto).to eq(Forms::RouteInput::DEFAULT_VALUE)
-          expect(route_for_yes.label).to eq({ text: "Option 1: Yes" })
+          expect(route_for_yes.label).to eq({ text: "If option 1 (Yes), go to:" })
 
           expect(route_for_no.goto).to eq(Forms::RouteInput::DEFAULT_VALUE)
-          expect(route_for_no.label).to eq({ text: "Option 2: No" })
+          expect(route_for_no.label).to eq({ text: "If option 2 (No), go to:" })
         end
 
         context "when the selection page has more than 10 options" do
@@ -154,7 +154,7 @@ RSpec.describe Routes::BuildService do
 
             none_of_the_above_route = routes_for_page1.find { |r| r.answer_value == "none_of_the_above" }
             expect(none_of_the_above_route).not_to be_nil
-            expect(none_of_the_above_route.label[:text]).to eq("Option 3: None of the above")
+            expect(none_of_the_above_route.label[:text]).to eq("If option 3 (None of the above), go to:")
           end
         end
 
@@ -207,7 +207,7 @@ RSpec.describe Routes::BuildService do
           expect(route_for_page1).to be_a(Forms::RouteInput)
           expect(route_for_page1.page_id).to eq(pages.first.id)
           expect(route_for_page1.answer_value).to be_nil
-          expect(route_for_page1.label).to eq({ text: "Go to", hidden: true })
+          expect(route_for_page1.label).to eq({ text: "After question #{pages.first.position}, go to:" })
         end
       end
     end
