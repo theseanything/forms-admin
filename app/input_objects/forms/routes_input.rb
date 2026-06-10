@@ -1,5 +1,9 @@
 class Forms::RoutesInput < BaseInput
+  include ActionView::Helpers::FormTagHelper
+
   attr_accessor :form, :routes
+
+  validate :routes_are_valid
 
   def self.too_many_selection_options?(page)
     page.answer_settings["selection_options"].length > 10
@@ -15,8 +19,6 @@ class Forms::RoutesInput < BaseInput
   end
 
   def submit
-    # TODO: Add validations - this is here so we don't forget it but the model
-    # can't be invalid yet
     return false if invalid?
 
     Routes::SyncService.new(form:, routes:).sync_conditions_from_routes
@@ -50,5 +52,20 @@ class Forms::RoutesInput < BaseInput
         ),
       )
     }.compact
+  end
+
+  def routes_are_valid
+    return if routes.nil?
+
+    routes.each.with_index do |route, index|
+      next if route.valid?
+
+      route.errors.each do |error|
+        attribute_key = "routes_attributes[#{index}][#{error.attribute}]"
+        error_field_id = field_id(:forms_routes_input_routes_attributes, error.attribute, index: index)
+
+        errors.add(attribute_key, error.message, url: "##{error_field_id}")
+      end
+    end
   end
 end

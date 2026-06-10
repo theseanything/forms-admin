@@ -188,4 +188,58 @@ RSpec.describe Forms::RoutesInput do
       end
     end
   end
+
+  describe "#routes_are_valid" do
+    before do
+      routes_input.routes = routes
+      routes_input.validate
+    end
+
+    context "when routes are valid" do
+      let(:routes) { build_list(:route_input, 2) }
+
+      it "is valid" do
+        expect(routes_input).to be_valid
+      end
+    end
+
+    context "when there are no routes" do
+      let(:routes) { [] }
+
+      it "is valid" do
+        expect(routes_input).to be_valid
+      end
+    end
+
+    context "when a route is invalid" do
+      let(:routes) do
+        [
+          instance_double(
+            Forms::RouteInput,
+            valid?: false,
+            errors: [instance_double(ActiveModel::Error, attribute: :goto, message: "a mock error")],
+          ),
+        ]
+      end
+
+      it "makes the parent object invalid" do
+        expect(routes_input).to be_invalid
+      end
+
+      it "copies the error from the route" do
+        expected_key = "routes_attributes[0][goto]".to_sym
+        expect(routes_input.errors).to have_key(expected_key)
+        expect(routes_input.errors.messages[expected_key]).to include("a mock error")
+      end
+
+      it "adds the URL" do
+        expected_key = "routes_attributes[0][goto]".to_sym
+        expected_url = "#forms_routes_input_routes_attributes_0_goto"
+
+        error_detail = routes_input.errors.details[expected_key].first
+        expect(error_detail).to have_key(:url)
+        expect(error_detail[:url]).to eq(expected_url)
+      end
+    end
+  end
 end
