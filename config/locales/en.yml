@@ -365,6 +365,14 @@ en:
       goto_page_doesnt_exist: The question you’re taking the person to no longer exists - edit question %{question_number}’s route
       route_number_for_any_other_answer: for any other answer
     prefix: 'Error:'
+    routes:
+      cannot_route_backwards_from_generic_page: The route from question %{question_number} cannot go to a previous question - edit this route
+      cannot_route_backwards_from_selection_page: The route from question %{question_number}, option %{option_number} cannot go to a previous question - edit this route
+      page_list:
+        cannot_route_backwards_from_generic_page: The route from question %{question_number} cannot go to a previous question - edit this route
+        cannot_route_backwards_from_selection_page:
+          one: A route from question %{question_number} is going to a previous question - edit this route
+          other: Routes from question %{question_number} are going to a previous question - edit this question’s routes
   exit_page:
     no_content_added_html: "<p>No content added</p>"
   feedback_link:

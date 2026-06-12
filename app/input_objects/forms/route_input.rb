@@ -9,7 +9,9 @@ class Forms::RouteInput < BaseInput
   attribute :goto
   attribute :answer_value
 
-  attr_accessor :page, :goto_options, :label
+  attr_accessor :page, :goto_page, :goto_options, :label
+
+  validate :route_is_not_backwards
 
   def goes_to_default_next_page?
     goto == DEFAULT_VALUE
@@ -26,6 +28,29 @@ class Forms::RouteInput < BaseInput
       nil
     else
       { goto_page_id: goto, skip_to_end: false, check_page_id: page.id }
+    end
+  end
+
+private
+
+  def route_is_not_backwards
+    return if skippable_for_backwards_validation?
+
+    return if goto_page.position > page.position
+
+    errors.add(:goto, error_message_for_backwards_route)
+  end
+
+  def skippable_for_backwards_validation?
+    goes_to_default_next_page? || goes_to_end_of_form? || goto_page.nil?
+  end
+
+  def error_message_for_backwards_route
+    if Forms::RoutesInput.route_with_selection_options?(page)
+      option_index = page.answer_settings.selection_options.find_index { |option| option["value"] == answer_value }
+      I18n.t("errors.routes.cannot_route_backwards_from_selection_page", question_number: page.position, option_number: option_index + 1)
+    else
+      I18n.t("errors.routes.cannot_route_backwards_from_generic_page", question_number: page.position)
     end
   end
 end

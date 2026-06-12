@@ -17,9 +17,7 @@ class Routes::BuildService
     end
 
     form.pages.flat_map do |page|
-      if page.answer_type == "selection" &&
-          page.answer_settings.only_one_option == "true" &&
-          !Forms::RoutesInput.too_many_selection_options?(page)
+      if Forms::RoutesInput.route_with_selection_options?(page)
         build_routes_for_selection_page(page, conditions_by_key)
       else
         build_route_for_generic_page(page, conditions_by_key)
@@ -75,6 +73,7 @@ private
         page:,
         answer_value:,
         goto: goto_value_for(condition),
+        goto_page: condition&.goto_page,
         goto_options: options_for_goto_page(page, condition&.goto_page_id),
         label: { text: "If option #{index} (#{answer_value_label}), go to:" },
       )
@@ -91,6 +90,7 @@ private
         page_id: page.id,
         page:,
         goto: goto_value_for(condition),
+        goto_page: condition&.goto_page,
         goto_options: options_for_goto_page(page, condition&.goto_page_id),
         label: { text: "After question #{page.position}, go to:" },
       ),
