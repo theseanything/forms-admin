@@ -23,7 +23,7 @@
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
     "autoprefixer": "^10.5.0",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.15",
     "regenerator-runtime": "^0.14.1",
