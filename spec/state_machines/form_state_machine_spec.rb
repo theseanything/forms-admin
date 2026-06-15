@@ -402,4 +402,53 @@ RSpec.describe FormStateMachine do
       end
     end
   end
+
+  describe ".event_path" do
+    it "returns the event for a state one transition away" do
+      expect(FakeForm.event_path(from: :live, to: :archived))
+        .to eq %i[archive_live_form]
+    end
+
+    it "returns the events to fire in order when the target state needs intermediate transitions" do
+      # no event goes directly from draft to archived, so the form has to be
+      # made live on the way
+      expect(FakeForm.event_path(from: :draft, to: :archived))
+        .to eq %i[make_live archive_live_form]
+    end
+
+    it "returns the events to fire in order when the target state needs two intermediate transitions" do
+      # reaching archived_with_draft from draft means passing through both the
+      # live and live_with_draft states
+      expect(FakeForm.event_path(from: :draft, to: :archived_with_draft))
+        .to eq %i[make_live create_draft_from_live_form archive_live_form]
+    end
+
+    it "returns the shortest sequence of events when there is more than one route" do
+      # an archived_with_draft form could reach archived by being made live
+      # and archived again, but deleting its draft gets there in one transition
+      expect(FakeForm.event_path(from: :archived_with_draft, to: :archived))
+        .to eq %i[delete_draft_from_archived_form]
+    end
+
+    it "returns an empty path when the form is already in the target state" do
+      expect(FakeForm.event_path(from: :live, to: :live)).to eq []
+    end
+
+    it "returns nil when no sequence of events reaches the target state" do
+      # no event transitions a form back to draft once it has been made live
+      expect(FakeForm.event_path(from: :live, to: :draft)).to be_nil
+    end
+
+    it "never routes through the delete_form event" do
+      # delete_form is the only transition into the deleted state, but firing
+      # it would destroy the form, so deleted is treated as unreachable
+      expect(FakeForm.event_path(from: :draft, to: :deleted)).to be_nil
+    end
+
+    it "never routes through the language-specific live events" do
+      # make_english_version_live also transitions from draft to live, but it
+      # publishes only one translation, so the path uses make_live
+      expect(FakeForm.event_path(from: :draft, to: :live)).to eq %i[make_live]
+    end
+  end
 end
