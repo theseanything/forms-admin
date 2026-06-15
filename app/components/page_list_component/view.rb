@@ -106,7 +106,7 @@ module PageListComponent
       page.routing_conditions.to_a
         .in_order_of(:answer_value, answer_order, filter: false)
         .group_by(&:goto_page_id)
-        .sort_by { |goto_page_id, _| goto_page_id || Float::INFINITY }
+        .sort_by { |goto_page_id, _| goto_page_id ? @pages.ids.index(goto_page_id) : Float::INFINITY }
     end
   end
 end

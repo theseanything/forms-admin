@@ -520,20 +520,19 @@ RSpec.describe PageListComponent::View, type: :component do
   end
 
   describe "#answer_value_groups" do
-    let(:form) { build_stubbed :form, :ready_for_routing }
+    let(:form) { create :form }
 
-    let(:pages) do
+    let!(:pages) do
       [
-        build_stubbed(
+        create(
           :page,
           :with_selection_settings,
-          id: 101,
+          form:,
           selection_options:,
-          routing_conditions: conditions,
         ),
-        build_stubbed(:page, id: 102),
-        build_stubbed(:page, id: 103),
-        build_stubbed(:page, id: 104),
+        create(:page, form:),
+        create(:page, form:),
+        create(:page, form:),
       ]
     end
 
@@ -547,20 +546,26 @@ RSpec.describe PageListComponent::View, type: :component do
 
     let(:conditions) do
       [
-        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 1", goto_page_id: 103),
-        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 2", goto_page_id: 103),
-        build_stubbed(:condition, routing_page_id: 101, answer_value: "Option 3", goto_page_id: 104),
-        build_stubbed(:condition, routing_page_id: 101, answer_value: nil, goto_page_id: nil, skip_to_end: true),
+        create(:condition, routing_page_id: pages[0].id, answer_value: "Option 1", goto_page_id: pages[2].id),
+        create(:condition, routing_page_id: pages[0].id, answer_value: "Option 2", goto_page_id: pages[2].id),
+        create(:condition, routing_page_id: pages[0].id, answer_value: "Option 3", goto_page_id: pages[3].id),
+        create(:condition, routing_page_id: pages[0].id, answer_value: nil, goto_page_id: nil, skip_to_end: true),
       ]
+    end
+
+    let(:page_list_component) { described_class.new(pages: form.reload.pages, form:) }
+
+    before do
+      conditions
     end
 
     it "groups conditions by goto_page_id" do
       expected = [
-        [103, [conditions.first, conditions.second]],
-        [104, [conditions.third]],
-        [nil, [conditions.fourth]],
+        [pages[2].id, [conditions[0], conditions[1]]],
+        [pages[3].id, [conditions[2]]],
+        [nil, [conditions[3]]],
       ]
-      result = page_list_component.answer_value_groups(pages.first)
+      result = page_list_component.answer_value_groups(form.pages.first)
       expect(result).to eq expected
     end
 
@@ -575,12 +580,34 @@ RSpec.describe PageListComponent::View, type: :component do
 
       it "returns the conditions in the same order" do
         expected = [
-          [103, [conditions.second, conditions.first]],
-          [104, [conditions.third]],
-          [nil, [conditions.fourth]],
+          [pages[2].id, [conditions[1], conditions[0]]],
+          [pages[3].id, [conditions[2]]],
+          [nil, [conditions[3]]],
         ]
 
-        result = page_list_component.answer_value_groups(pages.first)
+        result = page_list_component.answer_value_groups(form.pages.first)
+        expect(result).to eq expected
+      end
+    end
+
+    context "when page positions are not in ID order" do
+      let!(:pages) do
+        [
+          create(:page, :with_selection_settings, form:, selection_options:, position: 1),
+          create(:page, form:, position: 4),
+          create(:page, form:, position: 2),
+          create(:page, form:, position: 3),
+        ]
+      end
+
+      it "sorts groups by page position, not page id" do
+        expected = [
+          [pages[2].id, [conditions[0], conditions[1]]],
+          [pages[3].id, [conditions[2]]],
+          [nil, [conditions[3]]],
+        ]
+
+        result = page_list_component.answer_value_groups(form.pages.first)
         expect(result).to eq expected
       end
     end
