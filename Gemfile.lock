@@ -112,11 +112,11 @@ GEM
     auth-sanitizer (0.2.1)
       version_gem (~> 1.1, >= 1.1.10)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1257.0)
-    aws-sdk-cloudwatch (1.138.0)
+    aws-partitions (1.1259.0)
+    aws-sdk-cloudwatch (1.139.0)
       aws-sdk-core (~> 3, >= 3.248.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-codepipeline (1.116.0)
+    aws-sdk-codepipeline (1.117.0)
       aws-sdk-core (~> 3, >= 3.248.0)
       aws-sigv4 (~> 1.5)
     aws-sdk-core (3.251.0)
@@ -813,8 +813,8 @@ DEPENDENCIES
   aasm (~> 5.5)
   acts_as_list
   after_commit_everywhere (~> 1.6)
-  aws-sdk-cloudwatch (~> 1.138)
-  aws-sdk-codepipeline (~> 1.116)
+  aws-sdk-cloudwatch (~> 1.139)
+  aws-sdk-codepipeline (~> 1.117)
   axe-core-rspec
   bootsnap
   brakeman (~> 8.0.4)
@@ -888,9 +888,9 @@ CHECKSUMS
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   auth-sanitizer (0.2.1) sha256=917dcf01f7589b06c26726afe90568cf2fb29d37a1f94facfc664f11967cc577
   aws-eventstream (1.4.0) sha256=116bf85c436200d1060811e6f5d2d40c88f65448f2125bc77ffce5121e6e183b
-  aws-partitions (1.1257.0) sha256=03c531f40fdd979a9ae2aae70140c60e59000e6f62a60b3d6171b78cdded960c
-  aws-sdk-cloudwatch (1.138.0) sha256=43dd1f1be1ad217da395265cd497a6df02544129756a684a0bd80aaf3ad185ad
-  aws-sdk-codepipeline (1.116.0) sha256=07e0a1282b556da46749b75c2e7b741f4b72788b26e37ecd8c04b7fe9b936ec2
+  aws-partitions (1.1259.0) sha256=1a61c53f85cee1e69e4ab7946c7350b2237d724acf589023715e7117c03c18c6
+  aws-sdk-cloudwatch (1.139.0) sha256=07725a68bb3f3e9d5e4282eb990d0526a7037c2f6a0fbbc61772e483275f27c6
+  aws-sdk-codepipeline (1.117.0) sha256=8f57ad1d7155c6e2ddd67c9591c19952d0dab10402d09c8d358e4b0c2b5fc605
   aws-sdk-core (3.251.0) sha256=ef8186cb5509147e590310da58fab4c5b0901eba0e85a72955abdf772e425c87
   aws-sigv4 (1.12.1) sha256=6973ff95cb0fd0dc58ba26e90e9510a2219525d07620c8babeb70ef831826c00
   axe-core-api (4.11.3) sha256=f5f6e802743644a50e2d8ef24c22aefbb6df49dd169024ff0144b47f37e652ba
