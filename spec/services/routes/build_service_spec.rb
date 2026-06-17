@@ -205,8 +205,23 @@ RSpec.describe Routes::BuildService do
       end
     end
 
-    it "returns an empty array if the page has no next page" do
-      expect(service.options_for_goto_page(pages.third)).to be_empty
+    context "when the page has no next page" do
+      it "returns the end of the form option" do
+        expected_options = [["End of the form", "default"]]
+
+        expect(service.options_for_goto_page(pages.third)).to match_array(expected_options)
+      end
+
+      context "when there is a selected page" do
+        it "returns the selected page and end of the form options" do
+          expected_options = [
+            ["1. question 1", pages.first.id],
+            ["End of the form", "default"],
+          ]
+
+          expect(service.options_for_goto_page(pages.third, pages.first.id)).to match_array(expected_options)
+        end
+      end
     end
 
     it "returns a list of all possible goto options" do

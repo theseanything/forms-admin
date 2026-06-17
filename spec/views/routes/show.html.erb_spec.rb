@@ -171,6 +171,43 @@ describe "routes/show.html.erb" do
           end
         end
       end
+
+      context "when the routing page is the final page" do
+        let(:pages) do
+          [
+            build_stubbed(:page, id: 101),
+            build_stubbed(:page, id: 102),
+            build_stubbed(
+              :page,
+              id: 103,
+              routing_conditions: [
+                build_stubbed(
+                  :condition,
+                  routing_page_id: 103,
+                  goto_page_id: 101,
+                  answer_value: nil,
+                ),
+              ],
+            ),
+          ]
+        end
+
+        let(:routes_input) do
+          build(:routes_input, form:).assign_form_values.tap do |routes_input|
+            routes_input.routes.each { |route| allow(route).to receive(:invalid?).and_return(true) }
+          end
+        end
+
+        it "shows the selected goto page for the route" do
+          render_page
+
+          expect(rendered).to have_selector('.govuk-select[name="forms_routes_input[routes_attributes][2][goto]"]') do |field|
+            expect(field).to have_selector("option[selected]") do |option|
+              expect(option["value"]).to eq "101"
+            end
+          end
+        end
+      end
     end
 
     context "when a page is a select from a list question" do
@@ -247,7 +284,7 @@ describe "routes/show.html.erb" do
     end
   end
 
-  context "when there are not enoough pages" do
+  context "when there are not enough pages" do
     let(:pages) do
       [
         build_stubbed(:page, id: 101),

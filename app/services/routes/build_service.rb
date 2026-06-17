@@ -28,7 +28,18 @@ class Routes::BuildService
   def options_for_goto_page(page, selected = nil)
     next_page = form.next_page_after(page)
 
-    return [] unless next_page
+    # If there's no next page then it's the last page of the form.
+    # We only need options for this page if there's an error that needs correcting.
+    if next_page.nil?
+      selected_page = if selected && selected != Forms::RouteInput::DEFAULT_VALUE
+                        option_for_select(form.pages.find { |page| page.id == selected })
+                      end
+
+      return [
+        selected_page,
+        [END_OF_FORM_OPTION.first, Forms::RouteInput::DEFAULT_VALUE],
+      ].compact
+    end
 
     # Don't include the current page or pages before in the options,
     # unless the goto page for the existing condition is before the current page,
