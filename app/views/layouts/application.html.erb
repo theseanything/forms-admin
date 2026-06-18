@@ -24,7 +24,7 @@
   <%= render FeedbackLinkComponent::View.new(feedback_url: t("feedback_link.feedback_survey_url")) %>
 
   <%= govuk_footer meta_items_title: t("footer.helpful_links"), meta_items: do |footer| %>
-    <%= footer.with_meta_html do %>
+    <% footer.with_meta_html do %>
       <div class="govuk-footer__meta-custom">
         <%= t("footer.built_by_statement_html",
               link: link_to(t("footer.built_by_link"),
