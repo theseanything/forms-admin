@@ -29,6 +29,7 @@ class Reports::FormsCsvReportService
     "Submission formats",
     "Daily submissions CSV enabled",
     "Weekly submissions CSV enabled",
+    "Has Welsh translation",
     "Copy of answers enabled",
   ].freeze
 
@@ -80,6 +81,7 @@ private
       form["content"]["submission_format"]&.sort&.join(" "),
       form["content"]["send_daily_submission_batch"],
       form["content"]["send_weekly_submission_batch"],
+      Reports::FormDocumentsService.has_welsh_translation(form),
       Reports::FormDocumentsService.copy_of_answers_enabled?(form),
     ]
   end
