@@ -535,6 +535,58 @@ RSpec.describe Pages::QuestionInput, type: :model do
         end
       end
     end
+
+    context "when the original question is being changed to a selection question and has a condition" do
+      let(:answer_type) { "selection" }
+      let(:answer_settings) { { only_one_option: "true", selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }] } }
+      let!(:condition) { create(:condition, routing_page_id: page.id) }
+
+      context "when the form has multiple branches enabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: true) }
+
+        it "creates a condition for each option" do
+          expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(1).to(2)
+
+          expect(Condition.where(answer_value: "Option 1", routing_page_id: page.id).exists?).to be true
+          expect(Condition.where(answer_value: "Option 2", routing_page_id: page.id).exists?).to be true
+
+          expect(Condition.exists?(condition.id)).to be false
+        end
+
+        context "when the question is optional" do
+          let(:is_optional) { "true" }
+
+          it "creates a condition for each option and none of the above" do
+            expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(1).to(3)
+
+            expect(Condition.where(answer_value: Condition::NONE_OF_THE_ABOVE).exists?).to be true
+
+            expect(Condition.exists?(condition.id)).to be false
+          end
+        end
+
+        context "when the original condition skips to the end of the form" do
+          let!(:condition) { create(:condition, routing_page: page, skip_to_end: true) }
+
+          it "creates a condition for each option which skips to the end" do
+            expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(1).to(2)
+
+            expect(Condition.where(answer_value: "Option 1", routing_page_id: page.id, skip_to_end: true, goto_page_id: nil).exists?).to be true
+
+            expect(Condition.exists?(condition.id)).to be false
+          end
+        end
+      end
+
+      context "when the form does not have multiple branches enabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: false) }
+
+        it "does not create a condition for each option or remove the original condition" do
+          expect { question_input.update_page(page) }.not_to change { page.routing_conditions.count }.from(1)
+          expect(Condition.exists?(condition.id)).to be true
+        end
+      end
+    end
   end
 
   describe "#update_draft_question!" do

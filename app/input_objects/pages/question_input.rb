@@ -62,7 +62,10 @@ class Pages::QuestionInput < BaseInput
     page.assign_attributes(**attrs)
 
     ActiveRecord::Base.transaction do
-      remove_conditions_without_valid_answer_values(page) if draft_question.form&.group&.multiple_branches_enabled?
+      if draft_question.form&.group&.multiple_branches_enabled?
+        remove_conditions_without_valid_answer_values(page)
+        ensure_conditions_match_question_type(page)
+      end
       page.save_and_update_form
     end
   end
@@ -144,5 +147,38 @@ private
     valid_answer_values << Condition::NONE_OF_THE_ABOVE if page.is_optional
 
     page.routing_conditions.where.not(answer_value: valid_answer_values).destroy_all
+  end
+
+  def ensure_conditions_match_question_type(page)
+    if Forms::RoutesInput.route_with_selection_options?(page)
+      generic_condition = page.routing_conditions.where(answer_value: nil)&.first
+
+      return if generic_condition.nil?
+
+      attributes = if generic_condition.skip_to_end?
+                     {
+                       goto_page_id: nil,
+                       skip_to_end: true,
+                       check_page_id: page.id,
+                     }
+                   else
+                     {
+                       goto_page_id: generic_condition.goto_page_id,
+                       skip_to_end: false,
+                       check_page_id: page.id,
+                     }
+                   end
+
+      options = page.answer_settings[:selection_options].map { |option| option["value"] }
+      options << Condition::NONE_OF_THE_ABOVE if page.is_optional
+
+      options.each do |option|
+        condition_for_option = Condition.find_or_initialize_by(routing_page_id: page.id, answer_value: option)
+        condition_for_option.assign_attributes(attributes)
+        condition_for_option.save!
+      end
+
+      generic_condition.destroy!
+    end
   end
 end
