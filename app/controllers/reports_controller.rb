@@ -123,6 +123,14 @@ class ReportsController < WebController
     forms_feature_report(tag, params[:action], forms)
   end
 
+  def forms_with_copy_of_answers_enabled
+    tag = params[:tag]
+    forms = Reports::FormDocumentsService.form_documents(tag:)
+    forms = Reports::FeatureReportService.new(forms).forms_with_copy_of_answers_enabled
+
+    forms_feature_report(tag, params[:action], forms)
+  end
+
   def users
     data = Reports::UsersReportService.new.user_data
 

@@ -23,17 +23,23 @@ RSpec.describe Reports::FeatureReportService do
   let(:group) { create(:group) }
 
   let(:form_with_all_answer_types) do
-    create(:form, :live, :with_support, submission_type: "email", submission_format: %w[csv], payment_url: "https://www.gov.uk/payments/organisation/service", pages: [
-      create(:page, :with_address_settings, is_repeatable: true),
-      create(:page, :with_date_settings),
-      create(:page, answer_type: "email"),
-      create(:page, :with_full_name_settings),
-      create(:page, answer_type: "national_insurance_number"),
-      create(:page, answer_type: "number"),
-      create(:page, answer_type: "phone_number"),
-      create(:page, :with_selection_settings, is_optional: true),
-      create(:page, :with_single_line_text_settings, is_repeatable: true),
-    ])
+    create(:form, :live,
+           :with_support,
+           submission_type: "email",
+           submission_format: %w[csv],
+           payment_url: "https://www.gov.uk/payments/organisation/service",
+           send_copy_of_answers: "enabled",
+           pages: [
+             create(:page, :with_address_settings, is_repeatable: true),
+             create(:page, :with_date_settings),
+             create(:page, answer_type: "email"),
+             create(:page, :with_full_name_settings),
+             create(:page, answer_type: "national_insurance_number"),
+             create(:page, answer_type: "number"),
+             create(:page, answer_type: "phone_number"),
+             create(:page, :with_selection_settings, is_optional: true),
+             create(:page, :with_single_line_text_settings, is_repeatable: true),
+           ])
   end
   let(:form_with_a_few_answer_types) do
     create(:form,
@@ -116,6 +122,7 @@ RSpec.describe Reports::FeatureReportService do
         },
         forms_with_exit_pages: 1,
         forms_with_welsh_translation: 1,
+        forms_with_copy_of_answers_enabled: 1,
       })
     end
   end
@@ -507,6 +514,21 @@ RSpec.describe Reports::FeatureReportService do
           "form_id" => form_with_a_welsh_translation.id,
           "content" => a_hash_including(
             "name" => form_with_a_welsh_translation.name,
+          ),
+        ),
+      ]
+    end
+  end
+
+  describe "#forms_with_copy_of_answers_enabled" do
+    it "returns live forms with copy of answers enabled" do
+      forms = described_class.new(form_documents).forms_with_copy_of_answers_enabled
+      expect(forms.length).to eq 1
+      expect(forms).to match [
+        a_hash_including(
+          "form_id" => form_with_all_answer_types.id,
+          "content" => a_hash_including(
+            "name" => form_with_all_answer_types.name,
           ),
         ),
       ]

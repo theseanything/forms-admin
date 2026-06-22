@@ -1833,6 +1833,7 @@ en:
         copied_forms: "%{tag} forms that are copies"
         forms_with_add_another_answer: "%{tag} forms with add another answer"
         forms_with_branch_routes: "%{tag} forms with branch routes"
+        forms_with_copy_of_answers_enabled: "%{tag} forms that allow people to ask for a copy of their answers"
         forms_with_csv_submission_email_attachments: "%{tag} forms with CSV email attachments"
         forms_with_daily_submission_csv: "%{tag} forms getting a daily CSV of completed forms"
         forms_with_exit_pages: "%{tag} forms with exit pages"
@@ -1867,6 +1868,10 @@ en:
       download_csv: Download data about all %{tag} forms with branch routes as a CSV file
       empty: There are no %{tag} forms with branch routes
       heading: "%{tag} forms with branch routes"
+    forms_with_copy_of_answers_enabled:
+      download_csv: Download data about all %{tag} forms that allow people to ask for a copy of their answers (as a CSV)
+      empty: There are no %{tag} forms that allow people to ask for a copy of their answers
+      heading: "%{tag} forms that allow people to ask for a copy of their answers"
     forms_with_csv_submission_email_attachments:
       download_csv: Download data about all %{tag} forms with CSV submission email attachments enabled (as a CSV)
       empty: There are no %{tag} forms with CSV submission email attachments enabled

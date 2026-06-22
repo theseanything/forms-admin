@@ -265,6 +265,7 @@ Rails.application.routes.draw do
       get "forms-with-s3-submissions", to: "reports#forms_with_s3_submissions", as: :report_forms_with_s3_submissions
       get "forms-with-exit-pages", to: "reports#forms_with_exit_pages", as: :report_forms_with_exit_pages
       get "forms-with-welsh-translation", to: "reports#forms_with_welsh_translation", as: :report_forms_with_welsh_translation
+      get "forms-with-copy-of-answers-enabled", to: "reports#forms_with_copy_of_answers_enabled", as: :report_forms_with_copy_of_answers_enabled
       get "selection-questions-summary", to: "reports#selection_questions_summary", as: :report_selection_questions_summary
       get "selection-questions-with-autocomplete", to: "reports#selection_questions_with_autocomplete", as: :report_selection_questions_with_autocomplete
       get "selection-questions-with-radios", to: "reports#selection_questions_with_radios", as: :report_selection_questions_with_radios
