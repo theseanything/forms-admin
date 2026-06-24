@@ -61,7 +61,10 @@ class Pages::QuestionInput < BaseInput
 
     page.assign_attributes(**attrs)
 
-    page.save_and_update_form
+    ActiveRecord::Base.transaction do
+      remove_conditions_without_valid_answer_values(page) if draft_question.form&.group&.multiple_branches_enabled?
+      page.save_and_update_form
+    end
   end
 
   def update_draft_question!
@@ -132,5 +135,14 @@ private
     end
 
     answer_settings_cloned
+  end
+
+  def remove_conditions_without_valid_answer_values(page)
+    return unless Forms::RoutesInput.route_with_selection_options?(page)
+
+    valid_answer_values = page.answer_settings[:selection_options].map { it[:value] }
+    valid_answer_values << Condition::NONE_OF_THE_ABOVE if page.is_optional
+
+    page.routing_conditions.where.not(answer_value: valid_answer_values).destroy_all
   end
 end

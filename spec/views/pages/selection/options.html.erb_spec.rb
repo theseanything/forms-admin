@@ -11,6 +11,7 @@ describe "pages/selection/options.html.erb", type: :view do
   let(:include_none_of_the_above) { "yes" }
   let(:only_one_option) { "true" }
   let(:draft_question) { build :draft_question, answer_type: "selection", answer_settings: { only_one_option: } }
+  let(:banner_content) { nil }
 
   before do
     # # mock the form.page_number method
@@ -19,6 +20,7 @@ describe "pages/selection/options.html.erb", type: :view do
     # # mock the path helper
     without_partial_double_verification do
       allow(view).to receive_messages(form_pages_path: "/pages", current_form: form)
+      allow(view).to receive(:selection_options_in_routes_banner).and_return(banner_content)
     end
 
     # # setup instance variables
@@ -167,6 +169,23 @@ describe "pages/selection/options.html.erb", type: :view do
         expect(rendered).to have_unchecked_field("pages_selection_options_input[include_none_of_the_above]", with: "no")
         expect(rendered).to have_unchecked_field("pages_selection_options_input[include_none_of_the_above]", with: "yes")
         expect(rendered).to have_unchecked_field("pages_selection_options_input[include_none_of_the_above]", with: "yes_with_question")
+      end
+    end
+
+    context "when is selection_options_in_routes_banner returns a banner shows it" do
+      let(:banner_content) { nil }
+
+      it "doesn't render the banner" do
+        expect(rendered).not_to have_css(".govuk-notification-banner")
+      end
+
+      context "when there is a single option which is none of the above" do
+        let(:banner_content) { { heading: "There is a route from ‘None of the above’", text: "If you remove ‘None of the above’, the route will be deleted. View your question routes" } }
+
+        it "renders the banner" do
+          expect(rendered).to have_css(".govuk-notification-banner")
+          expect(rendered).to have_css(".govuk-notification-banner__heading", text: "There is a route from ‘None of the above’")
+        end
       end
     end
   end

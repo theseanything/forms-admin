@@ -2,14 +2,15 @@ require "rails_helper"
 
 describe "pages/selection/bulk_options.html.erb", type: :view do
   let(:form) { create :form }
-  let(:page) { create :page, :with_selection_settings, answer_settings: }
-  let(:bulk_options_input) { build :bulk_options_input, draft_question: page, include_none_of_the_above: }
+  let(:draft_question) { build :draft_question, answer_type: "selection", answer_settings: }
+  let(:bulk_options_input) { build :bulk_options_input, draft_question:, include_none_of_the_above: }
   let(:include_none_of_the_above) { "yes" }
   let(:answer_settings) { DataStruct.new(only_one_option:, selection_options:) }
   let(:only_one_option) { "true" }
   let(:selection_options) { [] }
   let(:page_number) { 1 }
   let(:back_link_url) { "/a-back-link-url" }
+  let(:banner_content) { nil }
 
   before do
     form.reload
@@ -20,12 +21,14 @@ describe "pages/selection/bulk_options.html.erb", type: :view do
     # # mock the path helper
     without_partial_double_verification do
       allow(view).to receive_messages(form_pages_path: "/type-of-answer", current_form: form)
+      allow(view).to receive(:selection_options_in_routes_banner).and_return(banner_content)
     end
 
     # # setup instance variables
     @bulk_options_input = bulk_options_input
     @bulk_options_path = selection_bulk_options_create_path(form.id)
     @back_link_url = back_link_url
+    @draft_question = draft_question
   end
 
   context "when there are no errors" do
@@ -138,6 +141,23 @@ describe "pages/selection/bulk_options.html.erb", type: :view do
           expect(rendered).to have_unchecked_field("pages_selection_bulk_options_input[include_none_of_the_above]", with: "no")
           expect(rendered).to have_unchecked_field("pages_selection_bulk_options_input[include_none_of_the_above]", with: "yes")
           expect(rendered).to have_unchecked_field("pages_selection_bulk_options_input[include_none_of_the_above]", with: "yes_with_question")
+        end
+      end
+    end
+
+    context "when is selection_options_in_routes_banner returns a banner shows it" do
+      let(:banner_content) { nil }
+
+      it "doesn't render the banner" do
+        expect(rendered).not_to have_css(".govuk-notification-banner")
+      end
+
+      context "when there is a single option which is none of the above" do
+        let(:banner_content) { { heading: "There is a route from ‘None of the above’", text: "If you remove ‘None of the above’, the route will be deleted. View your question routes" } }
+
+        it "renders the banner" do
+          expect(rendered).to have_css(".govuk-notification-banner")
+          expect(rendered).to have_css(".govuk-notification-banner__heading", text: "There is a route from ‘None of the above’")
         end
       end
     end

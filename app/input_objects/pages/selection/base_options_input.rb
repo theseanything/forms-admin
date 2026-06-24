@@ -10,7 +10,6 @@ class Pages::Selection::BaseOptionsInput < BaseInput
   def submit
     return false if invalid?
 
-    is_optional = include_none_of_the_above != "no"
     draft_question.assign_attributes(answer_settings:, is_optional:)
 
     success = draft_question.save!
@@ -35,8 +34,6 @@ class Pages::Selection::BaseOptionsInput < BaseInput
     only_one_option? ? MAXIMUM_CHOOSE_ONLY_ONE_OPTION : MAXIMUM_CHOOSE_MORE_THAN_ONE_OPTION
   end
 
-private
-
   def selected_none_of_the_above_option(draft_question)
     return nil if draft_question.is_optional.nil?
     return "no" unless draft_question.is_optional
@@ -44,6 +41,16 @@ private
 
     "yes"
   end
+
+  def is_optional
+    include_none_of_the_above != "no"
+  end
+
+  def selection_options_with_value
+    selection_options.map { |option| { name: option[:name], value: option[:name] } }
+  end
+
+private
 
   def maximum_error_type
     only_one_option? ? :maximum_choose_only_one_option : :maximum_choose_more_than_one_option
@@ -71,9 +78,5 @@ private
       options_count: selection_options.length,
       only_one_option: only_one_option?,
     )
-  end
-
-  def selection_options_with_value
-    selection_options.map { |option| { name: option[:name], value: option[:name] } }
   end
 end

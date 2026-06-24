@@ -6,6 +6,16 @@
   <div class="govuk-grid-column-two-thirds">
     <%= form_with model: [current_form, @bulk_options_input], url: @bulk_options_path do |f| %>
       <%= f.govuk_error_summary %>
+
+      <% banner_content = selection_options_in_routes_banner(@draft_question, @bulk_options_input.selection_options_with_value, @bulk_options_input.is_optional, option_indexes: :answer_value) %>
+
+      <% if banner_content %>
+        <%= govuk_notification_banner(title_text: t("banner.default.title")) do |banner| %>
+          <% banner.with_heading(text: banner_content[:heading]) %>
+          <p> <%= banner_content[:text].html_safe %> </p>
+        <% end %>
+      <% end %>
+
       <span class="govuk-caption-l"><%= t("pages.question") %> <%= current_form.page_number(@page) %></span>
       <h1 class="govuk-heading-l"><%= t("page_titles.bulk_options") %></h1>
 
