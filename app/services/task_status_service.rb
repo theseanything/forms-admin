@@ -36,6 +36,8 @@ class TaskStatusService
       batch_submissions_status:,
       share_preview_status:,
       make_live_status:,
+      make_only_english_live_status:,
+      make_only_welsh_live_status:,
       welsh_language_status:,
       submission_email_status:,
       confirm_submission_email_status:,
@@ -137,6 +139,20 @@ private
     return :not_started if @form.has_been_archived
 
     :completed if @form.has_live_version
+  end
+
+  def make_only_english_live_status
+    return :completed if @form.has_live_version && !@form.changed_from_live_version?(language: "en")
+    return :not_started if @form.can_make_language_live?(language: "en")
+
+    :cannot_start
+  end
+
+  def make_only_welsh_live_status
+    return :not_started if @form.can_make_language_live?(language: "cy")
+    return :completed if @form.live_welsh_form_document.present?
+
+    :cannot_start
   end
 
   def make_live_status_for_draft

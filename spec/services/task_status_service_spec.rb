@@ -9,6 +9,10 @@ describe TaskStatusService do
 
   let(:current_user) { build(:user, role: :standard) }
 
+  before do
+    form.set_task_status_service(task_status_service)
+  end
+
   describe "statuses" do
     describe "name status" do
       let(:form) { build(:form, :new_form, :with_group, group:) }
@@ -391,6 +395,143 @@ describe TaskStatusService do
         end
       end
     end
+
+    describe "make_only_english_live_status" do
+      let(:can_make_english_live) { false }
+      let(:can_make_welsh_live) { false }
+      let(:changed_from_live_version) { false }
+
+      let(:form) { build(:form, :with_group, group:) }
+
+      before do
+        allow(form).to receive(:can_make_language_live?).with(language: "en").and_return(can_make_english_live)
+        allow(form).to receive(:changed_from_live_version?).with(language: "en").and_return(changed_from_live_version)
+        allow(form).to receive(:can_make_language_live?).with(language: "cy").and_return(can_make_welsh_live)
+      end
+
+      context "with a new form" do
+        let(:form) { build(:form, :new_form, :with_group, group:) }
+
+        it "returns the correct default value" do
+          expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+        end
+      end
+
+      context "when the English version can be made live" do
+        let(:can_make_english_live) { true }
+
+        it "returns not started" do
+          expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :not_started
+        end
+      end
+
+      context "when the English version cannot be made live" do
+        let(:can_make_english_live) { false }
+
+        context "when the form is live" do
+          let(:form) { build(:form, :live, :with_group, group:) }
+
+          it "returns completed" do
+            expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :completed
+          end
+        end
+
+        context "when the form is live with draft" do
+          let(:form) { build(:form, :live_with_draft, :with_group, group:) }
+
+          context "when there are changes from the English form document" do
+            let(:changed_from_live_version) { true }
+
+            it "returns cannot_start" do
+              expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+            end
+          end
+
+          context "when there are no changes from the English form document" do
+            let(:changed_from_live_version) { false }
+
+            it "returns completed" do
+              expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :completed
+            end
+          end
+        end
+
+        context "when the form is a draft" do
+          let(:form) { build(:form, :ready_for_live, :with_group, group:) }
+
+          it "returns cannot_start" do
+            expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+          end
+        end
+
+        context "when the form is archived" do
+          let(:form) { build(:form, :archived, :with_group, group:) }
+
+          it "returns cannot_start" do
+            expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+          end
+        end
+
+        context "when the form is archived with draft" do
+          let(:form) { build(:form, :archived_with_draft, :with_group, group:) }
+
+          it "returns cannot_start" do
+            expect(task_status_service.all_task_statuses[:make_only_english_live_status]).to eq :cannot_start
+          end
+        end
+      end
+    end
+
+    describe "make_only_welsh_live_status" do
+      let(:can_make_english_live) { true }
+      let(:can_make_welsh_live) { false }
+
+      let(:form) { build(:form, :with_group, group:) }
+
+      before do
+        allow(form).to receive(:can_make_language_live?).with(language: "en").and_return(can_make_english_live)
+        allow(form).to receive(:can_make_language_live?).with(language: "cy").and_return(can_make_welsh_live)
+      end
+
+      context "with a new form" do
+        let(:form) { build(:form, :new_form, :with_group, group:) }
+
+        it "returns the correct default value" do
+          expect(task_status_service.all_task_statuses[:make_only_welsh_live_status]).to eq :cannot_start
+        end
+      end
+
+      context "when the Welsh version can be made live" do
+        let(:can_make_welsh_live) { true }
+
+        it "returns not started" do
+          expect(task_status_service.all_task_statuses[:make_only_welsh_live_status]).to eq :not_started
+        end
+      end
+
+      context "when the Welsh version cannot be made live" do
+        let(:can_make_welsh_live) { false }
+        let(:welsh_form_document) { build(:form_document, :live, form:, language: "cy", content: form.as_form_document) }
+
+        before do
+          allow(form).to receive(:live_welsh_form_document).and_return(welsh_form_document)
+        end
+
+        context "when the form already has a live Welsh version" do
+          it "returns completed" do
+            expect(task_status_service.all_task_statuses[:make_only_welsh_live_status]).to eq :completed
+          end
+        end
+
+        context "when the form does not have a live Welsh version" do
+          let(:welsh_form_document) { nil }
+
+          it "returns cannot start" do
+            expect(task_status_service.all_task_statuses[:make_only_welsh_live_status]).to eq :cannot_start
+          end
+        end
+      end
+    end
   end
 
   describe "#mandatory_tasks_completed" do
@@ -537,6 +678,8 @@ describe TaskStatusService do
         share_preview_status: :completed,
         submission_email_status: :completed,
         confirm_submission_email_status: :completed,
+        make_only_english_live_status: :completed,
+        make_only_welsh_live_status: :cannot_start,
       }
       expect(task_status_service.all_task_statuses).to eq expected_hash
     end

@@ -118,7 +118,7 @@ RSpec.describe FormStateMachine do
       end
 
       it "transitions to live state" do
-        expect(form).to transition_from(form_state).to(:live).on_event(:make_english_version_live)
+        expect(form).to transition_from(form_state).to(:live_with_draft).on_event(:make_english_version_live)
       end
 
       it "calls the before_make_english_live callback" do

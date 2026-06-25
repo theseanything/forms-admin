@@ -73,7 +73,7 @@ module FormStateMachine
         before :before_make_english_live
         after :after_make_english_live
 
-        transitions from: %i[draft live live_with_draft archived_with_draft], to: :live, guard: :can_make_english_version_live?
+        transitions from: %i[draft live live_with_draft archived_with_draft], to: :live_with_draft, guard: :can_make_english_version_live?
       end
 
       event :make_welsh_version_live do

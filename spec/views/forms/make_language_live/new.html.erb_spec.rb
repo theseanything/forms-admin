@@ -15,22 +15,24 @@ describe "forms/make_language_live/new.html.erb" do
 
   context "when there are no errors" do
     before do
-      render template: "forms/make_language_live/new", locals: { current_form:, language: }
+      render template: "forms/make_language_live/new", locals: { current_form:, language:, page_title:, page_body: }
     end
 
     context "when the language being made live is English" do
       let(:language) { "en" }
+      let(:page_title) { t("page_titles.make_language_live.en") }
+      let(:page_body) { t("make_language_live.en.new.body_html", submission_email: current_form.submission_email) }
 
       it "has the correct page title" do
-        expect(view.content_for(:title)).to eq t("page_titles.make_language_live.en")
+        expect(view.content_for(:title)).to eq page_title
       end
 
       it "contains a heading" do
-        expect(rendered).to have_css("h1", text: t("page_titles.make_language_live.en"))
+        expect(rendered).to have_css("h1", text: page_title)
       end
 
       it "contains the body text" do
-        expect(rendered).to include(t("make_language_live.en.new.body_html", submission_email: current_form.submission_email))
+        expect(rendered).to include page_body
       end
 
       it "renders radio buttons for making the draft changes live" do
@@ -46,17 +48,19 @@ describe "forms/make_language_live/new.html.erb" do
 
     context "when the language being made live is Welsh" do
       let(:language) { "cy" }
+      let(:page_title) { t("page_titles.make_language_live.cy") }
+      let(:page_body) { t("make_language_live.cy.new.body_html", submission_email: current_form.submission_email) }
 
       it "has the correct page title" do
-        expect(view.content_for(:title)).to eq t("page_titles.make_language_live.cy")
+        expect(view.content_for(:title)).to eq page_title
       end
 
       it "contains a heading" do
-        expect(rendered).to have_css("h1", text: t("page_titles.make_language_live.cy"))
+        expect(rendered).to have_css("h1", text: page_title)
       end
 
       it "contains the body text" do
-        expect(rendered).to include(t("make_language_live.cy.new.body_html", submission_email: current_form.submission_email))
+        expect(rendered).to include page_body
       end
 
       it "renders radio buttons for making the draft changes live" do
@@ -76,11 +80,13 @@ describe "forms/make_language_live/new.html.erb" do
       make_language_live_input.errors.add(:confirm, "An error")
 
       assign(:make_language_live_input, make_language_live_input)
-      render template: "forms/make_language_live/new", locals: { current_form:, language: }
+      render template: "forms/make_language_live/new", locals: { current_form:, language:, page_title:, page_body: }
     end
 
     context "when the language being made live is English" do
       let(:language) { "en" }
+      let(:page_title) { t("page_titles.make_language_live.en") }
+      let(:page_body) { t("make_language_live.en.new.body_html", submission_email: current_form.submission_email) }
 
       it "displays the error summary" do
         expect(rendered).to have_selector(".govuk-error-summary")
@@ -91,12 +97,14 @@ describe "forms/make_language_live/new.html.erb" do
       end
 
       it "sets the page title with error prefix" do
-        expect(view.content_for(:title)).to eq(title_with_error_prefix(t("page_titles.make_language_live.en"), true))
+        expect(view.content_for(:title)).to eq(title_with_error_prefix(page_title, true))
       end
     end
 
     context "when the language being made live is Welsh" do
       let(:language) { "cy" }
+      let(:page_title) { t("page_titles.make_language_live.cy") }
+      let(:page_body) { t("make_language_live.cy.new.body_html", submission_email: current_form.submission_email) }
 
       it "displays the error summary" do
         expect(rendered).to have_selector(".govuk-error-summary")
@@ -107,7 +115,7 @@ describe "forms/make_language_live/new.html.erb" do
       end
 
       it "sets the page title with error prefix" do
-        expect(view.content_for(:title)).to eq(title_with_error_prefix(t("page_titles.make_language_live.cy"), true))
+        expect(view.content_for(:title)).to eq(title_with_error_prefix(page_title, true))
       end
     end
   end
