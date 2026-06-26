@@ -81,15 +81,26 @@ describe "pages/selection/type.html.erb", type: :view do
 
         context "when a routing condition is set" do
           let(:routing_conditions) { [build(:condition)] }
+          let(:show_routing_warning) { true }
 
           context "when the options will not need to be reduced" do
             before do
-              allow(selection_type_input).to receive(:need_to_reduce_options?).and_return false
+              allow(selection_type_input).to receive_messages(need_to_reduce_options?: false, show_routing_warning?: show_routing_warning)
               render(template: "pages/selection/type")
             end
 
-            it "displays a warning about routes being deleted" do
-              expect(rendered).to have_selector(".govuk-notification-banner__content", text: I18n.t("selection_type.routing_warning"))
+            context "when show_routing_warning returns true" do
+              it "displays a warning about routes being deleted" do
+                expect(rendered).to have_selector(".govuk-notification-banner__content", text: I18n.t("selection_type.routing_warning"))
+              end
+            end
+
+            context "when show_routing_warning returns false" do
+              let(:show_routing_warning) { false }
+
+              it "does not display a warning about routes being deleted" do
+                expect(rendered).not_to have_selector(".govuk-notification-banner__content")
+              end
             end
           end
 
