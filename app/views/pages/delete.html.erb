@@ -5,16 +5,26 @@
   <div class="govuk-grid-column-two-thirds">
 
     <% unless @delete_confirmation_input.errors.any? %>
-      <% if @routing.present? %>
-        <%= govuk_notification_banner(title_text: "Important") do |banner|
-          banner.with_heading(text: t(".notification_banner.#{@routing}.heading_text", question_number: @page.position), tag: :h3)
+      <% if FeatureService.new(group: current_form.group).enabled?(:multiple_branches) %>
+        <% if @routing.present? %>
+          <%= govuk_notification_banner(title_text: "Important") do |banner|
+            banner.with_heading(text: @routing_banner_heading, tag: :h3)
+            
+            @routing_banner_html
+          end %>
+        <% end %>
+      <% else %>
+        <% if @routing.present? %>
+          <%= govuk_notification_banner(title_text: "Important") do |banner|
+            banner.with_heading(text: t(".notification_banner.#{@routing}.heading_text", question_number: @page.position), tag: :h3)
 
-          t(
-            ".notification_banner.#{@routing}.html",
-            route_page_question_number: @route_page.position,
-            show_routes_href: show_routes_path(current_form.id, @route_page.id),
-          )
-        end %>
+            t(
+              ".notification_banner.#{@routing}.html",
+              route_page_question_number: @route_page.position,
+              show_routes_href: show_routes_path(current_form.id, @route_page.id),
+            )
+          end %>
+        <% end %>
       <% end %>
     <% end %>
 

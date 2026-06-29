@@ -18,7 +18,14 @@ class PagesController < FormsController
 
     @page_goto_conditions = page.goto_conditions
 
-    if page.routing_conditions.any? && page.routing_conditions.first.secondary_skip?
+    if FeatureService.new(group: current_form.group).enabled?(:multiple_branches)
+      @page_conditions = page.routing_conditions
+      @routing = @page_conditions + @page_goto_conditions
+      if @routing.present?
+        @routing_banner_heading = routing_banner_heading(@page_conditions, @page_goto_conditions)
+        @routing_banner_html = routing_banner_html(@page_conditions, @page_goto_conditions)
+      end
+    elsif page.routing_conditions.any? && page.routing_conditions.first.secondary_skip?
       @routing = :start_of_secondary_skip_route
 
       # route page is condition check page
@@ -39,7 +46,6 @@ class PagesController < FormsController
       # route page is condition routing page
       @route_page = @page_goto_conditions.first.routing_page
     end
-
     @delete_confirmation_input = Pages::DeleteConfirmationInput.new
 
     render locals: { current_form: }
@@ -181,5 +187,25 @@ private
     end
 
     CurrentLoggingAttributes.validation_errors = errors.map { |error| "PageList: #{error}" } if errors.any?
+  end
+
+  def routing_banner_heading(page_conditions, goto_conditions)
+    if page_conditions.present? && goto_conditions.present?
+      t("pages.delete.routing_and_goto_heading", question_number: page.position)
+    elsif page_conditions.present?
+      t("pages.delete.routing_heading", question_number: page.position, count: page_conditions.count)
+    elsif goto_conditions.present?
+      t("pages.delete.goto_heading", question_number: page.position, count: goto_conditions.count)
+    end
+  end
+
+  def routing_banner_html(page_conditions, goto_conditions)
+    if page_conditions.present? && goto_conditions.present?
+      t("pages.delete.routing_and_goto_html", routes_href: routes_path(current_form.id))
+    elsif page_conditions.present?
+      t("pages.delete.routing_html", question_number: page.position, count: page_conditions.count, routes_href: routes_path(current_form.id))
+    elsif goto_conditions.present?
+      t("pages.delete.goto_html", question_number: page.position, count: goto_conditions.count, routes_href: routes_path(current_form.id))
+    end
   end
 end

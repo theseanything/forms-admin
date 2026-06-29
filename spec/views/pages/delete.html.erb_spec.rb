@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "pages/delete" do
+RSpec.describe "pages/delete", feature_multiple_branches: false do
   let(:delete_confirmation_input) { Forms::DeleteConfirmationInput.new }
   let(:current_form) { create :form }
   let(:page) { create :page, form: current_form }
@@ -192,6 +192,40 @@ RSpec.describe "pages/delete" do
 
       it "does not render the notification banner" do
         expect(rendered).not_to have_css ".govuk-notification-banner"
+      end
+    end
+  end
+
+  context "when multiple_branches is enabled", :feature_multiple_branches do
+    context "when page to delete is not associated with any routes" do
+      before do
+        assign(:routing, [])
+      end
+
+      it "does not render a notification banner" do
+        expect(rendered).not_to have_css ".govuk-notification-banner"
+      end
+    end
+
+    context "when the page to delete is associated with a route" do
+      before do
+        assign(:routing, ["a route"])
+        assign(:routing_banner_heading, "Question 1 has a route")
+        assign(:routing_banner_html, "<p class=\"govuk-body\">If you delete this question, its route will also be deleted.</p>".html_safe)
+
+        render locals: { current_form: }
+      end
+
+      it "renders a notification banner" do
+        expect(rendered).to have_css ".govuk-notification-banner"
+      end
+
+      describe "notification banner" do
+        subject(:banner) { rendered.html.at_css(".govuk-notification-banner") }
+
+        it { is_expected.to have_text "Important" }
+        it { is_expected.to have_css "h3.govuk-notification-banner__heading", text: "Question 1 has a route", count: 1 }
+        it { is_expected.to have_css "p.govuk-body", text: "If you delete this question, its route will also be deleted." }
       end
     end
   end
