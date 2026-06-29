@@ -35,4 +35,25 @@ RSpec.describe ExitPage, type: :model do
       expect(question_page.exit_pages).to eq([exit_page])
     end
   end
+
+  describe "translations" do
+    let!(:question_page) { create(:page) }
+    let!(:exit_page) { create(:exit_page, question_page:) }
+
+    it "can set and read translated attributes for :en and :cy locales" do
+      exit_page.heading = "English heading"
+      exit_page.markdown = "English markdown"
+
+      exit_page.heading_cy = "Welsh heading"
+      exit_page.markdown_cy = "Welsh markdown"
+      exit_page.save!
+
+      exit_page.reload
+      expect(exit_page.heading).to eq("English heading")
+      expect(exit_page.heading_cy).to eq("Welsh heading")
+
+      expect(exit_page.markdown).to eq("English markdown")
+      expect(exit_page.markdown_cy).to eq("Welsh markdown")
+    end
+  end
 end

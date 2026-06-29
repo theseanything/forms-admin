@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_26_145112) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_29_121653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -69,6 +69,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_145112) do
     t.bigint "user_id", null: false
     t.index ["form_id"], name: "index_draft_questions_on_form_id"
     t.index ["user_id"], name: "index_draft_questions_on_user_id"
+  end
+
+  create_table "exit_page_translations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "exit_page_id", null: false
+    t.text "heading"
+    t.string "locale", null: false
+    t.text "markdown"
+    t.datetime "updated_at", null: false
+    t.index ["exit_page_id", "locale"], name: "index_exit_page_translations_on_exit_page_id_and_locale", unique: true
+    t.index ["locale"], name: "index_exit_page_translations_on_locale"
   end
 
   create_table "exit_pages", force: :cascade do |t|
@@ -307,6 +318,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_145112) do
   add_foreign_key "create_form_events", "groups", on_delete: :cascade
   add_foreign_key "create_form_events", "users", on_delete: :cascade
   add_foreign_key "draft_questions", "users"
+  add_foreign_key "exit_page_translations", "exit_pages"
   add_foreign_key "exit_pages", "pages", column: "question_page_id", on_delete: :cascade
   add_foreign_key "form_documents", "forms"
   add_foreign_key "form_translations", "forms"
