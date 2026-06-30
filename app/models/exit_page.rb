@@ -6,4 +6,12 @@ class ExitPage < ApplicationRecord
   validates :markdown, presence: true
 
   translates :heading, :markdown
+
+  def as_form_document_exit_page
+    {
+      "id" => id,
+      "heading" => heading,
+      "markdown" => markdown,
+    }
+  end
 end

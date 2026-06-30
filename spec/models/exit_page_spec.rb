@@ -56,4 +56,17 @@ RSpec.describe ExitPage, type: :model do
       expect(exit_page.markdown_cy).to eq("Welsh markdown")
     end
   end
+
+  describe "#as_form_document_exit_page" do
+    let!(:question_page) { create(:page) }
+    let!(:exit_page) { create(:exit_page, question_page:) }
+
+    it "returns a hash" do
+      expect(exit_page.as_form_document_exit_page).to be_a(Hash)
+    end
+
+    it "returns the exit page attributes" do
+      expect(exit_page.as_form_document_exit_page).to match a_hash_including("id" => exit_page.id, "heading" => exit_page.heading, "markdown" => exit_page.markdown)
+    end
+  end
 end
