@@ -752,6 +752,10 @@ RSpec.describe Page, type: :model do
       expect(page.as_form_document_step(second_page)["data"]).to match a_hash_including(*page_attributes)
     end
 
+    it "includes exit_pages as an array" do
+      expect(page.as_form_document_step(second_page)["exit_pages"]).to be_a(Array)
+    end
+
     context "when there are conditions associated with the page" do
       let!(:condition) { create :condition, routing_page_id: page.id, check_page_id: page.id }
 
@@ -763,6 +767,18 @@ RSpec.describe Page, type: :model do
     context "when the provided next_page is nil" do
       it "has nil next_step_id" do
         expect(page.as_form_document_step(nil)["next_step_id"]).to be_nil
+      end
+    end
+
+    context "when the page has an ExitPage" do
+      let!(:exit_page) { create :exit_page, question_page: page }
+
+      before do
+        create(:condition, routing_page_id: page.id, check_page_id: page.id, exit_page:)
+      end
+
+      it "includes the exit page" do
+        expect(page.reload.as_form_document_step(second_page)["exit_pages"].first).to match a_hash_including("id" => exit_page.id, "markdown" => exit_page.markdown, "heading" => exit_page.heading)
       end
     end
   end

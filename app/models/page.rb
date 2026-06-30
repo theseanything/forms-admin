@@ -112,6 +112,7 @@ class Page < ApplicationRecord
       "type" => "question",
       "data" => slice(*%w[question_text hint_text answer_type is_optional answer_settings page_heading guidance_markdown is_repeatable]),
       "routing_conditions" => routing_conditions.map(&:as_form_document_condition),
+      "exit_pages" => exit_pages.map(&:as_form_document_exit_page),
     }
   end
 
