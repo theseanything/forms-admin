@@ -54,10 +54,15 @@ class Page < ApplicationRecord
   def save_and_update_form
     return true unless has_changes_to_save?
 
-    save!
-    form.save_question_changes!
-    check_conditions.destroy_all if answer_type_changed_from_selection_only_one_option
-    check_conditions.destroy_all if answer_settings_changed_from_only_one_option
+    ActiveRecord::Base.transaction do
+      save!
+      form.save_question_changes!
+
+      if answer_type_changed_from_selection_only_one_option || answer_settings_changed_from_only_one_option
+        exit_pages.destroy_all
+        check_conditions.destroy_all
+      end
+    end
 
     true
   end
