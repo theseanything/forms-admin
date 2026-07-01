@@ -521,6 +521,16 @@ RSpec.describe Page, type: :model do
           expect(page.reload.check_conditions).not_to be_empty
         end
       end
+
+      context "when the answer type changes from selection with more than one option" do
+        subject(:page) { create :page, :selection_with_checkboxes, form:, routing_conditions:, check_conditions: }
+
+        it "does not delete any conditions" do
+          page.answer_type = "number"
+          page.save_and_update_form
+          expect(page.reload.check_conditions).not_to be_empty
+        end
+      end
     end
   end
 
