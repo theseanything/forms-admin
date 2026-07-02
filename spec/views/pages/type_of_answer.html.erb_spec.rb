@@ -66,20 +66,25 @@ describe "pages/type_of_answer.html.erb", type: :view do
     expect(rendered).not_to have_selector(".govuk-notification-banner__content")
   end
 
-  context "when editing an existing" do
-    let(:page) { OpenStruct.new(routing_conditions:, answer_type:) }
+  context "when editing an existing select one option question with a route set" do
+    let(:page) { OpenStruct.new(routing_conditions:, answer_type:, answer_settings:) }
+    let(:answer_settings) { OpenStruct.new(only_one_option: "true") }
     let(:answer_type) { "selection" }
     let(:routing_conditions) { [build(:condition)] }
 
     it "displays a warning about routes being deleted if answer type changes" do
-      expect(Capybara.string(rendered.html).find(".govuk-notification-banner__content").text(normalize_ws: true))
-        .to include(Capybara.string(I18n.t("type_of_answer.routing_warning_about_change_answer_type_html", pages_link_url: form_pages_path(form)))
-                        .text(normalize_ws: true))
+      expect(Capybara.string(rendered.html).find(".govuk-notification-banner__heading").text(normalize_ws: true))
+        .to include(Capybara.string(I18n.t("type_of_answer.routing_warning_changing_from_one_option_heading", count: 1))
+          .text(normalize_ws: true))
     end
 
-    context "when multiple branches are enabled", :feature_multiple_branches do
-      it "does not display a warning about routes being deleted if answer type changes" do
-        expect(rendered).not_to have_selector(".govuk-notification-banner__content")
+    context "with multiple routes set" do
+      let(:routing_conditions) { [build(:condition), build(:condition)] }
+
+      it "displays a warning about routes being deleted if answer type changes" do
+        expect(Capybara.string(rendered.html).find(".govuk-notification-banner__heading").text(normalize_ws: true))
+          .to include(Capybara.string(I18n.t("type_of_answer.routing_warning_changing_from_one_option_heading", count: 2))
+            .text(normalize_ws: true))
       end
     end
 

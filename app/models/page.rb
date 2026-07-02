@@ -54,7 +54,7 @@ class Page < ApplicationRecord
 
     save!
     form.save_question_changes!
-    check_conditions.destroy_all if answer_type_changed_from_selection
+    check_conditions.destroy_all if answer_type_changed_from_selection_only_one_option
     check_conditions.destroy_all if answer_settings_changed_from_only_one_option
 
     true
@@ -79,8 +79,8 @@ class Page < ApplicationRecord
     next_page.present?
   end
 
-  def answer_type_changed_from_selection
-    answer_type_previously_was&.to_sym == :selection && answer_type&.to_sym != :selection
+  def answer_type_changed_from_selection_only_one_option
+    answer_type_previously_was&.to_sym == :selection && answer_type&.to_sym != :selection && answer_settings_previously_was.only_one_option == "true"
   end
 
   def answer_settings_changed_from_only_one_option
