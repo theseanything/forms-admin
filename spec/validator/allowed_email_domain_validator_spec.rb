@@ -22,6 +22,21 @@ RSpec.describe AllowedEmailDomainValidator do
     expect(model).to be_valid
   end
 
+  it "validates email with .gov.scot" do
+    model.email = "test.gov.scot"
+    expect(model).to be_valid
+  end
+
+  it "validates email with .gov.wales" do
+    model.email = "test.gov.wales"
+    expect(model).to be_valid
+  end
+
+  it "validates email with .mod.uk" do
+    model.email = "test.mod.uk"
+    expect(model).to be_valid
+  end
+
   it "does not validate any non-govuk email" do
     model.email = "test@example.com"
     expect(model).to be_invalid

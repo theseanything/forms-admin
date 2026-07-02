@@ -1,7 +1,13 @@
 class AllowedEmailDomainValidator < ActiveModel::EachValidator
+  ALLOWED_SUBDOMAIN_REGEXES = [/\.gov\.uk\z/i,
+                               /\.gov\.scot\z/i,
+                               /\.gov\.wales\z/i,
+                               /\.mod\.uk\z/i].freeze
+
   def validate_each(record, attribute, value)
     if value.present?
-      return if value =~ /\.gov\.uk\z/i
+
+      return if ALLOWED_SUBDOMAIN_REGEXES.any? { it.match?(value) }
 
       # TODO: we might not want to check against current user domain
       # when we have a proper allow list?
