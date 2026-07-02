@@ -649,7 +649,19 @@ RSpec.describe Condition, type: :model do
           { "name" => "cannot_route_to_next_page" },
         ],
         "has_routing_errors" => true,
+        "exit_page_id" => nil,
       })
+    end
+
+    context "when the condition has an ExitPage" do
+      let(:exit_page) { create :exit_page, question_page: check_page }
+      let(:condition) { create :condition, exit_page_id: exit_page.id, routing_page_id: check_page.id }
+
+      it "includes the exit_page_id" do
+        expect(condition.as_json).to include({
+          "exit_page_id" => condition.exit_page.id,
+        })
+      end
     end
   end
 
@@ -675,6 +687,7 @@ RSpec.describe Condition, type: :model do
         "validation_errors" => [
           { "name" => "answer_value_doesnt_exist" },
         ],
+        "exit_page_id" => nil,
       })
     end
   end

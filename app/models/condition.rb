@@ -102,12 +102,11 @@ class Condition < ApplicationRecord
   def as_json(options = {})
     super(options.reverse_merge(
       methods: %i[validation_errors has_routing_errors],
-      except: %i[exit_page_id],
     ))
   end
 
   def as_form_document_condition
-    data = as_json(methods: %i[validation_errors], except: %i[exit_page_id])
+    data = as_json(methods: %i[validation_errors])
     data.merge(
       "routing_page_id" => routing_page&.external_id,
       "check_page_id" => check_page&.external_id,
