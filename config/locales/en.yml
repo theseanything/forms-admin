@@ -2024,7 +2024,7 @@ en:
       draft: draft
       live: live
       live-or-archived: live or archived
-    users:
+    users_per_organisation:
       heading: Number of users per organisation
       table_headings:
         organisation_name: Organisation
