@@ -5,6 +5,7 @@ class Organisation < ApplicationRecord
   has_many :users
 
   has_many :mou_signatures
+  has_many :organisation_domains, dependent: :destroy
 
   scope :not_closed, -> { where(closed: false) }
   scope :with_users, -> { joins(:users).distinct.order(:name) }

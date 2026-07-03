@@ -171,6 +171,12 @@ en:
             agreed:
               crown: You must agree to the memorandum of understanding
               non_crown: You must agree to the agreement to continue
+        organisation_domain:
+          attributes:
+            domain:
+              blank: Enter a domain name
+              invalid_domain: Enter a domain name in the correct format, like subdomain.gov.uk
+              taken: This domain name is already in use
         page:
           attributes:
             hint_text:
