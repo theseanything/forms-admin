@@ -245,6 +245,8 @@ en:
           daily_enabled: You’ll get a daily batch of form submissions
           disabled: You will not get a daily or weekly batch of form submissions
           weekly_enabled: You’ll get a weekly batch of form submissions
+        brand_removed: Your form will use the default GOV.UK brand
+        brand_saved: Your form’s brand has been saved
         change_name: Your form name has been saved
         copied: Your form has been copied
         copy_of_answers_disabled: People will not have the option to ask for a copy of their answers
@@ -273,6 +275,12 @@ en:
       route_updated: Question %{question_number}’s route has been updated
       secondary_skip_created: Route for any other answer has been added
       title: Success
+  brand_input:
+    body_html: |
+      <p>You can choose a brand to change how your form looks to people filling it in, for example, the logo and colours.</p>
+
+      <p>If you do not choose a brand, your form will use the default GOV.UK brand.</p>
+    heading: Choose a brand for your form
   bulk_options:
     hint: Enter each option on a new line
     label: Enter the options for your list
@@ -1590,6 +1598,7 @@ en:
     archive_form_confirm: Archive this form
     archive_form_confirmation: Your form has been archived
     archive_welsh_confirm: Archive the Welsh version of this form
+    brand: Choose a brand for your form
     bulk_options: Enter your list’s options into a text box
     change_name: Name your form
     change_order_pages_added_error: Sorry, we could not save the new question order
