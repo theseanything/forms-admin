@@ -1,6 +1,4 @@
 class User < ApplicationRecord
-  include GDS::SSO::User
-
   class UserAuthenticationException < StandardError; end
 
   EMAIL_DOMAIN_DENYLIST = [
@@ -83,18 +81,11 @@ class User < ApplicationRecord
     self.has_access = false if organisation_restricted_access?
   end
 
-  def self.find_for_gds_oauth(auth_hash)
-    find_for_auth(
-      provider: auth_hash["provider"],
-      uid: auth_hash["uid"],
-      email: auth_hash["info"]["email"],
-      name: auth_hash["info"]["name"],
-      permissions: auth_hash["extra"]["user"]["permissions"].to_a,
-      organisation_slug: auth_hash["extra"]["user"]["organisation_slug"],
-      organisation_content_id: auth_hash["extra"]["user"]["organisation_content_id"],
-      disabled: auth_hash["extra"]["user"]["disabled"],
-    )
-  end
+  # We need to keep this method until the GDS SSO gem is removed.
+  # The gem adds a Warden::Manager.after_authentication block
+  # on loading which calls this method after sign-in.
+  # When the gem is removed, this method will be deleted.
+  def clear_remotely_signed_out!; end
 
   def self.find_for_auth(attributes)
     user = where(provider: attributes[:provider], uid: attributes[:uid]).first ||

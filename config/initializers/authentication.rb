@@ -74,7 +74,7 @@ Warden::Manager.serialize_from_session do |(uid, auth_timestamp)|
   end
 
   if auth_timestamp && ((auth_timestamp + Settings.auth_valid_for) > Time.zone.now.utc)
-    User.where(uid:, remotely_signed_out: false).first
+    User.where(uid:).first
   end
 end
 
