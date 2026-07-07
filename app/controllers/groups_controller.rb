@@ -82,6 +82,8 @@ class GroupsController < WebController
 
     @group.assign_attributes(group_params)
 
+    authorize @group, :move? if @group.organisation_id_changed?
+
     if @group.active?
       success_message = t("groups.success_messages.update") if @group.changed.include?("name")
       success_message = t("groups.success_messages.move", org_name: @group.organisation.name) if @group.changed.include?("organisation_id")

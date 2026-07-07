@@ -377,6 +377,51 @@ RSpec.describe "/groups", type: :request do
         expect(response).to have_http_status :not_found
       end
     end
+
+    context "when the parameters include a different organisation_id" do
+      let(:other_organisation) { create :organisation, slug: "other-org" }
+
+      context "when user is a group admin of the group" do
+        let(:role) { :group_admin }
+
+        it "is forbidden" do
+          patch group_url(member_group), params: { group: { organisation_id: other_organisation.id } }
+          expect(response).to have_http_status(:forbidden)
+        end
+
+        it "does not change the group's organisation" do
+          expect {
+            patch group_url(member_group), params: { group: { organisation_id: other_organisation.id } }
+          }.not_to(change { member_group.reload.organisation_id })
+        end
+      end
+
+      context "when user is an organisation admin for the group's organisation" do
+        let(:current_user) { organisation_admin_user }
+
+        it "is forbidden" do
+          patch group_url(member_group), params: { group: { organisation_id: other_organisation.id } }
+          expect(response).to have_http_status(:forbidden)
+        end
+
+        it "does not change the group's organisation" do
+          expect {
+            patch group_url(member_group), params: { group: { organisation_id: other_organisation.id } }
+          }.not_to(change { member_group.reload.organisation_id })
+        end
+      end
+
+      context "when user is a super admin" do
+        before do
+          login_as_super_admin_user
+        end
+
+        it "moves the group to the other organisation" do
+          patch group_url(member_group), params: { group: { organisation_id: other_organisation.id } }
+          expect(member_group.reload.organisation_id).to eq(other_organisation.id)
+        end
+      end
+    end
   end
 
   describe "GET /move" do
