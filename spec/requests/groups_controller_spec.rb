@@ -448,6 +448,86 @@ RSpec.describe "/groups", type: :request do
     end
   end
 
+  describe "GET /feature-flags" do
+    let(:group) { create(:group) }
+
+    context "when user is not a super admin" do
+      it "is forbidden" do
+        get feature_flags_group_path(group)
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when user is a super admin" do
+      before do
+        login_as_super_admin_user
+      end
+
+      it "is allowed" do
+        get feature_flags_group_path(group)
+
+        expect(response).to have_http_status(:ok)
+        expect(response).to render_template(:feature_flags)
+      end
+    end
+  end
+
+  describe "POST /feature-flags" do
+    let(:feature_flag) { Group.feature_flag_attributes.first }
+    let(:feature_name) { feature_flag.delete_suffix("_enabled") }
+    let(:group) { create(:group, feature_flag => false) }
+
+    before do
+      skip "no group feature flags are configured" if Group.feature_flag_attributes.empty?
+    end
+
+    context "when user is not a super admin" do
+      it "is forbidden and does not change the flag" do
+        post feature_flags_group_path(group), params: { group: { feature_flag => "true" } }
+
+        expect(response).to have_http_status(:forbidden)
+        expect(group.reload[feature_flag]).to be(false)
+      end
+    end
+
+    context "when user is a super admin" do
+      before do
+        login_as_super_admin_user
+      end
+
+      it "enables a feature flag and redirects to the group" do
+        post feature_flags_group_path(group), params: { group: { feature_flag => "true" } }
+
+        expect(group.reload[feature_flag]).to be(true)
+        expect(FeatureService.new(group:).enabled?(feature_name)).to be(true)
+        expect(response).to redirect_to(group_path(group))
+      end
+
+      it "does not turn an enabled feature flag off" do
+        group.update!(feature_flag => true)
+
+        post feature_flags_group_path(group), params: { group: { feature_flag => "false" } }
+
+        expect(group.reload[feature_flag]).to be(true)
+        expect(FeatureService.new(group:).enabled?(feature_name)).to be(true)
+      end
+
+      it "leaves an enabled flag on while enabling another" do
+        skip "fewer than two group feature flags are configured" if Group.feature_flag_attributes.size < 2
+
+        other_feature_flag = Group.feature_flag_attributes.second
+        group.update!(feature_flag => true)
+
+        post feature_flags_group_path(group), params: { group: { feature_flag => "false", other_feature_flag => "true" } }
+
+        group.reload
+        expect(group[feature_flag]).to be(true)
+        expect(group[other_feature_flag]).to be(true)
+      end
+    end
+  end
+
   describe "GET /delete" do
     let!(:group) { create :group }
 

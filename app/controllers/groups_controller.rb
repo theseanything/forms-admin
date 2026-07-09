@@ -105,6 +105,28 @@ class GroupsController < WebController
     render :move
   end
 
+  # GET /groups/1/feature-flags
+  def feature_flags
+    authorize @group, :manage_feature_flags?
+  end
+
+  # POST /groups/1/feature-flags
+  def update_feature_flags
+    authorize @group, :manage_feature_flags?
+
+    # Feature flags can only be switched on, never off. Enabling a feature can change
+    # a group's forms or data in ways that would need to be manually reversed before
+    # it is safe to disable, so we only ever turn flags on here.
+    flags_to_enable = feature_flag_params.select { |_attr, value| ActiveModel::Type::Boolean.new.cast(value) }
+    @group.assign_attributes(flags_to_enable.transform_values { true })
+
+    if @group.save
+      redirect_to @group, success: t("groups.success_messages.feature_flags"), status: :see_other
+    else
+      render :feature_flags, status: :unprocessable_content
+    end
+  end
+
   # GET /groups/1/delete
   def delete
     authorize @group
@@ -199,6 +221,10 @@ private
   # Only allow a list of trusted parameters through.
   def group_params
     params.require(:group).permit(:name, :organisation_id)
+  end
+
+  def feature_flag_params
+    params.require(:group).permit(*Group.feature_flag_attributes)
   end
 
   def confirm_upgrade_input_params

@@ -240,6 +240,9 @@ Rails.application.routes.draw do
       get "delete", to: "groups#delete"
       get "move", to: "groups#move"
 
+      get "feature-flags", to: "groups#feature_flags"
+      post "feature-flags", to: "groups#update_feature_flags"
+
       get "upgrade", to: "groups#confirm_upgrade"
       post "upgrade", to: "groups#upgrade"
 

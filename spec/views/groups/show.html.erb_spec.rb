@@ -12,6 +12,7 @@ RSpec.describe "groups/show", type: :view do
   let(:edit?) { true }
   let(:move?) { false }
   let(:delete?) { false }
+  let(:manage_feature_flags?) { false }
   let(:request_upgrade?) { false }
   let(:review_upgrade?) { false }
 
@@ -29,6 +30,7 @@ RSpec.describe "groups/show", type: :view do
                                       edit?: edit?,
                                       delete?: delete?,
                                       move?: move?,
+                                      manage_feature_flags?: manage_feature_flags?,
                                       request_upgrade?: request_upgrade?,
                                       review_upgrade?: review_upgrade?)
 
@@ -71,6 +73,22 @@ RSpec.describe "groups/show", type: :view do
 
     it "has a link to move the group" do
       expect(rendered).to have_link("Move this group to another organisation")
+    end
+  end
+
+  context "when the user has permission to manage feature flags" do
+    let(:manage_feature_flags?) { true }
+
+    it "has a link to manage feature flags" do
+      expect(rendered).to have_link("Manage feature flags for this group", href: feature_flags_group_path(group))
+    end
+  end
+
+  context "when the user does not have permission to manage feature flags" do
+    let(:manage_feature_flags?) { false }
+
+    it "does not have a link to manage feature flags" do
+      expect(rendered).not_to have_link("Manage feature flags for this group")
     end
   end
 
