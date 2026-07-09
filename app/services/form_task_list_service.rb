@@ -64,8 +64,10 @@ private
   def create_form_optional_subsection
     rows = [
       { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.payment_link"), path: payment_link_path(@form.id), status: @task_statuses[:payment_link_status] },
-      { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.brand"), path: brand_path(@form.id), status: @task_statuses[:brand_status] },
     ]
+    if FeatureService.new(group: @form.group).enabled?(:custom_branding)
+      rows << { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.brand"), path: brand_path(@form.id), status: @task_statuses[:brand_status] }
+    end
     if FeatureService.new(group: @form.group).enabled?(:send_filler_answers)
       rows << { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.copy_of_answers"), path: copy_of_answers_path(@form.id), status: @task_statuses[:copy_of_answers_status] }
     end

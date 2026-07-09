@@ -6,9 +6,10 @@ describe FormTaskListService do
   let(:organisation) { build :organisation, :with_signed_mou, id: 1 }
   let(:form) { create(:form, :new_form, pages:) }
   let(:pages) { [] }
-  let(:group) { create(:group, name: "Group 1", organisation:, status: group_status, send_filler_answers_enabled:) }
+  let(:group) { create(:group, name: "Group 1", organisation:, status: group_status, send_filler_answers_enabled:, custom_branding_enabled:) }
   let(:group_status) { :trial }
   let(:send_filler_answers_enabled) { true }
+  let(:custom_branding_enabled) { true }
 
   let(:can_view_form) { true }
   let(:can_make_form_live) { false }
@@ -156,9 +157,19 @@ describe FormTaskListService do
         expect(section_rows.first[:path]).to eq "/forms/#{form.id}/payment-link"
       end
 
-      it "has link to brand settings" do
-        expect(section_rows[1][:task_name]).to eq "Choose a brand for your form"
-        expect(section_rows[1][:path]).to eq "/forms/#{form.id}/brand"
+      context "when the custom_branding feature is enabled" do
+        it "has link to brand settings" do
+          expect(section_rows[1][:task_name]).to eq "Choose a brand for your form"
+          expect(section_rows[1][:path]).to eq "/forms/#{form.id}/brand"
+        end
+      end
+
+      context "when the custom_branding feature is disabled" do
+        let(:custom_branding_enabled) { false }
+
+        it "does not have link to brand settings" do
+          expect(section_rows.map { |row| row[:path] }).not_to include("/forms/#{form.id}/brand")
+        end
       end
 
       context "when the send_filler_answers feature is enabled" do
