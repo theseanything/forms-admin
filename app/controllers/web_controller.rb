@@ -46,7 +46,7 @@ class WebController < ApplicationController
   end
 
   def user_signed_in
-    warden && warden.authenticated? && !warden.user.remotely_signed_out?
+    warden && warden.authenticated?
   end
 
   def current_user
@@ -99,7 +99,7 @@ private
   end
 
   def auth_strategy_permitted?
-    return true if %w[mock_gds_sso developer].include? Settings.auth_provider
+    return true if %w[mock_user developer].include? Settings.auth_provider
 
     @current_user.super_admin? ? PRIVILEGED_AUTH0_CONNECTION_STRATEGIES.include?(warden.session["auth0_connection_strategy"]) : true
   end

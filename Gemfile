@@ -13,7 +13,6 @@ gem "pg", "~> 1.6"
 gem "puma", "~> 8.0.2"
 
 # Used for handling authentication
-gem "gds-sso"
 gem "omniauth-auth0"
 gem "omniauth-rails_csrf_protection"
 gem "warden"

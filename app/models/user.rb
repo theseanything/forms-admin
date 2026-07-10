@@ -1,5 +1,6 @@
 class User < ApplicationRecord
-  include GDS::SSO::User
+  # TODO: Drop this column in a future migration
+  self.ignored_columns += [:remotely_signed_out]
 
   class UserAuthenticationException < StandardError; end
 
@@ -81,19 +82,6 @@ class User < ApplicationRecord
 
   before_create do
     self.has_access = false if organisation_restricted_access?
-  end
-
-  def self.find_for_gds_oauth(auth_hash)
-    find_for_auth(
-      provider: auth_hash["provider"],
-      uid: auth_hash["uid"],
-      email: auth_hash["info"]["email"],
-      name: auth_hash["info"]["name"],
-      permissions: auth_hash["extra"]["user"]["permissions"].to_a,
-      organisation_slug: auth_hash["extra"]["user"]["organisation_slug"],
-      organisation_content_id: auth_hash["extra"]["user"]["organisation_content_id"],
-      disabled: auth_hash["extra"]["user"]["disabled"],
-    )
   end
 
   def self.find_for_auth(attributes)

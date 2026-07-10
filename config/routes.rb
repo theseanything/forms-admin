@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   get "/sign-up" => "authentication#sign_up", as: :sign_up
   get "/sign-out" => "authentication#sign_out", as: :sign_out
   get "/sign-in" => "authentication#sign_in", as: :sign_in
+  get "/auth/failure" => "authentication#failure", as: :auth_failure
 
   scope "auth/:provider" do
     match "/callback" => "authentication#callback_from_omniauth", via: %i[get post]

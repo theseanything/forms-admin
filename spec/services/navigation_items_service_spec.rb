@@ -3,7 +3,7 @@ require "rails_helper"
 describe NavigationItemsService do
   include Rails.application.routes.url_helpers
 
-  let!(:provider) { :gds }
+  let!(:provider) { :auth0 }
   let!(:user) { build(:user, provider:) }
   let!(:service) { described_class.new(user:) }
   let(:support_url) { "http://localhost:3002/support" }
@@ -70,20 +70,6 @@ describe NavigationItemsService do
         it "includes reports in navigation items" do
           reports_item = NavigationItemsService::NavigationItem.new(text: I18n.t("header.reports"), href: reports_path, active: false)
           expect(service.navigation_items).to include(reports_item)
-        end
-      end
-
-      context "when user has provider gds" do
-        let(:provider) { :gds }
-
-        it "includes correct profile in navigation items" do
-          profile_item = NavigationItemsService::NavigationItem.new(text: user.name, href: GDS::SSO::Config.oauth_root_url, active: false, classes: ["app-service-navigation__item--featured"])
-          expect(service.navigation_items).to include(profile_item)
-        end
-
-        it "includes correct signout in navigation items" do
-          signout_item = NavigationItemsService::NavigationItem.new(text: I18n.t("header.sign_out"), href: gds_sign_out_path, active: false)
-          expect(service.navigation_items).to include(signout_item)
         end
       end
 

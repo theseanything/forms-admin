@@ -25,7 +25,7 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
                                 name: "A User",
                                 role: :super_admin,
                                 uid: "123456",
-                                provider: :mock_gds_sso,
+                                provider: :mock_user,
                                 terms_agreed_at: Time.zone.now,
                                 research_contact_status: :consented,
                                 user_research_opted_in_at: Time.zone.now })
