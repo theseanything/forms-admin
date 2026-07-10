@@ -12,10 +12,10 @@ GIT
 
 GIT
   remote: https://github.com/govuk-forms/govuk-forms-markdown.git
-  revision: 84c6b2296accca578e7b77e7d1730472d9c9e7af
-  tag: 0.9.0
+  revision: f331c34c6d7da94644175ac98cd109bfd0697eba
+  tag: 0.12.0
   specs:
-    govuk-forms-markdown (0.9.0)
+    govuk-forms-markdown (0.12.0)
       redcarpet (~> 3.6)
 
 GEM
@@ -906,7 +906,7 @@ CHECKSUMS
   google-protobuf (4.35.0-x86_64-linux-musl) sha256=be0218520d77b2aee898b363514b03819f6f63f9c041ae0d0d79b4ce5247bffd
   googleapis-common-protos-types (1.23.0) sha256=992e740a523794d9fc5f29a504465d8fc737aaa16c930fe7228e3346860faf0a
   govuk-components (6.4.0) sha256=3bb3cdc1b48f2124ceadb86b82c90e07eb12caa761d9bd8b022572a9d60c495f
-  govuk-forms-markdown (0.9.0)
+  govuk-forms-markdown (0.12.0)
   govuk_design_system_formbuilder (6.3.0) sha256=6389f3d13f4ee5cd59bce3aa4889e279a7c3fb7003096d408cf7dc9b330fbe72
   govuk_notify_rails (3.0.0) sha256=e0e1b8b0a7c47f90963034f290fb2982652aa8051a733c25c178680d44f2d7aa
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
