@@ -1479,6 +1479,7 @@ en:
           hint: Select MOU or agreement status
           label: Agreement type
           none: No agreement signed
+          signed: Any agreement signed
         clear_filter: Clear filter
         name:
           hint: Enter name or abbreviation

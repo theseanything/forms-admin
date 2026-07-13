@@ -24,6 +24,8 @@ class Organisation < ApplicationRecord
       where(id: MouSignature.crown.select(:organisation_id))
     when "non_crown"
       where(id: MouSignature.non_crown.select(:organisation_id))
+    when "signed"
+      where(id: MouSignature.select(:organisation_id))
     when "none"
       where.missing(:mou_signatures)
     end

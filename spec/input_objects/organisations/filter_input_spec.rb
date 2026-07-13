@@ -43,6 +43,7 @@ RSpec.describe Organisations::FilterInput, type: :model do
         OpenStruct.new(label: I18n.t("organisations.index.filter.agreement_type.any")),
         OpenStruct.new(label: I18n.t("mou_signatures.index.agreement_type.crown"), value: "crown"),
         OpenStruct.new(label: I18n.t("mou_signatures.index.agreement_type.non_crown"), value: "non_crown"),
+        OpenStruct.new(label: I18n.t("organisations.index.filter.agreement_type.signed"), value: "signed"),
         OpenStruct.new(label: I18n.t("organisations.index.filter.agreement_type.none"), value: "none"),
       ])
     end

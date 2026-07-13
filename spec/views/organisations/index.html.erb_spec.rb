@@ -35,6 +35,7 @@ describe "organisations/index.html.erb" do
       I18n.t("organisations.index.filter.agreement_type.any"),
       I18n.t("mou_signatures.index.agreement_type.crown"),
       I18n.t("mou_signatures.index.agreement_type.non_crown"),
+      I18n.t("organisations.index.filter.agreement_type.signed"),
       I18n.t("organisations.index.filter.agreement_type.none"),
     ])
     expect(rendered).to have_button(I18n.t("organisations.index.filter.submit"))

@@ -89,6 +89,10 @@ RSpec.describe Organisation, type: :model do
         expect(described_class.by_agreement_type("non_crown")).to contain_exactly(organisation_with_non_crown_agreement)
       end
 
+      it "returns organisations with any signed agreement when signed" do
+        expect(described_class.by_agreement_type("signed")).to contain_exactly(organisation_with_crown_mou, organisation_with_non_crown_agreement)
+      end
+
       it "returns organisations without a signed agreement when none" do
         expect(described_class.by_agreement_type("none")).to contain_exactly(organisation_without_agreement)
       end
