@@ -108,19 +108,17 @@ class GroupsController < WebController
   # GET /groups/1/feature-flags
   def feature_flags
     authorize @group, :manage_feature_flags?
+
+    @feature_flags_input = Groups::FeatureFlagsInput.new(group: @group).assign_group_values
   end
 
   # POST /groups/1/feature-flags
   def update_feature_flags
     authorize @group, :manage_feature_flags?
 
-    # Feature flags can only be switched on, never off. Enabling a feature can change
-    # a group's forms or data in ways that would need to be manually reversed before
-    # it is safe to disable, so we only ever turn flags on here.
-    flags_to_enable = feature_flag_params.select { |_attr, value| ActiveModel::Type::Boolean.new.cast(value) }
-    @group.assign_attributes(flags_to_enable.transform_values { true })
+    @feature_flags_input = Groups::FeatureFlagsInput.new(feature_flags_input_params)
 
-    if @group.save
+    if @feature_flags_input.submit
       redirect_to @group, success: t("groups.success_messages.feature_flags"), status: :see_other
     else
       render :feature_flags, status: :unprocessable_content
@@ -223,8 +221,10 @@ private
     params.require(:group).permit(:name, :organisation_id)
   end
 
-  def feature_flag_params
-    params.require(:group).permit(*Group.feature_flag_attributes)
+  def feature_flags_input_params
+    # When every flag is already enabled the form has no enabled inputs, so the
+    # input params may be missing entirely.
+    params.fetch(:groups_feature_flags_input, {}).permit(*Group.feature_flag_attributes).merge(group: @group)
   end
 
   def confirm_upgrade_input_params

@@ -1,10 +1,10 @@
-<% set_page_title(title_with_error_prefix(t(".title"), @group.errors.any?)) %>
+<% set_page_title(title_with_error_prefix(t(".title"), @feature_flags_input.errors.any?)) %>
 <% content_for :back_link, govuk_back_link_to(@group, t("back_link.group", group_name: @group.name)) %>
 
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
-    <%= form_with(model: @group, url: feature_flags_group_path(@group), method: :post) do |f| %>
-      <% if @group.errors.any? %>
+    <%= form_with(model: @feature_flags_input, url: feature_flags_group_path(@group)) do |f| %>
+      <% if @feature_flags_input.errors.any? %>
         <%= f.govuk_error_summary %>
       <% end %>
 
