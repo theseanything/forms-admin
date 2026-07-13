@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   get "/sign-up" => "authentication#sign_up", as: :sign_up
   get "/sign-out" => "authentication#sign_out", as: :sign_out
   get "/sign-in" => "authentication#sign_in", as: :sign_in
+  get "/auth/failure" => "authentication#failure", as: :auth_failure
 
   scope "auth/:provider" do
     match "/callback" => "authentication#callback_from_omniauth", via: %i[get post]
@@ -70,6 +71,8 @@ Rails.application.routes.draw do
     post "/declaration-preview" => "forms/declaration#render_preview", as: :declaration_render_preview
     get "/payment-link" => "forms/payment_link#new", as: :payment_link
     post "/payment-link" => "forms/payment_link#create", as: :payment_link_create
+    get "/brand" => "forms/brand#new", as: :brand
+    post "/brand" => "forms/brand#create", as: :brand_create
     get "/share-preview" => "forms/share_preview#new", as: :share_preview
     post "/share-preview" => "forms/share_preview#create", as: :share_preview_create
     get "/welsh-translation" => "forms/welsh_translation#new", as: :welsh_translation
@@ -214,6 +217,8 @@ Rails.application.routes.draw do
 
   resources :mou_signatures, only: %i[index], path: "mous"
 
+  resources :organisations, only: %i[index show]
+
   resource :mou_signature, only: %i[new show create], path: "/memorandum-of-understanding", defaults: { agreement_type: :crown }, as: :mou_signature do
     get "/signed", to: "mou_signatures#confirmation", as: :confirmation
   end
@@ -234,6 +239,9 @@ Rails.application.routes.draw do
     member do
       get "delete", to: "groups#delete"
       get "move", to: "groups#move"
+
+      get "feature-flags", to: "groups#feature_flags"
+      post "feature-flags", to: "groups#update_feature_flags"
 
       get "upgrade", to: "groups#confirm_upgrade"
       post "upgrade", to: "groups#upgrade"
@@ -265,6 +273,7 @@ Rails.application.routes.draw do
       get "forms-with-s3-submissions", to: "reports#forms_with_s3_submissions", as: :report_forms_with_s3_submissions
       get "forms-with-exit-pages", to: "reports#forms_with_exit_pages", as: :report_forms_with_exit_pages
       get "forms-with-welsh-translation", to: "reports#forms_with_welsh_translation", as: :report_forms_with_welsh_translation
+      get "forms-with-copy-of-answers-enabled", to: "reports#forms_with_copy_of_answers_enabled", as: :report_forms_with_copy_of_answers_enabled
       get "selection-questions-summary", to: "reports#selection_questions_summary", as: :report_selection_questions_summary
       get "selection-questions-with-autocomplete", to: "reports#selection_questions_with_autocomplete", as: :report_selection_questions_with_autocomplete
       get "selection-questions-with-radios", to: "reports#selection_questions_with_radios", as: :report_selection_questions_with_radios
@@ -272,13 +281,13 @@ Rails.application.routes.draw do
       get "selection-questions-with-none-of-the-above", to: "reports#selection_questions_with_none_of_the_above", as: :report_selection_questions_with_none_of_the_above
     end
 
-    get "users", to: "reports#users", as: :report_users
     get "add_another_answer", to: "reports#add_another_answer", as: :report_add_another_answer
     get "last-signed-in-at", to: "reports#last_signed_in_at", as: :report_last_signed_in_at
-    get "csv-downloads", to: "reports#csv_downloads", as: :report_csv_downloads
     get "live-forms-csv", to: "reports#live_forms_csv", as: :report_live_forms_csv
     get "live-questions-csv", to: "reports#live_questions_csv", as: :report_live_questions_csv
     get "contact-for-research", to: "reports#contact_for_research", as: :report_contact_for_research
+    get "users-per-organisation", to: "reports#users_per_organisation", as: :report_users_per_organisation
+    get "organisation-email-domains", to: "reports#organisation_domains", as: :report_organisation_domains
   end
 
   scope "api/v2", as: "api_v2" do

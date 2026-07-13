@@ -2,16 +2,26 @@
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     <h1 class="govuk-heading-l"><%= t(".title") %></h1>
-    <ul class="govuk-list">
-      <li><%= govuk_link_to t("reports.add_another_answer.title"), report_add_another_answer_path %></li>
-      <li><%= govuk_link_to t("reports.features.title", tag: tag_label("live")), report_features_path(tag: :live) %></li>
+    <p><%= t(".feature_and_answer_type_usage") %></p>
+    <ul class="govuk-list govuk-list--bullet">
       <li><%= govuk_link_to t("reports.features.title", tag: tag_label("live-or-archived")), report_features_path(tag: 'live-or-archived') %></li>
+      <li><%= govuk_link_to t("reports.features.title", tag: tag_label("live")), report_features_path(tag: :live) %></li>
       <li><%= govuk_link_to t("reports.features.title", tag: tag_label("draft")), report_features_path(tag: :draft) %></li>
-      <li><%= govuk_link_to t("reports.selection_questions_summary.title", tag: tag_label("live")), report_selection_questions_summary_path(tag: :live) %></li>
-      <li><%= govuk_link_to t("reports.users.title"), report_users_path %></li>
+    </ul>
+    <p><%= t(".download_form_data_as_a_csv_file") %></p>
+    <ul class="govuk-list govuk-list--bullet">
+      <li><%= govuk_link_to t("reports.csv_downloads.forms"), report_live_forms_csv_path, no_visited_state: true %></li>
+      <li><%= govuk_link_to t("reports.csv_downloads.questions"), report_live_questions_csv_path, no_visited_state: true %></li>
+    </ul>
+    <p><%= t(".user_reports") %></p>
+    <ul class="govuk-list govuk-list--bullet">
       <li><%= govuk_link_to t("reports.last_signed_in_at.title"), report_last_signed_in_at_path %></li>
-      <li><%= govuk_link_to t("reports.csv_downloads.title"), report_csv_downloads_path %></li>
       <li><%= govuk_link_to t("reports.contact_for_research.title"), report_contact_for_research_path %></li>
+    </ul>
+    <p><%= t(".organisation_reports") %></p>
+    <ul class="govuk-list govuk-list--bullet">
+      <li><%= govuk_link_to t("reports.users_per_organisation.title"), report_users_per_organisation_path %></li>
+      <li><%= govuk_link_to t("reports.organisation_domains.title"), report_organisation_domains_path %></li>
     </ul>
   </div>
 </div>

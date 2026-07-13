@@ -1,6 +1,42 @@
 module FormStateMachine
   extend ActiveSupport::Concern
 
+  # delete_form destroys the form rather than just changing its state, and the
+  # language-specific live events publish only one translation, so a path
+  # between states must never fire them
+  EXCLUDED_EVENTS = %i[delete_form make_english_version_live make_welsh_version_live].freeze
+
+  class_methods do
+    # Breadth-first search of the state machine for the shortest sequence of
+    # events that takes a form from one state to another, so that all event
+    # callbacks run along the way. Returns an array of event names to fire in
+    # order, an empty array if the form is already in the target state, or nil
+    # if no sequence of events reaches it. Event guards such as
+    # all_ready_for_live? are not evaluated here; they are only checked when
+    # the events are fired.
+    def event_path(from:, to:)
+      event_paths = { from => [] }
+      queue = [from]
+
+      while (state = queue.shift)
+        return event_paths[state] if state == to
+
+        aasm.events.each do |event|
+          next if EXCLUDED_EVENTS.include?(event.name)
+
+          event.transitions_from_state(state).each do |transition|
+            next if event_paths.key?(transition.to)
+
+            event_paths[transition.to] = event_paths[state] + [event.name]
+            queue << transition.to
+          end
+        end
+      end
+
+      nil
+    end
+  end
+
   included do
     include AASM
 
@@ -37,7 +73,7 @@ module FormStateMachine
         before :before_make_english_live
         after :after_make_english_live
 
-        transitions from: %i[draft live live_with_draft archived_with_draft], to: :live, guard: :can_make_english_version_live?
+        transitions from: %i[draft live live_with_draft archived_with_draft], to: :live_with_draft, guard: :can_make_english_version_live?
       end
 
       event :make_welsh_version_live do

@@ -99,6 +99,8 @@ class PageListComponent::PageListComponentPreview < ViewComponent::Preview
       (build :page, id: 5, position: 5, question_text: "What is your favourite colour?", routing_conditions: []),
     ]
 
+    pages.define_singleton_method(:ids) { map(&:id) }
+
     form = build(:form, :with_group, id: 1, pages:)
     form.group.multiple_branches_enabled = true
 

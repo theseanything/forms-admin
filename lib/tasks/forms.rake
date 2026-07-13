@@ -25,6 +25,35 @@ namespace :forms do
     end
   end
 
+  desc "set the state for a form by transitioning through the form state machine"
+  task :set_state, %i[form_id state] => :environment do |_, args|
+    usage_message = "usage: rake forms:set_state[<form_id>, <state>]".freeze
+    abort usage_message if args[:form_id].blank? || args[:state].blank?
+    abort "state must be one of #{Form.states.keys.join(', ')}" unless Form.states.key?(args[:state])
+
+    form = Form.find(args[:form_id])
+
+    # the make_live event guard checks the form's task statuses through a
+    # service that is normally injected by the controller
+    form.set_task_status_service(TaskStatusService.new(form:, current_user: nil))
+
+    events = Form.event_path(from: form.aasm.current_state, to: args[:state].to_sym)
+
+    abort "cannot transition form from \'#{form.state}\' to \'#{args[:state]}\'" if events.nil?
+
+    if events.empty?
+      Rails.logger.info "forms:set_state: #{fmt_form(form)} is already in state \'#{form.state}\'"
+      next
+    end
+
+    ActiveRecord::Base.transaction do
+      events.each do |event|
+        Rails.logger.info "forms:set_state: firing #{event} on #{fmt_form(form)} in state \'#{form.state}\'"
+        form.public_send(:"#{event}!")
+      end
+    end
+  end
+
   namespace :submission_email do
     desc "set the submission email for a form, without validation"
     task :update, %i[form_id submission_email] => :environment do |_, args|

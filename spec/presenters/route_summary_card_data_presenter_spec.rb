@@ -46,6 +46,19 @@ describe RouteSummaryCardDataPresenter do
       end
     end
 
+    context "when the condition is for the none of the above answer" do
+      before do
+        page.update!(is_optional: true)
+        create :condition, routing_page_id: page.id, check_page_id: page.id, goto_page_id: pages.last.id, answer_value: Condition::NONE_OF_THE_ABOVE
+        pages.each(&:reload)
+      end
+
+      it "includes 'None of the above'" do
+        result = service.summary_card_data
+        expect(result[0][:rows][0][:value][:text]).to eq "None of the above"
+      end
+    end
+
     context "when the condition has an exit page data" do
       let!(:condition) { create :condition, :with_exit_page, routing_page_id: page.id, check_page_id: page.id, answer_value: "Option 1" }
 

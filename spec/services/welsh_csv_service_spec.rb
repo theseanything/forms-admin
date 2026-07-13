@@ -269,9 +269,9 @@ RSpec.describe "WelshCsvService" do
                         ["Question 1 - question or label if ‘None of the above’ is selected", "None of the above question?", "Welsh None of the above question?"],
                         ["Question 1 - exit page heading", "Exit page heading", "Welsh exit page heading"],
                         ["Question 1 - exit page content", "Exit page markdown", "Welsh exit page markdown"],
-                        ["Question 2 - question text", "What?", "Welsh What?"],
                         ["Question 2 - page heading", "Page heading", "Welsh Page heading"],
                         ["Question 2 - guidance text", "This is the guidance.", "Welsh This is the guidance."],
+                        ["Question 2 - question text", "What?", "Welsh What?"],
                         ["Declaration", "Declaration text", ""],
                         ["Information about what happens next", "English what happens next", "Welsh what happens next"],
                         ["GOV⁠.⁠UK Pay payment link", "https://www.gov.uk/payment", "https://www.gov.uk/payment_cy"],
@@ -280,7 +280,7 @@ RSpec.describe "WelshCsvService" do
                         ["Contact details for support - phone number and opening times", "English support phone", "Welsh support phone"],
                         ["Contact details for support - online contact link", "https://www.gov.uk/support", "https://www.gov.uk/support_cy"],
                         ["Contact details for support - online contact link text", "Support URL text", "Welsh Support URL text"]]
-        expect(csv).to match_array(expected_csv)
+        expect(csv).to eq(expected_csv)
       end
     end
   end

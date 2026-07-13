@@ -36,11 +36,6 @@ RSpec.describe Routes::BuildService do
           expect(route_for_page1.goto).to eq(Forms::RouteInput::DEFAULT_VALUE)
         end
 
-        it "sets the label correctly for a generic page" do
-          route_for_page1 = service.build_routes.first
-          expect(route_for_page1.label).to eq({ text: "Go to", hidden: true })
-        end
-
         context "when a condition exists for the generic page" do
           let!(:conditions) do
             [
@@ -69,6 +64,22 @@ RSpec.describe Routes::BuildService do
             expect(route_for_page1.goto).to eq(Forms::RouteInput::END_OF_FORM_VALUE)
           end
         end
+
+        context "when a condition goes to the next page" do
+          before do
+            create(:condition, form:, routing_page: pages.first, goto_page: pages.second, answer_value: nil)
+          end
+
+          it "sets the goto value to the next page ID" do
+            route_for_page1 = service.build_routes.first
+            expect(route_for_page1.goto).to eq(pages.second.id)
+          end
+
+          it "has a goto option for each page after" do
+            route_for_page1 = service.build_routes.first
+            expect(route_for_page1.goto_options.length).to eq 3
+          end
+        end
       end
 
       context "with a selection page (radios)" do
@@ -93,18 +104,6 @@ RSpec.describe Routes::BuildService do
 
           expect(route_for_yes).not_to be_nil
           expect(route_for_no).not_to be_nil
-        end
-
-        it "sets the correct goto value and label for each option route" do
-          routes_for_page1 = service.build_routes.select { |r| r.page_id == pages.first.id }
-          route_for_yes = routes_for_page1.find { |r| r.answer_value == "Yes" }
-          route_for_no = routes_for_page1.find { |r| r.answer_value == "No" }
-
-          expect(route_for_yes.goto).to eq(Forms::RouteInput::DEFAULT_VALUE)
-          expect(route_for_yes.label).to eq({ text: "Option 1: Yes" })
-
-          expect(route_for_no.goto).to eq(Forms::RouteInput::DEFAULT_VALUE)
-          expect(route_for_no.label).to eq({ text: "Option 2: No" })
         end
 
         context "when the selection page has more than 10 options" do
@@ -138,7 +137,7 @@ RSpec.describe Routes::BuildService do
 
             none_of_the_above_route = routes_for_page1.find { |r| r.answer_value == "none_of_the_above" }
             expect(none_of_the_above_route).not_to be_nil
-            expect(none_of_the_above_route.label[:text]).to eq("Option 3: None of the above")
+            expect(none_of_the_above_route.label[:text]).to eq("If option 3 (None of the above), go to:")
           end
         end
 
@@ -191,7 +190,7 @@ RSpec.describe Routes::BuildService do
           expect(route_for_page1).to be_a(Forms::RouteInput)
           expect(route_for_page1.page_id).to eq(pages.first.id)
           expect(route_for_page1.answer_value).to be_nil
-          expect(route_for_page1.label).to eq({ text: "Go to", hidden: true })
+          expect(route_for_page1.label).to eq({ text: "After question #{pages.first.position}, go to:" })
         end
       end
     end
@@ -206,8 +205,23 @@ RSpec.describe Routes::BuildService do
       end
     end
 
-    it "returns an empty array if the page has no next page" do
-      expect(service.options_for_goto_page(pages.third)).to be_empty
+    context "when the page has no next page" do
+      it "returns the end of the form option" do
+        expected_options = [["End of the form", "default"]]
+
+        expect(service.options_for_goto_page(pages.third)).to match_array(expected_options)
+      end
+
+      context "when there is a selected page" do
+        it "returns the selected page and end of the form options" do
+          expected_options = [
+            ["1. question 1", pages.first.id],
+            ["End of the form", "default"],
+          ]
+
+          expect(service.options_for_goto_page(pages.third, pages.first.id)).to match_array(expected_options)
+        end
+      end
     end
 
     it "returns a list of all possible goto options" do
@@ -226,7 +240,7 @@ RSpec.describe Routes::BuildService do
       options = service.options_for_goto_page(pages.first)
       default_option = options.find { |opt| opt[1] == Forms::RouteInput::DEFAULT_VALUE }
 
-      expect(default_option).to eq(["Go to question 2", Forms::RouteInput::DEFAULT_VALUE])
+      expect(default_option).to eq(["2. #{pages.second.question_text}", Forms::RouteInput::DEFAULT_VALUE])
     end
 
     it "does not include the current page in the options" do
@@ -240,7 +254,7 @@ RSpec.describe Routes::BuildService do
       options = service.options_for_goto_page(pages.second)
 
       expect(options).to eq [
-        ["Go to question 3", Forms::RouteInput::DEFAULT_VALUE],
+        ["3. #{pages.third.question_text}", Forms::RouteInput::DEFAULT_VALUE],
         ["End of the form", "end_of_form"],
       ]
     end
@@ -251,7 +265,7 @@ RSpec.describe Routes::BuildService do
 
         expect(options).to eq [
           ["1. #{pages.first.question_text}", pages.first.id],
-          ["Go to question 3", Forms::RouteInput::DEFAULT_VALUE],
+          ["3. #{pages.third.question_text}", Forms::RouteInput::DEFAULT_VALUE],
           ["End of the form", "end_of_form"],
         ]
       end

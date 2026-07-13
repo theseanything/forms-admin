@@ -56,7 +56,7 @@ module Forms
     end
 
     def render_new(status: :ok)
-      render "new", status:, locals: { current_form:, language: params[:language] }
+      render "new", status:, locals: { current_form:, language: params[:language], page_title: new_page_title, page_body: new_page_body }
     end
 
     def render_confirmation(status: :ok)
@@ -72,6 +72,22 @@ module Forms
 
     def go_to_make_welsh_live_input_params
       params.require(:forms_go_to_make_welsh_live_input).permit(:confirm)
+    end
+
+    def new_page_title
+      return I18n.t("page_titles.make_your_changes_to_english_live") if making_english_changes_live?
+
+      I18n.t("page_titles.make_language_live.#{params[:language]}")
+    end
+
+    def new_page_body
+      return t("make_language_live.en.make_your_changes_to_english_live.body_html", submission_email: @current_form.submission_email) if making_english_changes_live?
+
+      t("make_language_live.#{params[:language]}.new.body_html", submission_email: @current_form.submission_email)
+    end
+
+    def making_english_changes_live?
+      @current_form.is_live? && params[:language] == "en"
     end
   end
 end

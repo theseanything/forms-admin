@@ -1,10 +1,22 @@
 # Used to add feature flags in the app to control access to certain features.
 features:
+  custom_branding:
+    enabled_by_group: true
   exit_pages:
     enabled_by_group: true
   multiple_branches:
     enabled_by_group: true
-  send_filler_answers: true
+  send_filler_answers:
+    enabled_by_group: true
+
+# Brands that a form can be styled with in forms-runner. A form with no
+# brand_id uses the default GOV.UK branding.
+branding:
+  available_brands:
+    - id: cheshire-east
+      name: Cheshire East Council
+    - id: south-gloucestershire
+      name: South Gloucestershire Council
 
 forms_api:
   # Authentication key to authenticate with forms-api

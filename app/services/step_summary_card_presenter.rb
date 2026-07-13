@@ -34,6 +34,15 @@ class StepSummaryCardPresenter
     }
   end
 
+  def build_bilingual_table2
+    {
+      classes: %w[app-translation-table],
+      head: bilingual_table_header,
+      rows: step_summary_table_service.values_with_welsh_content2,
+      first_cell_is_header: true,
+    }
+  end
+
   def build_untranslated_content
     step_summary_table_service.untranslated_content
   end

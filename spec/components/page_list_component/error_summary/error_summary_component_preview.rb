@@ -2,7 +2,7 @@ class PageListComponent::ErrorSummary::ErrorSummaryComponentPreview < ViewCompon
   include FactoryBot::Syntax::Methods
 
   def default
-    form = build(:form, id: 1, pages: [])
+    form = build(:form, :with_group, id: 1, pages: [])
 
     render(PageListComponent::ErrorSummary::View.new(form))
   end
@@ -13,7 +13,7 @@ class PageListComponent::ErrorSummary::ErrorSummaryComponentPreview < ViewCompon
     pages = [(build :page, id: 1, position: 1, question_text: "Enter your name", routing_conditions:),
              (build :page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: []),
              (build :page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: [])]
-    form = build(:form, id: 0, pages:)
+    form = build(:form, :with_group, id: 0, pages:)
 
     # We need to build the records rather than create them so that we don't save them to the database when we view the
     # preview. However, this means that the associations aren't available so we need to manually set the associations
@@ -35,7 +35,7 @@ class PageListComponent::ErrorSummary::ErrorSummaryComponentPreview < ViewCompon
     pages = [(build :page, id: 1, position: 1, question_text: "Enter your name", routing_conditions: routing_conditions_page_1),
              (build :page, id: 2, position: 2, question_text: "What is your pet's phone number?", routing_conditions: routing_conditions_page_2),
              (build :page, id: 3, position: 3, question_text: "How many pets do you own?", routing_conditions: [])]
-    form = build(:form, id: 0, pages:)
+    form = build(:form, :with_group, id: 0, pages:)
 
     # We need to build the records rather than create them so that we don't save them to the database when we view the
     # preview. However, this means that the associations aren't available so we need to manually set the associations

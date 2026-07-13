@@ -14,6 +14,10 @@ class Forms::MarkPagesSectionCompleteInput < Forms::MarkCompleteInput
   end
 
   def has_routing_errors
+    if FeatureService.new(group: form.group).enabled?(:multiple_branches)
+      NormaliseConditionsService.new(form:).normalise_conditions
+    end
+
     errors.add :base, :has_routing_errors if form.has_routing_errors?
   end
 end

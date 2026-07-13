@@ -1,14 +1,17 @@
 require "rails_helper"
 
 describe "forms/what_happens_next/new.html.erb" do
-  let(:current_form) { OpenStruct.new(id: 1, name: "Form 1", form_slug: "form-1") }
+  let(:current_form) { create :form }
+  let(:group) { create(:group, send_filler_answers_enabled:) }
+  let(:send_filler_answers_enabled) { true }
   let(:what_happens_next_input) { Forms::WhatHappensNextInput.new(form: current_form).assign_form_values }
   let(:preview_html) { "" }
 
   before do
+    GroupForm.create!(form_id: current_form.id, group_id: group.id)
     assign(:what_happens_next_input, what_happens_next_input)
     assign(:preview_html, preview_html)
-    render template: "forms/what_happens_next/new"
+    render template: "forms/what_happens_next/new", locals: { current_form: }
   end
 
   it "contains an example" do
@@ -28,13 +31,15 @@ describe "forms/what_happens_next/new.html.erb" do
     expect(rendered).to have_text(I18n.t("what_happens_next.reference_numbers"))
   end
 
-  context "when send_filler_answers feature flag is enabled", :feature_send_filler_answers do
+  context "when send_filler_answers feature flag is enabled" do
     it "has content saying that answers might be included in the confirmation email" do
       expect(rendered).to have_text(I18n.t("what_happens_next.confirmation_email_send_filler_answers_enabled"))
     end
   end
 
-  context "when send_filler_answers feature flag is disabled", feature_send_filler_answers: false do
+  context "when send_filler_answers feature flag is disabled" do
+    let(:send_filler_answers_enabled) { false }
+
     it "has content saying answers will not be included in the confirmation email" do
       expect(rendered).to have_text(I18n.t("what_happens_next.confirmation_email"))
     end

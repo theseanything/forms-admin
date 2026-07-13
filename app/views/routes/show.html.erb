@@ -25,7 +25,7 @@
               row.with_value do
                 capture do %>
                 <p> <%= page.question_text %> </p>
-                <% if @routes_input.form.next_page_after(page).present? %>
+                <% if @routes_input.form.next_page_after(page).present? || routes.any?(&:invalid?) %>
                   <ul class="govuk-list">
                     <% routes.each do |route| %>
                       <li>
@@ -33,7 +33,13 @@
                           route_form.hidden_field(:id) +
                             route_form.hidden_field(:page_id) +
                             route_form.hidden_field(:answer_value) +
-                            route_form.govuk_select(:goto, options_for_select(route_form.object.goto_options, route_form.object.goto), label: route_form.object.label)
+                            route_form.govuk_select(
+                              :goto,
+                              options_for_select(route_form.object.goto_options, route_form.object.goto),
+                              label: route_form.object.label,
+                              id: route_form.field_id(:goto),
+                              class: ["govuk-!-width-full"],
+                            )
                         end %>
                       </li>
                     <% end %>

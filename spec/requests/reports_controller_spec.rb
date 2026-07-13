@@ -40,6 +40,17 @@ RSpec.describe ReportsController, type: :request do
         expect(response).to have_http_status(:ok)
         expect(response).to render_template("reports/index")
         expect(response.body).to include "Reports"
+        reports_list = [
+          "Feature and answer type usage in live forms",
+          "Feature and answer type usage in live or archived forms",
+          "Feature and answer type usage in draft forms",
+          "Download data about all live or archived forms",
+          "Download all questions in live or archived forms",
+          "Number of users per organisation",
+          "When users last signed in",
+          "Users interested in research",
+        ]
+        expect(response.body).to include(*reports_list)
       end
     end
   end
@@ -392,8 +403,10 @@ RSpec.describe ReportsController, type: :request do
     end
   end
 
-  describe "#users" do
-    let(:path) { report_users_path }
+  describe "#forms_with_copy_of_answers_enabled" do
+    let(:path) { report_forms_with_copy_of_answers_enabled_path(tag: :live) }
+    let(:form) { create(:form, :live, send_copy_of_answers: "enabled") }
+    let(:forms) { [form] }
 
     include_examples "unauthorized user is forbidden"
 
@@ -404,10 +417,13 @@ RSpec.describe ReportsController, type: :request do
         get path
       end
 
-      it "returns http code 200 and renders the users report template" do
+      it "returns http code 200 with the expected report data" do
         expect(response).to have_http_status(:ok)
+        expect(response).to render_template("reports/feature_report")
 
-        expect(response).to render_template("reports/users")
+        node = Capybara.string(response.body)
+        expect(node).to have_xpath "//thead/tr/th[1]", text: "Form name"
+        expect(node).to have_xpath "//tbody/tr[1]/td[1]", text: form.name
       end
     end
   end
@@ -675,6 +691,31 @@ RSpec.describe ReportsController, type: :request do
       end
     end
 
+    describe "#forms_with_copy_of_answers_enabled as csv" do
+      let(:form) { create(:form, :live, send_copy_of_answers: "enabled") }
+      let(:forms) { [form, *create_list(:form, 2, :live)] }
+      let(:expected_csv_filename) { "live_forms_with_copy_of_answers_enabled_report-2025-05-15 15:31:57 UTC.csv" }
+
+      before do
+        login_as_super_admin_user
+
+        travel_to Time.utc(2025, 5, 15, 15, 31, 57)
+
+        get report_forms_with_copy_of_answers_enabled_path(tag: :live, format: :csv)
+      end
+
+      it_behaves_like "csv response"
+
+      it "has expected response body" do
+        csv = CSV.parse(response.body, headers: true)
+        expect(csv.headers).to eq Reports::FormsCsvReportService::FORM_CSV_HEADERS
+        expect(csv.length).to eq 1
+        expect(csv.by_col["Form name"]).to eq [
+          form.name,
+        ]
+      end
+    end
+
     describe "#live_questions_csv" do
       let(:forms) do
         live_forms = create_list(:form, 2, :live, pages_count: 3)
@@ -768,6 +809,45 @@ RSpec.describe ReportsController, type: :request do
       it "returns http code 200 and renders the template" do
         expect(response).to have_http_status(:ok)
         expect(response).to render_template("reports/contact_for_research")
+      end
+    end
+  end
+
+  describe "#users_per_organisation" do
+    let(:path) { report_users_per_organisation_path }
+
+    include_examples "unauthorized user is forbidden"
+
+    context "when the user is a super admin" do
+      before do
+        login_as_super_admin_user
+
+        get path
+      end
+
+      it "returns http code 200 and renders the users report template" do
+        expect(response).to have_http_status(:ok)
+
+        expect(response).to render_template("reports/users_per_organisation")
+      end
+    end
+  end
+
+  describe "#organisation_domains" do
+    let(:path) { report_organisation_domains_path }
+
+    include_examples "unauthorized user is forbidden"
+
+    context "when the user is a super admin" do
+      before do
+        login_as_super_admin_user
+
+        get path
+      end
+
+      it "returns http code 200 and renders the template" do
+        expect(response).to have_http_status(:ok)
+        expect(response).to render_template("reports/organisation_domains")
       end
     end
   end

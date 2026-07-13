@@ -10,10 +10,9 @@ gem "rails", "~> 8.1.3"
 gem "pg", "~> 1.6"
 
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 8.0.1"
+gem "puma", "~> 8.0.2"
 
 # Used for handling authentication
-gem "gds-sso"
 gem "omniauth-auth0"
 gem "omniauth-rails_csrf_protection"
 gem "warden"
@@ -49,16 +48,16 @@ gem "govuk_design_system_formbuilder", "~> 6"
 gem "dfe-autocomplete", require: "dfe/autocomplete", github: "DFE-Digital/dfe-autocomplete", ref: "1d4cc65039e11cc3ba9e7217a719b8128d0e4d53"
 
 # Our own custom markdown renderer
-gem "govuk-forms-markdown", require: "govuk_forms_markdown", github: "govuk-forms/govuk-forms-markdown", tag: "0.8.0"
+gem "govuk-forms-markdown", require: "govuk_forms_markdown", github: "govuk-forms/govuk-forms-markdown", tag: "0.12.0"
 
 # For structured logging
 gem "lograge"
 
 # For distributed tracing and telemetry
-gem "opentelemetry-exporter-otlp", "~> 0.33.0"
-gem "opentelemetry-instrumentation-all", "~> 0.93.0"
+gem "opentelemetry-exporter-otlp", "~> 0.34.0"
+gem "opentelemetry-instrumentation-all", "~> 0.94.0"
 gem "opentelemetry-propagator-xray", "~> 0.27.0"
-gem "opentelemetry-sdk", "~> 1.11"
+gem "opentelemetry-sdk", "~> 1.12"
 
 # Use GOV.UK Nofity api to send emails
 gem "govuk_notify_rails"
@@ -70,8 +69,8 @@ gem "validate_url"
 gem "paper_trail"
 
 # For AWS interactions
-gem "aws-sdk-cloudwatch", "~> 1.135"
-gem "aws-sdk-codepipeline", "~> 1.113"
+gem "aws-sdk-cloudwatch", "~> 1.142"
+gem "aws-sdk-codepipeline", "~> 1.117"
 
 # For Mailchimp audience integration
 gem "MailchimpMarketing", "~> 3.0"
@@ -112,7 +111,7 @@ group :development, :test do
   gem "bundler-audit", "~> 0.9.3"
 
   # For detecting security vulnerabilities in Ruby on Rails applications via static analysis.
-  gem "brakeman", "~> 8.0.4"
+  gem "brakeman", "~> 8.0.5"
 end
 
 group :test do

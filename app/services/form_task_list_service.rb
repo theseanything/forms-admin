@@ -65,7 +65,10 @@ private
     rows = [
       { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.payment_link"), path: payment_link_path(@form.id), status: @task_statuses[:payment_link_status] },
     ]
-    if FeatureService.enabled?(:send_filler_answers)
+    if FeatureService.new(group: @form.group).enabled?(:custom_branding)
+      rows << { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.brand"), path: brand_path(@form.id), status: @task_statuses[:brand_status] }
+    end
+    if FeatureService.new(group: @form.group).enabled?(:send_filler_answers)
       rows << { task_name: I18n.t("forms.task_list_#{create_or_edit}.create_form_optional_subsection.copy_of_answers"), path: copy_of_answers_path(@form.id), status: @task_statuses[:copy_of_answers_status] }
     end
 
@@ -193,14 +196,20 @@ private
 
   def make_form_live_section_tasks
     [
-      {
-        task_name: share_preview_task_name,
-        path: share_preview_path(@form.id),
-        status: @task_statuses[:share_preview_status],
-        active: @form.pages.any?,
-      },
-      make_live_task,
-    ]
+      share_preview_task,
+      (make_live_task unless display_make_languages_live_tasks?),
+      (make_only_english_live_task if display_make_languages_live_tasks?),
+      (make_only_welsh_live_task if display_make_languages_live_tasks?),
+    ].compact
+  end
+
+  def share_preview_task
+    {
+      task_name: share_preview_task_name,
+      path: share_preview_path(@form.id),
+      status: @task_statuses[:share_preview_status],
+      active: @form.pages.any?,
+    }
   end
 
   def make_live_task
@@ -213,6 +222,37 @@ private
       status: status,
       active: can_make_form_live,
     }
+  end
+
+  def make_only_english_live_task
+    status = @task_statuses[:make_only_english_live_status]
+    can_make_form_live = status == :not_started
+    english_changes_to_make_live = @form.is_live? && @form.changed_from_live_version?(language: "en")
+
+    task_name = english_changes_to_make_live ? I18n.t("forms.task_list_edit.make_form_live_section.make_english_form_live") : I18n.t("forms.task_list_create.make_form_live_section.make_english_form_live")
+
+    {
+      task_name:,
+      path: can_make_form_live ? make_language_live_path(@form.id, language: "en") : "",
+      status:,
+      active: can_make_form_live,
+    }
+  end
+
+  def make_only_welsh_live_task
+    status = @task_statuses[:make_only_welsh_live_status]
+    can_make_form_live = status == :not_started
+
+    {
+      task_name: I18n.t("forms.task_list_create.make_form_live_section.make_welsh_form_live"),
+      path: can_make_form_live ? make_language_live_path(@form.id, language: "cy") : "",
+      status:,
+      active: can_make_form_live,
+    }
+  end
+
+  def display_make_languages_live_tasks?
+    @form.live_welsh_form_document.blank? && @form.has_welsh_translation?
   end
 
   def live_title_name
@@ -252,6 +292,7 @@ private
 
   def remove_optional_statuses(statuses)
     statuses.delete(:payment_link_status)
+    statuses.delete(:brand_status)
     statuses.delete(:copy_of_answers_status)
     statuses.delete(:submission_attachments_status)
     statuses.delete(:batch_submissions_status)

@@ -4,6 +4,7 @@ module Forms
       authorize current_form, :can_view_form?
       @what_happens_next_input = WhatHappensNextInput.new(form: current_form).assign_form_values
       @preview_html = preview_html(@what_happens_next_input)
+      render :new, locals: { current_form: }
     end
 
     def create
@@ -14,15 +15,15 @@ module Forms
       case params[:route_to].to_sym
       when :preview
         if @what_happens_next_input.valid?
-          render :new, status: :ok
+          render :new, status: :ok, locals: { current_form: }
         else
-          render :new, status: :unprocessable_content
+          render :new, status: :unprocessable_content, locals: { current_form: }
         end
       when :save_and_continue
         if @what_happens_next_input.submit
           redirect_to form_path(@what_happens_next_input.form.id), success: t("banner.success.form.what_happens_next_saved")
         else
-          render :new, status: :unprocessable_content
+          render :new, status: :unprocessable_content, locals: { current_form: }
         end
       end
     end

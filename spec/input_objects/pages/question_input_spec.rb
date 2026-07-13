@@ -475,6 +475,118 @@ RSpec.describe Pages::QuestionInput, type: :model do
         end
       end
     end
+
+    context "when there are conditions which no longer have answer_values" do
+      let(:draft_question) { build :selection_draft_question, form_id: form.id }
+      let(:answer_settings) { { only_one_option: "true", selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Not option 2", value: "Not option 2" }] } }
+
+      let!(:keep_condition) { create(:condition, answer_value: "Option 1", routing_page_id: page.id) }
+      let!(:remove_condition) { create(:condition, answer_value: "Option 2", routing_page_id: page.id) }
+
+      context "when the form has multiple branches enabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: true) }
+
+        it "removes the conditions" do
+          expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(2).to(1)
+          expect(Condition.exists?(keep_condition.id)).to be true
+          expect(Condition.exists?(remove_condition.id)).to be false
+        end
+      end
+
+      context "when the form has multiple branches disabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: false) }
+
+        it "does not remove the conditions" do
+          expect { question_input.update_page(page) }.not_to change { page.routing_conditions.count }.from(2)
+        end
+      end
+    end
+
+    context "when there are conditions based on the none of the above option" do
+      # The draft question before we update it
+      # It's optional so there is a none of the above option
+      let(:draft_question) { build :selection_draft_question, form_id: form.id, is_optional: true }
+
+      # The settings we are saving to the page
+      let(:answer_settings) { { only_one_option: "true", selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }] } }
+
+      # Is optional is a string here because it comes from the form
+      # We set it to false, simulating remove the none of the above option
+      let(:is_optional) { "false" }
+
+      let!(:none_of_the_above_condition) { create(:condition, answer_value: Condition::NONE_OF_THE_ABOVE, routing_page_id: page.id) }
+      let!(:other_condition) { create(:condition, answer_value: "Option 2", routing_page_id: page.id) }
+
+      context "when the form has multiple branches enabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: true) }
+
+        it "removes the none of the above condition" do
+          expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(2).to(1)
+          expect(Condition.exists?(none_of_the_above_condition.id)).to be false
+          expect(Condition.exists?(other_condition.id)).to be true
+        end
+      end
+
+      context "when the form has multiple branches disabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: false) }
+
+        it "does not remove the none of the above condition" do
+          expect { question_input.update_page(page) }.not_to change { page.routing_conditions.count }.from(2)
+        end
+      end
+    end
+
+    context "when the original question is being changed to a selection question and has a condition" do
+      let(:answer_type) { "selection" }
+      let(:answer_settings) { { only_one_option: "true", selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }] } }
+      let!(:condition) { create(:condition, routing_page_id: page.id) }
+
+      context "when the form has multiple branches enabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: true) }
+
+        it "creates a condition for each option" do
+          expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(1).to(2)
+
+          expect(Condition.where(answer_value: "Option 1", routing_page_id: page.id).exists?).to be true
+          expect(Condition.where(answer_value: "Option 2", routing_page_id: page.id).exists?).to be true
+
+          expect(Condition.exists?(condition.id)).to be false
+        end
+
+        context "when the question is optional" do
+          let(:is_optional) { "true" }
+
+          it "creates a condition for each option and none of the above" do
+            expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(1).to(3)
+
+            expect(Condition.where(answer_value: Condition::NONE_OF_THE_ABOVE).exists?).to be true
+
+            expect(Condition.exists?(condition.id)).to be false
+          end
+        end
+
+        context "when the original condition skips to the end of the form" do
+          let!(:condition) { create(:condition, routing_page: page, skip_to_end: true) }
+
+          it "creates a condition for each option which skips to the end" do
+            expect { question_input.update_page(page) }.to change { page.routing_conditions.count }.from(1).to(2)
+
+            expect(Condition.where(answer_value: "Option 1", routing_page_id: page.id, skip_to_end: true, goto_page_id: nil).exists?).to be true
+
+            expect(Condition.exists?(condition.id)).to be false
+          end
+        end
+      end
+
+      context "when the form does not have multiple branches enabled" do
+        let(:form) { create :form, :with_group, group: create(:group, multiple_branches_enabled: false) }
+
+        it "does not create a condition for each option or remove the original condition" do
+          expect { question_input.update_page(page) }.not_to change { page.routing_conditions.count }.from(1)
+          expect(Condition.exists?(condition.id)).to be true
+        end
+      end
+    end
   end
 
   describe "#update_draft_question!" do

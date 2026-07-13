@@ -111,4 +111,49 @@ RSpec.describe Pages::Selection::TypeInput do
       end
     end
   end
+
+  describe "show_routing_warning?" do
+    let(:draft_question) { build :draft_question, form_id: form.id, page: }
+    let(:page) { build(:page) }
+
+    context "when multiple branches is disabled", feature_multiple_branches: false do
+      it "returns true" do
+        expect(input.show_routing_warning?).to be true
+      end
+    end
+
+    context "when multiple branches is enabled", :feature_multiple_branches do
+      context "when the page is nil" do
+        let(:page) { nil }
+
+        it "returns false" do
+          expect(input.show_routing_warning?).to be false
+        end
+      end
+
+      context "when the page is not a selection question" do
+        let(:page) { build(:page, answer_type: "text") }
+
+        it "returns false" do
+          expect(input.show_routing_warning?).to be false
+        end
+      end
+
+      context "when the selection type is only one option" do
+        let(:page) { build(:page, :selection_with_radios) }
+
+        it "returns false" do
+          expect(input.show_routing_warning?).to be true
+        end
+      end
+
+      context "when the selection type is multiple options" do
+        let(:page) { build(:page, :selection_with_checkboxes) }
+
+        it "returns true" do
+          expect(input.show_routing_warning?).to be false
+        end
+      end
+    end
+  end
 end

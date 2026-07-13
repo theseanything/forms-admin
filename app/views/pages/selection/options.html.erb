@@ -7,6 +7,15 @@
     <%= form_with model: [current_form, @selection_options_input], url: @selection_options_path do |f| %>
       <%= f.govuk_error_summary %>
 
+      <% banner_content = selection_options_in_routes_banner(@selection_options_input.draft_question, @selection_options_input.selection_options_with_value, @selection_options_input.is_optional) %>
+
+      <% if banner_content %>
+        <%= govuk_notification_banner(title_text: t("banner.default.title")) do |banner| %>
+          <% banner.with_heading(text: banner_content[:heading]) %>
+          <p> <%= banner_content[:text].html_safe %> </p>
+        <% end %>
+      <% end %>
+
       <%#
         Browsers use the first submit button in a form when the enter key is pressed, so we have to put this hidden button here,
         otherwise pressing the enter key will delete the first item in the list instead of submnitting the form.

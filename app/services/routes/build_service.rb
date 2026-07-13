@@ -3,7 +3,7 @@
 # based on the pages and conditions.
 class Routes::BuildService
   END_OF_FORM_OPTION = [I18n.t("page_conditions.end_of_form"), Forms::RouteInput::END_OF_FORM_VALUE].freeze
-  NONE_OF_THE_ABOVE_OPTION = DataStruct.new(value: :none_of_the_above.to_s, name: I18n.t("page_conditions.none_of_the_above"))
+  NONE_OF_THE_ABOVE_OPTION = DataStruct.new(value: Condition::NONE_OF_THE_ABOVE, name: I18n.t("page_conditions.none_of_the_above"))
 
   attr_reader :form
 
@@ -17,9 +17,7 @@ class Routes::BuildService
     end
 
     form.pages.flat_map do |page|
-      if page.answer_type == "selection" &&
-          page.answer_settings.only_one_option == "true" &&
-          !Forms::RoutesInput.too_many_selection_options?(page)
+      if Forms::RoutesInput.route_with_selection_options?(page)
         build_routes_for_selection_page(page, conditions_by_key)
       else
         build_route_for_generic_page(page, conditions_by_key)
@@ -30,7 +28,18 @@ class Routes::BuildService
   def options_for_goto_page(page, selected = nil)
     next_page = form.next_page_after(page)
 
-    return [] unless next_page
+    # If there's no next page then it's the last page of the form.
+    # We only need options for this page if there's an error that needs correcting.
+    if next_page.nil?
+      selected_page = if selected && selected != Forms::RouteInput::DEFAULT_VALUE
+                        option_for_select(form.pages.find { |page| page.id == selected })
+                      end
+
+      return [
+        selected_page,
+        [END_OF_FORM_OPTION.first, Forms::RouteInput::DEFAULT_VALUE],
+      ].compact
+    end
 
     # Don't include the current page or pages before in the options,
     # unless the goto page for the existing condition is before the current page,
@@ -43,11 +52,11 @@ class Routes::BuildService
       _, value = option
 
       if drop
-        if selected && value == selected
-          option
-        elsif value == next_page_id
+        if value == next_page_id
           drop = false
-          ["Go to question #{page.position.next}", Forms::RouteInput::DEFAULT_VALUE]
+          ["#{page.position.next}. #{next_page.question_text}", Forms::RouteInput::DEFAULT_VALUE]
+        elsif selected && value == selected
+          option
         end
         # return nil
       else
@@ -59,13 +68,12 @@ class Routes::BuildService
 private
 
   def build_routes_for_selection_page(page, conditions_by_key)
-    options = page.answer_settings&.selection_options || []
+    options = page.answer_settings&.selection_options&.dup || []
 
     options << NONE_OF_THE_ABOVE_OPTION if page.is_optional
 
-    options.map.with_index(1) do |option, index|
+    options.map do |option|
       answer_value = option["value"]
-      answer_value_label = answer_value == NONE_OF_THE_ABOVE_OPTION[:value] ? I18n.t("page_conditions.none_of_the_above") : option["name"]
       key = [page.id, answer_value]
       condition = conditions_by_key[key]
 
@@ -75,8 +83,8 @@ private
         page:,
         answer_value:,
         goto: goto_value_for(condition),
+        goto_page: condition&.goto_page,
         goto_options: options_for_goto_page(page, condition&.goto_page_id),
-        label: { text: "Option #{index}: #{answer_value_label}" },
       )
     end
   end
@@ -91,8 +99,8 @@ private
         page_id: page.id,
         page:,
         goto: goto_value_for(condition),
+        goto_page: condition&.goto_page,
         goto_options: options_for_goto_page(page, condition&.goto_page_id),
-        label: { text: "Go to", hidden: true },
       ),
     ]
   end

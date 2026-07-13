@@ -171,6 +171,12 @@ en:
             agreed:
               crown: You must agree to the memorandum of understanding
               non_crown: You must agree to the agreement to continue
+        organisation_domain:
+          attributes:
+            domain:
+              blank: Enter a domain name
+              invalid_domain: Enter a domain name in the correct format, like subdomain.gov.uk
+              taken: This domain name is already in use
         page:
           attributes:
             hint_text:
@@ -239,6 +245,8 @@ en:
           daily_enabled: You’ll get a daily batch of form submissions
           disabled: You will not get a daily or weekly batch of form submissions
           weekly_enabled: You’ll get a weekly batch of form submissions
+        brand_removed: Your form will use the default GOV.UK brand
+        brand_saved: Your form’s brand has been saved
         change_name: Your form name has been saved
         copied: Your form has been copied
         copy_of_answers_disabled: People will not have the option to ask for a copy of their answers
@@ -267,6 +275,12 @@ en:
       route_updated: Question %{question_number}’s route has been updated
       secondary_skip_created: Route for any other answer has been added
       title: Success
+  brand_input:
+    body_html: |
+      <p>You can choose a brand to change how your form looks to people filling it in, for example, the logo and colours.</p>
+
+      <p>If you do not choose a brand, your form will use the default GOV.UK brand.</p>
+    heading: Choose a brand for your form
   bulk_options:
     hint: Enter each option on a new line
     label: Enter the options for your list
@@ -365,6 +379,14 @@ en:
       goto_page_doesnt_exist: The question you’re taking the person to no longer exists - edit question %{question_number}’s route
       route_number_for_any_other_answer: for any other answer
     prefix: 'Error:'
+    routes:
+      cannot_route_backwards_from_generic_page: The route from question %{question_number} cannot go to a previous question - edit this route
+      cannot_route_backwards_from_selection_page: The route from question %{question_number}, option %{option_number} cannot go to a previous question - edit this route
+      page_list:
+        cannot_route_backwards_from_generic_page: The route from question %{question_number} cannot go to a previous question - edit this route
+        cannot_route_backwards_from_selection_page:
+          one: A route from question %{question_number} is going to a previous question - edit this route
+          other: Routes from question %{question_number} are going to a previous question - edit this question’s routes
   exit_page:
     no_content_added_html: "<p>No content added</p>"
   feedback_link:
@@ -517,6 +539,7 @@ en:
         other: Optional tasks
     task_list_create:
       create_form_optional_subsection:
+        brand: Choose a brand for your form
         copy_of_answers: Give people the option to ask for a copy of their answers
         payment_link: Add a link to a payment page on GOV.UK Pay
       create_form_section:
@@ -546,7 +569,9 @@ en:
 
               A group admin can request to upgrade the group so forms can be made live. You can <a href="%{group_members_path}">view the members of the group</a> to find a group admin.
           no_org_admin: You cannot make this form live because it’s in a ‘trial’ group.
+        make_english_form_live: Make your English form live
         make_live: Make your form live
+        make_welsh_form_live: Make your Welsh form live
         share_preview: Share a preview of your draft form
         title: Make your form live
         user_cannot_administer:
@@ -563,6 +588,7 @@ en:
         title: Create a Welsh version of your form (optional)
     task_list_edit:
       create_form_optional_subsection:
+        brand: Choose a brand for your form
         copy_of_answers: Give people the option to ask for a copy of their answers
         payment_link: Add a link to a payment page on GOV.UK Pay
       create_form_section:
@@ -580,6 +606,7 @@ en:
           submission_attachments: Get a CSV or JSON file of each completed form
         title: Change how you get completed forms
       make_form_live_section:
+        make_english_form_live: Make changes to your English form live
         make_live: Make your changes live
         share_preview: Share a preview of your draft form
         title: Make your changes live
@@ -716,6 +743,13 @@ en:
       success: The group, ‘%{group_name}’, has been deleted
     edit:
       title: Change the name of this group
+    feature_flags:
+      flags:
+        custom_branding_enabled: Custom branding
+        multiple_branches_enabled: Multiple branches
+        send_filler_answers_enabled: Send a copy of completed answers to form fillers
+      hint: You can turn a feature flag on, but not off. A feature can change how a form or group works, which might take extra steps to reverse. Ask a developer if you need to switch a feature off.
+      title: Feature flags
     form_table_caption: Forms in ‘%{group_name}’
     group_list:
       created_by: Created by
@@ -829,6 +863,7 @@ en:
         title: Managing this group
       edit_group_members: Edit members of this group
       edit_group_name: Change the name of this group
+      feature_flags: Manage feature flags for this group
       move: Move this group to another organisation
       review_group_members: View members of this group
       trial_banner:
@@ -859,6 +894,7 @@ en:
       trial: Trial group
       upgrade_requested: Trial group
     success_messages:
+      feature_flags: This group’s feature flags have been updated
       move: Group’s organisation has changed to %{org_name}
       update: The name of this group has been changed
       upgrade: This group is now active
@@ -893,6 +929,7 @@ en:
       </p>
   header:
     mous: MOUs
+    organisations: Organisations
     product_name: Forms
     reports: Reports
     sign_out: Sign out
@@ -1227,6 +1264,10 @@ en:
           <p>The form will not be indexed by search engines, so people will not be able to find it easily. Contact your GOV.UK publishing team to publish links to your form on GOV.UK so people can find it.</p>
           <p>Completed forms will be sent to: <span class="govuk-!-text-break-word">%{submission_email}</span></p>
     en:
+      make_your_changes_to_english_live:
+        body_html: |
+          <p>The form will not be indexed by search engines, so people will not be able to find it easily. Contact your GOV.UK publishing team to publish links to your form on GOV.UK so people can find it.</p>
+          <p>Completed forms will be sent to: <span class="govuk-!-text-break-word">%{submission_email}</span></p>
       new:
         body_html: |
           <p>When you make your form live you’ll get a new URL for the English version.</p>
@@ -1426,6 +1467,58 @@ en:
 
       If you pasted the web address, check you copied the entire address.
     title: Page not found
+  organisations:
+    boolean:
+      'false': 'No'
+      'true': 'Yes'
+    index:
+      filter:
+        clear_filter: Clear filter
+        mou_signed:
+          any: All organisations
+          hint: Select MOU or agreement status
+          label: MOU signed
+        name:
+          hint: Enter name or abbreviation
+          label: Name
+        sort:
+          forms: Forms (most first)
+          hint: Choose how to order the list
+          label: Sort by
+          name: Name (A to Z)
+          users: Users (most first)
+        submit: Filter
+      no_results: No organisations found.
+      organisation_count:
+        one: 1 organisation
+        other: "%{count} organisations"
+      showing_count: Showing %{from} to %{to} of %{count} organisations
+      table_caption: All organisations
+      table_headings:
+        forms: Forms
+        mou_signed: MOU signed
+        name: Name
+        users: Users
+    show:
+      admin_users:
+        heading: Organisation admins
+        none: This organisation does not have any organisation admins.
+      domains:
+        heading: Email domains
+        none: This organisation does not have any email domains.
+      mou_signatures:
+        heading: MOUs and agreements
+        none: No one has agreed an MOU or agreement for this organisation.
+      not_set: Not set
+      summary:
+        closed: Closed
+        created_at: Created
+        forms: Number of forms
+        govuk_content_id: GOV.UK content ID
+        groups: Number of groups
+        internal: Internal
+        slug: Slug
+        users: Number of users
   page_conditions:
     condition_answer_value_text: "“%{answer_value}”"
     condition_answer_value_text2: "‘%{answer_value}’"
@@ -1466,7 +1559,6 @@ en:
     unconditional_skip_to_end_text: Go to the end of the form
   page_route_card:
     any_other_answer: Route for any other answer
-    conditional_answer_value: "%{answer_value}"
     continue_to: Continue to
     delete: Delete
     delete_route: Delete all routes
@@ -1480,6 +1572,7 @@ en:
       cannot_route_to_next_page_secondary_skip: The route for any other answer is not skipping any questions - edit or delete this route
     goto_page_invalid: Edit this route to select the question or page you want to take the person to, or delete the route
     if_answer_is: If the answer is
+    none_of_the_above: None of the above
     question_name_long: "%{question_number}. %{question_text}"
     question_name_short: Question %{question_number}
     route_title: Route %{route_number}
@@ -1522,6 +1615,7 @@ en:
     archive_form_confirm: Archive this form
     archive_form_confirmation: Your form has been archived
     archive_welsh_confirm: Archive the Welsh version of this form
+    brand: Choose a brand for your form
     bulk_options: Enter your list’s options into a text box
     change_name: Name your form
     change_order_pages_added_error: Sorry, we could not save the new question order
@@ -1567,6 +1661,7 @@ en:
     non_crown_agreement_confirmation: You’ve agreed to the GOV.UK Forms agreement
     non_crown_agreement_new: GOV.UK Forms agreement
     not_found: Page not found
+    organisations: Organisations
     payment_link: Add a link to a payment page on GOV.UK Pay
     privacy_policy: Provide a link to privacy information for this form
     question_text: What’s your question?
@@ -1619,11 +1714,24 @@ en:
         any_other_answer_warning: If you delete this route, the route for any other answer will also be deleted
         delete_condition_legend: Are you sure you want to delete this route?
         exit_page_warning: If you delete this route, the exit page it goes to will also be deleted
+        none_of_the_above: None of the above
         skip_to_key: skip the person to
       edit:
         back_link: Back to question %{question_number}’s routes
       hint_html: "<p>You can skip people who select one specific answer to question %{question_number} to a later question or page. People who select any other answer will continue to question %{continue_to_question_number}.<p>"
     delete:
+      goto_heading:
+        one: There’s a route to question %{question_number}
+        other: There are routes to question %{question_number}
+      goto_html:
+        one: |
+          <p class="govuk-body">
+            If you delete this question, the route to it will also be deleted. <a class="govuk-notification-banner__link" href="%{routes_href}">View your question routes</a>
+          </p>
+        other: |
+          <p class="govuk-body">
+            If you delete this question, the routes to it will also be deleted. <a class="govuk-notification-banner__link" href="%{routes_href}">View your question routes</a>
+          </p>
       notification_banner:
         end_of_route:
           heading_text: Question %{question_number} is at the end of a route
@@ -1653,6 +1761,23 @@ en:
               <a class="govuk-notification-banner__link" href="%{show_routes_href}">Question %{route_page_question_number}’s route</a>
               starts at this question. If you delete this question, the route from it will also be deleted.
             </p>
+      routing_and_goto_heading: There are routes to and from question %{question_number}
+      routing_and_goto_html: |
+        <p class="govuk-body">
+          If you delete this question, its routes will also be deleted. <a class="govuk-notification-banner__link" href="%{routes_href}">View your question routes</a>
+        </p>
+      routing_heading:
+        one: Question %{question_number} has a route
+        other: Question %{question_number} has routes
+      routing_html:
+        one: |
+          <p class="govuk-body">
+            If you delete this question, its route will also be deleted. <a class="govuk-notification-banner__link" href="%{routes_href}">View your question routes</a>
+          </p>
+        other: |
+          <p class="govuk-body">
+            If you delete this question, its routes will also be deleted. <a class="govuk-notification-banner__link" href="%{routes_href}">View your question routes</a>
+          </p>
       title: Are you sure you want to delete this question?
     delete_question: Delete question
     destroy:
@@ -1811,9 +1936,8 @@ en:
         name: Name
       title: Users interested in research
     csv_downloads:
-      forms: Download data about all live or archived forms as a CSV file
-      questions: Download all questions in live or archived forms as a CSV file
-      title: Download form data as a CSV file
+      forms: Download data about all live or archived forms
+      questions: Download all questions in live or archived forms
     features:
       answer_types:
         heading: Answer type usage
@@ -1825,6 +1949,7 @@ en:
         copied_forms: "%{tag} forms that are copies"
         forms_with_add_another_answer: "%{tag} forms with add another answer"
         forms_with_branch_routes: "%{tag} forms with branch routes"
+        forms_with_copy_of_answers_enabled: "%{tag} forms that allow people to ask for a copy of their answers"
         forms_with_csv_submission_email_attachments: "%{tag} forms with CSV email attachments"
         forms_with_daily_submission_csv: "%{tag} forms getting a daily CSV of completed forms"
         forms_with_exit_pages: "%{tag} forms with exit pages"
@@ -1859,6 +1984,10 @@ en:
       download_csv: Download data about all %{tag} forms with branch routes as a CSV file
       empty: There are no %{tag} forms with branch routes
       heading: "%{tag} forms with branch routes"
+    forms_with_copy_of_answers_enabled:
+      download_csv: Download data about all %{tag} forms that allow people to ask for a copy of their answers (as a CSV)
+      empty: There are no %{tag} forms that allow people to ask for a copy of their answers
+      heading: "%{tag} forms that allow people to ask for a copy of their answers"
     forms_with_csv_submission_email_attachments:
       download_csv: Download data about all %{tag} forms with CSV submission email attachments enabled (as a CSV)
       empty: There are no %{tag} forms with CSV submission email attachments enabled
@@ -1896,13 +2025,24 @@ en:
       empty: There are no %{tag} forms with a Welsh translation
       heading: "%{tag} forms with a Welsh translation"
     index:
+      download_form_data_as_a_csv_file: Download form data as a CSV file
+      feature_and_answer_type_usage: Feature and answer type usage
+      organisation_reports: Organisation reports
       title: Reports
+      user_reports: User reports
     last_signed_in_at:
       heading: When users last signed in
       not_since: People who last signed in before %{since}
       not_since_auth0_enabled: People who last signed in before 3 November 2023
       not_since_last_signed_in_at_added: People who last signed in sometime between 3 November 2023 and 4 November 2024
       title: When users last signed in
+    organisation_domains:
+      heading: Organisations
+      table_headings:
+        domains: Email domains
+        organisation: Organisation
+        slug: Slug
+      title: Email domains used by organisations
     questions_with_add_another_answer:
       download_csv: Download all questions with add another answer in %{tag} forms as a CSV file
       empty: There are no questions with add another answer in %{tag} forms
@@ -1958,7 +2098,7 @@ en:
       draft: draft
       live: live
       live-or-archived: live or archived
-    users:
+    users_per_organisation:
       heading: Number of users per organisation
       table_headings:
         organisation_name: Organisation
@@ -2013,6 +2153,7 @@ en:
         <p>If you need to, you can make them skip one or more consecutive questions that only people on route %{route_number} need to answer.</p>
       primary_route_answer_key: If the answer is
       primary_route_continue_key: skip the person to
+    none_of_the_above: None of the above
   selection_none_of_the_above:
     preamble: If someone selects ‘None of the above’, we’ll show them a text box to enter their answer.
     preamble_more_than_30_options: If someone selects ‘None of the above’, we’ll show them a text box to enter their answer. If your list has over 30 options, we’ll show this text box on the next page of the form.
@@ -2104,7 +2245,9 @@ en:
     question_text: Question text
     selection_type:
       default: Selection from a list
-      none_of_the_above: None of the above
+      none_of_the_above:
+        cy: Dim un o’r uchod
+        en: None of the above
       only_one_option: Selection from a list, one option only
   task_statuses:
     cannot_start: Cannot start yet
@@ -2113,14 +2256,9 @@ en:
     not_started: Not started
     optional: Optional
   type_of_answer:
-    routing_warning_about_change_answer_type_heading: Your existing route may be deleted
-    routing_warning_about_change_answer_type_html: |
-      <p>
-        Changing the answer type from “Selection from a list of options” to a different answer type means your route will no longer work and will be deleted.
-      </p>
-      <p>
-        If you do not want to lose your route you can cancel this change by using the back button or <a href="%{pages_link_url}">go to your questions</a>.
-      </p>
+    routing_warning_changing_from_one_option_heading:
+      one: If you change the answer type of this question, its route will be deleted
+      other: If you change the answer type of this question, its routes will be deleted
   unarchive:
     new:
       body_html: |

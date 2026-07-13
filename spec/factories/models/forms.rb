@@ -21,6 +21,11 @@ FactoryBot.define do
     send_daily_submission_batch { false }
     send_weekly_submission_batch { false }
     send_copy_of_answers { "disabled" }
+    brand_id { nil }
+
+    trait :with_brand do
+      brand_id { Settings.branding.available_brands.first.id }
+    end
 
     trait :with_group do
       transient do

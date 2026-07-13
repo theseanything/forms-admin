@@ -24,7 +24,7 @@ module Forms
     end
 
     def check_feature_flag
-      raise NotFoundError unless FeatureService.enabled?(:send_filler_answers)
+      raise NotFoundError unless FeatureService.new(group: current_form.group).enabled?(:send_filler_answers)
     end
 
     def copy_of_answers_input_params

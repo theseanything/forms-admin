@@ -24,4 +24,12 @@ class Pages::Selection::TypeInput < BaseInput
     selection_options = draft_question&.answer_settings&.[](:selection_options)
     selection_options.present? && selection_options.length > 30
   end
+
+  def show_routing_warning?
+    return true unless FeatureService.new(group: draft_question.form&.group).enabled?(:multiple_branches)
+
+    return false if draft_question.page.nil?
+
+    draft_question.page.answer_type == "selection" && draft_question.page.answer_settings.only_one_option == "true"
+  end
 end

@@ -1,5 +1,6 @@
 class DraftQuestion < ApplicationRecord
   belongs_to :user
+  belongs_to :page, optional: true
 
   validates :form_id, presence: true
 

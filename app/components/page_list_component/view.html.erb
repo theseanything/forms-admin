@@ -33,11 +33,21 @@
           </div>
 
           <% if FeatureService.new(group: @form.group).enabled?(:multiple_branches) && page.routing_conditions.present? %>
-            <div class="govuk-summary-list__row">
+            <% error_message = PageListComponent::ErrorSummary::View.multiple_branch_error_message(page) %>
+            <div id="<%= PageListComponent::ErrorSummary::View.page_error_id(page) %>" class="govuk-summary-list__row app-page-list__row <%= class_names( "govuk-form-group--error": error_message.present?) %>">
               <dt class="govuk-summary-list__key app-page-list__key">
                 <%= t("page_conditions.condition_list_key", count: page.routing_conditions.count, question_number: page.position) %>
               </dt>
               <dd class="govuk-summary-list__value">
+
+              <% if error_message.present? %>
+                <ul class="govuk-list govuk-!-margin-0">
+                  <li class="app-page_list__route-text--error">
+                    <%= error_message %>
+                  </li>
+                </ul>
+              <% end %>
+
                 <% if page.routing_conditions.first.answer_value.present? %>
                   <% answer_value_groups(page).each do |_, group| %>
                     <p><%= condition_group_description(group) %></p>

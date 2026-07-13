@@ -24,6 +24,19 @@ class StepSummaryTableService
     rows
   end
 
+  def values_with_welsh_content2
+    rows = []
+
+    rows.push(page_heading_row) if @step.respond_to?(:page_heading) && @step.page_heading.present?
+    rows.push(guidance_markdown_row) if @step.respond_to?(:guidance_markdown) && @step.guidance_markdown.present?
+    rows.push(question_text_row) if @step.page_heading.present?
+    rows.push(hint_row) if @step.hint_text.present?
+    rows.concat(selection_rows) if @step.answer_type == "selection"
+    rows.concat(route_rows) if @step.routing_conditions.present?
+
+    rows
+  end
+
   def untranslated_content
     return text_row if @step.answer_type == "text"
     return date_row if @step.answer_type == "date"
@@ -37,7 +50,7 @@ class StepSummaryTableService
     conditions_for_step.map do |condition|
       welsh_condition = welsh_condition_from_id(condition.id)
       condition_data = {
-        answer_value: condition.answer_value,
+        answer_value: format_answer_value(condition.answer_value),
         answer_value_cy: welsh_answer_value(welsh_condition),
         goto_page: print_goto_page(condition, @steps),
         goto_page_cy: print_goto_page(welsh_condition, @welsh_steps),
@@ -118,6 +131,115 @@ private
     rows
   end
 
+  def route_rows
+    [[I18n.t("page_conditions.route2", count: number_of_routes), routes_value(@step.routing_conditions), welsh_routes_value(@step.routing_conditions)]]
+  end
+
+  def number_of_routes
+    if @step.routing_conditions.length == 1
+      1
+    else
+      answer_value_groups(@step.routing_conditions).length
+    end
+  end
+
+  def routes_value(conditions)
+    if conditions.first.answer_value.present?
+      print_routes(conditions)
+    else
+      print_unconditional_route(conditions.first)
+    end
+  end
+
+  def welsh_routes_value(conditions)
+    if conditions.first.answer_value.present?
+      print_welsh_routes(conditions)
+    else
+      print_welsh_unconditional_route(conditions.first)
+    end
+  end
+
+  def print_routes(conditions)
+    answer_value_groups = answer_value_groups(conditions)
+    answer_value_groups.map { |goto_page_id, condition_group|
+      if goto_page_id.nil?
+        caption = content_tag(:p, I18n.t("page_conditions.go_to_the_end"))
+      else
+        goto_question = @steps.find { |page| page.id == condition_group.first.goto_page_id }
+        goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+        goto_page_question_number = @steps.find_index(goto_question) + 1
+
+        caption = content_tag(:p, I18n.t("page_conditions.go_to_page", goto_page_question_number:, goto_page_question_text:))
+      end
+
+      answer_values = condition_group.map { |condition| "‘#{format_answer_value(condition.answer_value)}’" }
+      formatted_list = html_unordered_list2(answer_values)
+      safe_join([caption, formatted_list])
+    }.join.html_safe
+  end
+
+  def print_welsh_routes(conditions)
+    answer_value_groups = answer_value_groups(conditions)
+    answer_value_groups.map { |goto_page_id, condition_group|
+      if goto_page_id.nil?
+        caption = content_tag(:p, I18n.t("page_conditions.go_to_the_end"))
+      else
+        welsh_goto_question = welsh_step_from_id(condition_group.first.goto_page_id)
+        welsh_goto_page_question_text = ActionController::Base.helpers.sanitize(welsh_goto_question.question_text)
+        goto_page_question_number = @welsh_steps.find_index(welsh_goto_question) + 1
+
+        caption = content_tag(:p, I18n.t("page_conditions.go_to_page", goto_page_question_number:, goto_page_question_text: welsh_goto_page_question_text))
+      end
+
+      answer_values = condition_group.map do |condition|
+        welsh_condition = welsh_condition_from_id(condition.id)
+        "‘#{format_answer_value(welsh_answer_value2(welsh_condition))}’"
+      end
+
+      formatted_list = html_unordered_list2(answer_values)
+      safe_join([caption, formatted_list])
+    }.join.html_safe
+  end
+
+  def print_unconditional_route(condition)
+    if condition.skip_to_end
+      I18n.t("page_conditions.unconditional_skip_to_end_of_form").html_safe
+    else
+      goto_question = @steps.find { |page| page.id == condition.goto_page_id }
+      goto_page_question_text = ActionController::Base.helpers.sanitize(goto_question.question_text)
+      goto_page_question_number = @steps.find_index(goto_question) + 1
+
+      I18n.t("page_conditions.unconditional_go_to_page", goto_page_question_number:, goto_page_question_text:).html_safe
+    end
+  end
+
+  def print_welsh_unconditional_route(condition)
+    if condition.skip_to_end
+      I18n.t("page_conditions.unconditional_skip_to_end_of_form").html_safe
+    else
+      welsh_goto_question = welsh_step_from_id(condition.goto_page_id)
+      welsh_goto_page_question_text = ActionController::Base.helpers.sanitize(welsh_goto_question.question_text)
+      goto_page_question_number = @welsh_steps.find_index(welsh_goto_question) + 1
+
+      I18n.t("page_conditions.unconditional_go_to_page", goto_page_question_number:, goto_page_question_text: welsh_goto_page_question_text).html_safe
+    end
+  end
+
+  def answer_value_groups(conditions)
+    answer_order = @step.answer_settings&.selection_options&.map(&:value) || []
+
+    conditions.group_by(&:goto_page_id).map { |goto_page_id, condition_group|
+      goto_page_position = @steps.find_index { |page| page.id == goto_page_id } + 1 unless goto_page_id.nil?
+      sorted_condition_group = condition_group.in_order_of(:answer_value, answer_order, filter: false)
+      [goto_page_position, sorted_condition_group]
+    }.sort_by { |goto_page_position, _| goto_page_position || Float::INFINITY }
+  end
+
+  def format_answer_value(answer_value)
+    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == Condition::NONE_OF_THE_ABOVE
+    ActionController::Base.helpers.sanitize(answer_value)
+  end
+
   def selection_answer_type
     return I18n.t("step_summary_card.selection_type.default") unless @step.answer_settings.only_one_option == "true"
 
@@ -128,7 +250,7 @@ private
     return @step.show_selection_options unless @step.answer_settings.selection_options.length >= 1
 
     options = @step.answer_settings.selection_options.map(&:name)
-    options << I18n.t("step_summary_card.selection_type.none_of_the_above") if @step.is_optional?
+    options << I18n.t("step_summary_card.selection_type.none_of_the_above.en") if @step.is_optional?
     formatted_list = html_unordered_list(options)
 
     if options.length > 10
@@ -137,7 +259,7 @@ private
                                       .with_content(formatted_list)
                                       .call
     else
-      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length), class: "govuk-body-s")
+      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length))
       safe_join([caption, formatted_list])
     end
   end
@@ -146,7 +268,7 @@ private
     return welsh_step.show_selection_options unless welsh_step.answer_settings.selection_options.length >= 1
 
     options = welsh_step.answer_settings.selection_options.map(&:name)
-    options << I18n.t("step_summary_card.selection_type.none_of_the_above") if welsh_step.is_optional?
+    options << I18n.t("step_summary_card.selection_type.none_of_the_above.cy") if welsh_step.is_optional?
     formatted_list = html_unordered_list(options)
 
     if options.length > 10
@@ -155,7 +277,7 @@ private
                                       .with_content(formatted_list)
                                       .call
     else
-      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length), class: "govuk-body-s")
+      caption = content_tag(:p, I18n.t("page_settings_summary.selection.options_count", number_of_options: options.length))
       safe_join([caption, formatted_list])
     end
   end
@@ -245,6 +367,10 @@ private
     content_tag(:ul, html_list_item(list_items), class: ["govuk-list", "govuk-list--bullet"])
   end
 
+  def html_unordered_list2(list_items)
+    content_tag(:ul, html_list_item(list_items), class: ["govuk-list", "govuk-list--bullet govuk-!-static-margin-bottom-4"])
+  end
+
   def html_list_item(item)
     item.map { |i| content_tag(:li, i) }.join.html_safe
   end
@@ -293,6 +419,16 @@ private
   def welsh_answer_value(welsh_condition)
     return nil if welsh_condition.answer_value.blank?
 
+    return I18n.t("step_summary_card.selection_type.none_of_the_above.cy") if welsh_condition.answer_value == Condition::NONE_OF_THE_ABOVE
+
     @welsh_steps.find { |step| step.id == welsh_condition.check_page_id }.answer_settings.selection_options.find { |option| option.value == welsh_condition.answer_value }.name
+  end
+
+  def welsh_answer_value2(welsh_condition)
+    return nil if welsh_condition.answer_value.blank?
+
+    return I18n.t("step_summary_card.selection_type.none_of_the_above.cy") if welsh_condition.answer_value == Condition::NONE_OF_THE_ABOVE
+
+    @welsh_steps.find { |step| step.id == welsh_condition.routing_page_id }.answer_settings.selection_options.find { |option| option.value == welsh_condition.answer_value }.name
   end
 end

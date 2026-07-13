@@ -5,7 +5,8 @@ describe StepSummaryTableService do
     described_class.new(step: form_document_step, steps: form_document_steps, welsh_steps: welsh_form_document_steps)
   end
 
-  let(:form) { create :form, :with_welsh_translation, :live, id: 1, pages: [page] }
+  let(:form) { create :form, :with_welsh_translation, :live, id: 1, pages: }
+  let(:pages) { [page] }
   let(:page) { create(:page) }
 
   let(:form_document_content) { FormDocument::Content.from_form_document(form.live_form_document) }
@@ -117,6 +118,7 @@ describe StepSummaryTableService do
                question_text: "Are you renewing a licence?",
                question_text_cy: "Ydych chi'n adnewyddu trwydded?",
                answer_type: "selection",
+               is_optional: true,
                answer_settings: {
                  "only_one_option" => "true",
                  "selection_options" => [{ name: "Yes", value: "Yes" }, { name: "No", value: "No" }],
@@ -128,8 +130,8 @@ describe StepSummaryTableService do
       end
 
       it "includes a row for the selection options" do
-        selection_list = "<p class=\"govuk-body-s\">#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Yes</li><li>No</li></ul>"
-        selection_list_cy = "<p class=\"govuk-body-s\">#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 2)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Ydy</li><li>Nac ydy</li></ul>"
+        selection_list = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 3)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Yes</li><li>No</li><li>None of the above</li></ul>"
+        selection_list_cy = "<p>#{I18n.t('page_settings_summary.selection.options_count', number_of_options: 3)}</p><ul class=\"govuk-list govuk-list--bullet\"><li>Ydy</li><li>Nac ydy</li><li>Dim un o’r uchod</li></ul>"
         expect(step_summary_table_service.values_with_welsh_content).to include [I18n.t("step_summary_card.options_title"), selection_list, selection_list_cy]
       end
 
@@ -220,6 +222,218 @@ describe StepSummaryTableService do
         it "includes a row with the none of the above text" do
           expect(step_summary_table_service.values_with_welsh_content).to include [I18n.t("step_summary_card.none_of_the_above_question_title"), page.answer_settings[:none_of_the_above_question][:question_text], page.answer_settings_cy[:none_of_the_above_question][:question_text]]
         end
+      end
+    end
+  end
+
+  describe "#values_with_welsh_content2", :feature_multiple_branches do
+    let(:form) do
+      create :form,
+             :with_welsh_translation,
+             :ready_for_live,
+             id: 1,
+             name: "Apply for a juggling licence",
+             name_cy: "Apply for a juggling licence (Welsh)",
+             what_happens_next_markdown: "English what happens next",
+             what_happens_next_markdown_cy: "Welsh what happens next",
+             declaration_markdown: "English declaration",
+             declaration_markdown_cy: "Welsh declaration",
+             support_email: "english-support@example.gov.uk",
+             support_email_cy: "welsh-support@example.gov.uk",
+             support_phone: "01234 987654",
+             support_phone_cy: "01234 567891",
+             support_url_cy: "https://www.gov.uk/welsh-support",
+             support_url: "https://www.gov.uk/english-support",
+             support_url_text_cy: "Welsh Support",
+             support_url_text: "English Support",
+             privacy_policy_url: "https://www.gov.uk/english-privacy",
+             privacy_policy_url_cy: "https://www.gov.uk/welsh-privacy",
+             payment_url: "https://www.gov.uk/english-payment",
+             payment_url_cy: "https://www.gov.uk/payments/your-welsh-payment-link",
+             welsh_completed: true,
+             pages: [
+               create(
+                 :page,
+                 question_text: "Question",
+                 question_text_cy: "Question (Welsh)",
+               ),
+               create(
+                 :page,
+                 :with_selection_settings,
+                 question_text: "Branch question",
+                 question_text_cy: "Branch question (Welsh)",
+                 is_optional: true,
+                 answer_settings: DataStruct.new(
+                   only_one_option: "true",
+                   selection_options: [
+                     {
+                       name: "First branch",
+                       value: "First branch",
+                     },
+                     {
+                       name: "Second branch",
+                       value: "Second branch",
+                     },
+                     {
+                       name: "Also second branch",
+                       value: "Also second branch",
+                     },
+                     {
+                       name: "Skip the branches",
+                       value: "Skip the branches",
+                     },
+                   ],
+                 ),
+                 answer_settings_cy: DataStruct.new(
+                   only_one_option: "true",
+                   selection_options: [
+                     {
+                       name: "First branch (Welsh)",
+                       value: "First branch",
+                     },
+                     {
+                       name: "Second branch (Welsh)",
+                       value: "Second branch",
+                     },
+                     {
+                       name: "Also second branch (Welsh)",
+                       value: "Also second branch",
+                     },
+                     {
+                       name: "Skip the branches (Welsh)",
+                       value: "Skip the branches",
+                     },
+                   ],
+                 ),
+               ),
+               create(
+                 :page,
+                 question_text: "Question in branch 1",
+                 question_text_cy: "Question in branch 1 (Welsh)",
+               ),
+               create(
+                 :page,
+                 question_text: "Question at the end of branch 1",
+                 question_text_cy: "Question at the end of branch 1 (Welsh)",
+               ),
+               create(
+                 :page,
+                 question_text: "Question at the start of branch 2",
+                 question_text_cy: "Question at the start of branch 2 (Welsh)",
+               ),
+               create(
+                 :page,
+                 question_text: "Question in branch 2",
+                 question_text_cy: "Question in branch 2 (Welsh)",
+               ),
+               create(
+                 :page,
+                 question_text: "Question at the end of branch 2",
+                 question_text_cy: "Question at the end of branch 2 (Welsh)",
+               ),
+               create(
+                 :page,
+                 question_text: "Question",
+                 question_text_cy: "Question (Welsh)",
+               ),
+             ]
+    end
+
+    let(:pages) do
+      form.pages
+    end
+
+    let(:pages_with_routing) do
+      # Create conditions separately
+      create(
+        :condition,
+        answer_value: "Second branch",
+        goto_page_id: pages[4].id,
+        routing_page_id: pages[1].id,
+      )
+
+      create(
+        :condition,
+        answer_value: "Also second branch",
+        goto_page_id: pages[4].id,
+        routing_page_id: pages[1].id,
+      )
+
+      create(
+        :condition,
+        answer_value: "Also second branch",
+        goto_page_id: pages[7].id,
+        routing_page_id: pages[1].id,
+      )
+
+      create(
+        :condition,
+        answer_value: "none_of_the_above",
+        routing_page_id: pages[1].id,
+        skip_to_end: true,
+      )
+
+      create(
+        :condition,
+        routing_page_id: pages[3].id,
+        goto_page_id: pages[7].id,
+      )
+
+      create(
+        :condition,
+        routing_page_id: pages[6].id,
+        skip_to_end: true,
+      )
+
+      pages.each(&:reload)
+      form.save_draft!
+      form.make_live!
+      pages
+    end
+
+    before do
+      pages_with_routing
+      form.reload
+      pages.reload
+    end
+
+    context "when the page is a selection page with routing" do
+      let(:page) { pages_with_routing[1] }
+
+      it "includes a row for the routes" do
+        expect(step_summary_table_service.values_with_welsh_content2).to include([
+          "Routes",
+          "<p>Go to 5, ‘Question at the start of branch 2’ if the answer is:</p><ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\"><li>‘Second branch’</li><li>‘Also second branch’</li></ul>"\
+          "<p>Go to 8, ‘Question’ if the answer is:</p><ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\"><li>‘Also second branch’</li></ul>"\
+          "<p>Go to the end of the form if the answer is:</p><ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\"><li>‘None of the above’</li></ul>",
+          "<p>Go to 5, ‘Question at the start of branch 2 (Welsh)’ if the answer is:</p><ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\"><li>‘Second branch (Welsh)’</li><li>‘Also second branch (Welsh)’</li></ul>"\
+          "<p>Go to 8, ‘Question (Welsh)’ if the answer is:</p><ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\"><li>‘Also second branch (Welsh)’</li></ul>"\
+          "<p>Go to the end of the form if the answer is:</p><ul class=\"govuk-list govuk-list--bullet govuk-!-static-margin-bottom-4\"><li>‘Dim un o’r uchod’</li></ul>",
+        ])
+      end
+    end
+
+    context "when the page unconditionally skips to another page" do
+      let(:page) { pages_with_routing[3] }
+
+      it "includes a row for the routes" do
+        expect(step_summary_table_service.values_with_welsh_content2).to include([
+          "Route",
+          "Go to 8, ‘Question’",
+          "Go to 8, ‘Question (Welsh)’",
+        ])
+      end
+    end
+
+    context "when the page unconditionally skips to the end" do
+      let(:page) { pages_with_routing[6] }
+
+      it "includes a row for the routes" do
+        expect(step_summary_table_service.values_with_welsh_content2).to include([
+          "Route",
+          "Go to the end of the form",
+          "Go to the end of the form",
+        ])
       end
     end
   end
@@ -559,6 +773,20 @@ describe StepSummaryTableService do
                      ],
                    ),
                  ),
+                 create(
+                   :page,
+                   :with_selection_settings,
+                   question_text: "Question with none of the above",
+                   question_text_cy: "Question with none of the above (Welsh)",
+                   is_optional: true,
+                   answer_settings: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Option 1", value: "Option 1" }, { name: "Option 2", value: "Option 2" }]),
+                   answer_settings_cy: DataStruct.new(only_one_option: "true", selection_options: [{ name: "Option 1 (Welsh)", value: "Option 1" }, { name: "Option 2 (Welsh)", value: "Option 2" }]),
+                 ),
+                 create(
+                   :page,
+                   question_text: "Question",
+                   question_text_cy: "Question (Welsh)",
+                 ),
                ]
       end
 
@@ -621,6 +849,14 @@ describe StepSummaryTableService do
           exit_page_markdown_cy: "Exit page markdown (Welsh)",
         )
 
+        create(
+          :condition,
+          answer_value: "none_of_the_above",
+          check_page_id: pages[13].id,
+          routing_page_id: pages[13].id,
+          skip_to_end: true,
+        )
+
         pages.each(&:reload)
         form.save_draft!
         form.make_live!
@@ -665,6 +901,10 @@ describe StepSummaryTableService do
 
       let(:page_with_exit_page) do
         pages_with_routing[12]
+      end
+
+      let(:page_with_none_of_the_above) do
+        pages_with_routing[13]
       end
 
       let(:exit_page) do
@@ -780,6 +1020,27 @@ describe StepSummaryTableService do
                                                                     routing_page: "13. Exit page question",
                                                                     routing_page_cy: "13. Exit page question (Welsh)",
                                                                     secondary_skip: false }]
+        end
+      end
+
+      context "when a page has a route based on a none of the above answer" do
+        let(:page) { page_with_none_of_the_above }
+
+        it "returns an array containing the none of the above answer" do
+          expect(step_summary_table_service.route_content).to eq [{ answer_value: "None of the above",
+                                                                    answer_value_cy: "Dim un o’r uchod",
+                                                                    goto_page: "End of the form",
+                                                                    goto_page_cy: "End of the form",
+                                                                    routing_page: "14. Question with none of the above",
+                                                                    routing_page_cy: "14. Question with none of the above (Welsh)",
+                                                                    check_page: "14. Question with none of the above",
+                                                                    check_page_cy: "14. Question with none of the above (Welsh)",
+                                                                    secondary_skip: false,
+                                                                    exit_page: false,
+                                                                    exit_page_heading: nil,
+                                                                    exit_page_heading_cy: nil,
+                                                                    exit_page_markdown: nil,
+                                                                    exit_page_markdown_cy: nil }]
         end
       end
     end

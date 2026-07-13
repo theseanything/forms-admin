@@ -111,7 +111,7 @@ private
     return @step.show_selection_options unless @step.answer_settings.selection_options.length >= 1
 
     options = @step.answer_settings.selection_options.map(&:name)
-    options << I18n.t("step_summary_card.selection_type.none_of_the_above") if @step.is_optional?
+    options << I18n.t("step_summary_card.selection_type.none_of_the_above.en") if @step.is_optional?
     formatted_list = html_unordered_list(options)
 
     if options.length > 10
@@ -267,7 +267,7 @@ private
   end
 
   def format_answer_value(answer_value)
-    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == "none_of_the_above"
+    answer_value = I18n.t("page_conditions.none_of_the_above") if answer_value == Condition::NONE_OF_THE_ABOVE
     ActionController::Base.helpers.sanitize(answer_value)
   end
 

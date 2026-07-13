@@ -127,6 +127,8 @@ To run this project, your database will need to have a user in it. The `bin/setu
 ./bin/rails db:seed
 ```
 
+The database seed will also create a number of test forms, by default the submissions for these forms will be sent by email to the email address that you have configured in Git. If you want to override this, or are running this app in a container where git or its configuration is not present, then you can use set the `EMAIL` environment variable. If neither `EMAIL` or the git email address are set, the database seed will fallback to a generic test email address.
+
 ## Changing configuration
 
 ### Changing settings

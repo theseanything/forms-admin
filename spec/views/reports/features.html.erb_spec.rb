@@ -37,6 +37,7 @@ describe "reports/features.html.erb" do
       forms_with_s3_submissions: 5,
       forms_with_exit_pages: 1,
       forms_with_welsh_translation: 1,
+      forms_with_copy_of_answers_enabled: 2,
     }
   end
   let(:tag) { "live" }
@@ -146,6 +147,10 @@ describe "reports/features.html.erb" do
 
   it "includes the number of live forms with a welsh translation" do
     expect(rendered).to have_css(".govuk-summary-list__row", text: "Live forms with Welsh translation#{report[:forms_with_welsh_translation]}")
+  end
+
+  it "includes the number of live forms that allow people to ask for a copy of their answers" do
+    expect(rendered).to have_css(".govuk-summary-list__row", text: "Live forms that allow people to ask for a copy of their answers#{report[:forms_with_copy_of_answers]}")
   end
 
   it "has a link to the selection questions summary report" do

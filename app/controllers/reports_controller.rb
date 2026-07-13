@@ -123,10 +123,12 @@ class ReportsController < WebController
     forms_feature_report(tag, params[:action], forms)
   end
 
-  def users
-    data = Reports::UsersReportService.new.user_data
+  def forms_with_copy_of_answers_enabled
+    tag = params[:tag]
+    forms = Reports::FormDocumentsService.form_documents(tag:)
+    forms = Reports::FeatureReportService.new(forms).forms_with_copy_of_answers_enabled
 
-    render locals: { data: }
+    forms_feature_report(tag, params[:action], forms)
   end
 
   def add_another_answer
@@ -177,8 +179,6 @@ class ReportsController < WebController
     questions_feature_report(tag, params[:action], questions, type: :selection_questions_with_none_of_the_above)
   end
 
-  def csv_downloads; end
-
   def live_forms_csv
     forms = Reports::FormDocumentsService.form_documents(tag: "live-or-archived")
 
@@ -198,6 +198,18 @@ class ReportsController < WebController
 
   def contact_for_research
     data = Reports::ContactForResearchService.new.contact_for_research_data
+
+    render locals: { data: }
+  end
+
+  def users_per_organisation
+    data = Reports::OrganisationsReportService.new.users_per_organisation_report
+
+    render locals: { data: }
+  end
+
+  def organisation_domains
+    data = Reports::OrganisationsReportService.new.organisation_domains_report
 
     render locals: { data: }
   end

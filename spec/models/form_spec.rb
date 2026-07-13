@@ -1013,6 +1013,7 @@ RSpec.describe Form, type: :model do
         confirm_submission_email_status: :completed,
         privacy_policy_status: :completed,
         payment_link_status: :optional,
+        brand_status: :optional,
         copy_of_answers_status: :optional,
         submission_attachments_status: :optional,
         batch_submissions_status: :optional,
@@ -1020,6 +1021,8 @@ RSpec.describe Form, type: :model do
         welsh_language_status: :optional,
         share_preview_status: :completed,
         make_live_status: :completed,
+        make_only_english_live_status: :completed,
+        make_only_welsh_live_status: :cannot_start,
       }
       expect(form.all_task_statuses).to eq expected_hash
     end
@@ -1642,13 +1645,43 @@ RSpec.describe Form, type: :model do
             context "when the Welsh task is still in progress" do
               let(:form) { create :form, :ready_for_live, :with_welsh_translation, state: "live", welsh_completed: false }
 
-              it "returns true" do
+              it "returns false" do
                 expect(form.can_make_language_live?(language:)).to be false
               end
             end
 
             context "when the Welsh task is complete" do
               let(:form) { create :form, :ready_for_live, :with_welsh_translation, state: "live" }
+
+              it "returns true" do
+                expect(form.can_make_language_live?(language:)).to be true
+              end
+
+              context "when there are changes which have not yet been made live on the English version" do
+                before do
+                  form.name = "A new form name"
+                  form.save_draft!
+
+                  form.share_preview_completed = true
+                  form.save_draft!
+                end
+
+                it "returns false" do
+                  expect(form.can_make_language_live?(language:)).to be false
+                end
+              end
+            end
+
+            context "when the Welsh task has been completed since the English form was made live" do
+              let(:form) { create :form, :ready_for_live, :with_welsh_translation, state: "live", welsh_completed: false }
+
+              before do
+                form.welsh_completed = true
+                form.save_draft!
+
+                form.share_preview_completed = true
+                form.save_draft!
+              end
 
               it "returns true" do
                 expect(form.can_make_language_live?(language:)).to be true

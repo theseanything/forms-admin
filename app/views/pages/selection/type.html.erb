@@ -10,7 +10,7 @@
           <% banner.with_heading(text: t("selection_type.routing_and_reduce_your_options_combined_warning.heading"), tag: "h3") %>
           <p><%= t("selection_type.routing_and_reduce_your_options_combined_warning.body", pages_link_url: form_pages_path(current_form.id)) %></p>
         <% end %>
-      <% else %>
+      <% elsif @selection_type_input.show_routing_warning? %>
         <%= govuk_notification_banner(title_text: t("banner.default.title")) do |banner| %>
           <% banner.with_heading(text: t("selection_type.routing_warning")) %>
         <% end %>

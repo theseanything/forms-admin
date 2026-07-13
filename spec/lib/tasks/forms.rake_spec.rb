@@ -119,6 +119,133 @@ RSpec.describe "forms.rake", type: :task do
     end
   end
 
+  describe "forms:set_state" do
+    subject(:task) do
+      Rake::Task["forms:set_state"]
+    end
+
+    let(:form) { create :form, :ready_for_live }
+    let!(:other_form) { create :form }
+
+    context "with valid arguments" do
+      it "sets a draft form's state to archived by transitioning through live" do
+        expect {
+          task.invoke(form.id, "archived")
+        }.to change { form.reload.state }.from("draft").to("archived")
+      end
+
+      it "runs the event callbacks for the intermediate transitions" do
+        task.invoke(form.id, "archived")
+
+        form.reload
+        expect(form.first_made_live_at).not_to be_nil
+        expect(form.archived_form_document).not_to be_nil
+      end
+
+      it "sets a draft form's state to archived_with_draft by transitioning through two intermediate states" do
+        expect {
+          task.invoke(form.id, "archived_with_draft")
+        }.to change { form.reload.state }.from("draft").to("archived_with_draft")
+      end
+
+      it "sets an archived form's state to live" do
+        archived_form = create :form, :archived
+
+        expect {
+          task.invoke(archived_form.id, "live")
+        }.to change { archived_form.reload.state }.from("archived").to("live")
+      end
+
+      it "does not change other forms" do
+        expect {
+          task.invoke(form.id, "archived")
+        }.not_to(change { other_form.reload.state })
+      end
+    end
+
+    context "when the form is not ready to be made live" do
+      let(:form) { create :form }
+
+      it "raises an invalid transition error and does not change the form's state" do
+        expect {
+          task.invoke(form.id, "archived")
+        }.to raise_error(AASM::InvalidTransition)
+
+        expect(form.reload.state).to eq("draft")
+      end
+    end
+
+    context "when no sequence of events reaches the target state" do
+      it "aborts with a message" do
+        live_form = create :form, :live
+
+        expect {
+          task.invoke(live_form.id, "draft")
+        }.to raise_error(SystemExit)
+               .and output(/cannot transition form from 'live' to 'draft'/).to_stderr
+      end
+    end
+
+    context "when the form is already in the target state" do
+      it "does not abort and leaves the form's state unchanged" do
+        expect {
+          task.invoke(form.id, "draft")
+        }.not_to raise_error
+
+        expect(form.reload.state).to eq("draft")
+      end
+
+      it "logs that the form is already in the target state" do
+        allow(Rails.logger).to receive(:info)
+
+        task.invoke(form.id, "draft")
+
+        expect(Rails.logger).to have_received(:info)
+          .with(/forms:set_state: form #{form.id} \(".*"\) is already in state 'draft'/)
+      end
+    end
+
+    context "with invalid arguments" do
+      shared_examples_for "usage error" do
+        it "aborts with a usage message" do
+          expect {
+            task.invoke(*invalid_args)
+          }.to raise_error(SystemExit)
+                 .and output(/usage: rake forms:set_state/).to_stderr
+        end
+      end
+
+      context "with no arguments" do
+        it_behaves_like "usage error" do
+          let(:invalid_args) { [] }
+        end
+      end
+
+      context "with only one argument" do
+        it_behaves_like "usage error" do
+          let(:invalid_args) { [form.id] }
+        end
+      end
+
+      context "with a state that is not a form state" do
+        it "aborts with a message listing the valid states" do
+          expect {
+            task.invoke(form.id, "not_a_state")
+          }.to raise_error(SystemExit)
+                 .and output(/state must be one of draft, deleted, live, live_with_draft, archived, archived_with_draft/).to_stderr
+        end
+      end
+
+      context "with invalid form_id" do
+        it "raises an error" do
+          expect {
+            task.invoke("99", "archived")
+          }.to raise_error(ActiveRecord::RecordNotFound)
+        end
+      end
+    end
+  end
+
   describe "forms:submission_email:update" do
     subject(:task) do
       Rake::Task["forms:submission_email:update"]

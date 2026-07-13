@@ -1,4 +1,3 @@
-require "gds-sso/lint/user_spec"
 require "rails_helper"
 
 describe User, type: :model do
@@ -125,8 +124,6 @@ describe User, type: :model do
       expect(described_class.roles.values).to eq(%w[super_admin organisation_admin standard])
     end
   end
-
-  it_behaves_like "a gds-sso user class"
 
   describe "associations" do
     it "destroys associated memberships" do

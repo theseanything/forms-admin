@@ -29,7 +29,7 @@ class Pages::TypeOfAnswerController < PagesController
       redirect_to next_page_path(@type_of_answer_input.answer_type)
     else
       @type_of_answer_path = type_of_answer_update_path(current_form.id)
-      render :type_of_answer
+      render :type_of_answer, locals: { current_form: }
     end
   end
 

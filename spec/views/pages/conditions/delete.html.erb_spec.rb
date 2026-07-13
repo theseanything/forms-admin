@@ -33,6 +33,23 @@ describe "pages/conditions/delete.html.erb" do
     expect(rendered).to have_css(".govuk-summary-list__value", text: delete_condition_input.goto_page_question_text)
   end
 
+  context "when the condition is for a 'none of the above' answer" do
+    let(:condition) { create :condition, id: 1, routing_page_id: pages.first.id, check_page_id: pages.first.id, goto_page_id: pages.last.id, answer_value: Condition::NONE_OF_THE_ABOVE }
+
+    let(:page) do
+      page = pages.first
+      page.update!(is_optional: true)
+      page
+    end
+
+    it "contains the condition details" do
+      expect(rendered).to have_css(".govuk-summary-list__row") do |row|
+        row.has_css?(".govuk-summary-list__key", exact_text: "is answered as") &&
+          row.has_css?(".govuk-summary-list__value", exact_text: "None of the above")
+      end
+    end
+  end
+
   it "has a submit button" do
     expect(rendered).to have_css("button[type='submit'].govuk-button", text: I18n.t("save_and_continue"))
   end

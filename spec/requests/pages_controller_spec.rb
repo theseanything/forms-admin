@@ -248,6 +248,118 @@ RSpec.describe PagesController, type: :request do
           end
         end
       end
+
+      context "when the multiple_branches feature is enabled", :feature_multiple_branches do
+        let(:form) { create(:form, :ready_for_routing) }
+        let(:pages) { form.pages }
+        let(:page) { pages.first }
+
+        context "when page to delete has no routes" do
+          it "does not render a warning" do
+            get delete_page_path(form_id: form.id, page_id: page.id)
+
+            expect(response.body).not_to include "Important"
+          end
+        end
+
+        context "when page to delete is the start of one route" do
+          let(:page) { pages.first }
+
+          before do
+            create(:condition, routing_page_id: page.id, answer_value: "Red", goto_page_id: pages.last.id)
+          end
+
+          it "renders a warning about deleting this page" do
+            get delete_page_path(form_id: form.id, page_id: page.id)
+
+            assert_select(".govuk-notification-banner", count: 1) do
+              assert_select "*", "Important"
+              assert_select "h3", "Question #{page.position} has a route"
+              assert_select "p.govuk-body", /If you delete this question, its route will also be deleted/
+              assert_select "p.govuk-body a", "View your question routes"
+            end
+          end
+        end
+
+        context "when page to delete is the start of mulltiple routes" do
+          let(:page) { pages.first }
+
+          before do
+            create(:condition, routing_page_id: page.id, answer_value: "Red", goto_page_id: pages.last.id)
+            create(:condition, routing_page_id: page.id, answer_value: "Blue", goto_page_id: pages.last.id)
+          end
+
+          it "renders a warning about deleting this page" do
+            get delete_page_path(form_id: form.id, page_id: page.id)
+
+            assert_select(".govuk-notification-banner", count: 1) do
+              assert_select "*", "Important"
+              assert_select "h3", "Question #{page.position} has routes"
+              assert_select "p.govuk-body", /If you delete this question, its routes will also be deleted/
+              assert_select "p.govuk-body a", "View your question routes"
+            end
+          end
+        end
+
+        context "when page to delete is the end of a route" do
+          let(:page) { pages.last }
+
+          before do
+            create(:condition, routing_page_id: pages.first.id, answer_value: "Red", goto_page_id: page.id)
+          end
+
+          it "renders a warning about deleting this page" do
+            get delete_page_path(form_id: form.id, page_id: page.id)
+
+            assert_select(".govuk-notification-banner", count: 1) do
+              assert_select "*", "Important"
+              assert_select "h3", "There’s a route to question #{page.position}"
+              assert_select "p.govuk-body", /If you delete this question, the route to it will also be deleted./
+              assert_select "p.govuk-body a", "View your question routes"
+            end
+          end
+        end
+
+        context "when page to delete is the end of multiple routes" do
+          let(:page) { pages.last }
+
+          before do
+            create(:condition, routing_page_id: pages.first.id, answer_value: "Red", goto_page_id: page.id)
+            create(:condition, routing_page_id: pages.first.id, answer_value: "Blue", goto_page_id: page.id)
+          end
+
+          it "renders a warning about deleting this page" do
+            get delete_page_path(form_id: form.id, page_id: page.id)
+
+            assert_select(".govuk-notification-banner", count: 1) do
+              assert_select "*", "Important"
+              assert_select "h3", "There are routes to question #{page.position}"
+              assert_select "p.govuk-body", /If you delete this question, the routes to it will also be deleted./
+              assert_select "p.govuk-body a", "View your question routes"
+            end
+          end
+        end
+
+        context "when page to delete is the start and end of multiple routes" do
+          let(:page) { pages.third }
+
+          before do
+            create(:condition, routing_page_id: pages.first.id, answer_value: "Red", goto_page_id: page.id)
+            create(:condition, routing_page_id: page.id, answer_value: "Blue", goto_page_id: pages.last.id)
+          end
+
+          it "renders a warning about deleting this page" do
+            get delete_page_path(form_id: form.id, page_id: page.id)
+
+            assert_select(".govuk-notification-banner", count: 1) do
+              assert_select "*", "Important"
+              assert_select "h3", "There are routes to and from question #{page.position}"
+              assert_select "p.govuk-body", /If you delete this question, its routes will also be deleted./
+              assert_select "p.govuk-body a", "View your question routes"
+            end
+          end
+        end
+      end
     end
   end
 

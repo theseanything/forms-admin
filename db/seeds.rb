@@ -14,6 +14,8 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
     name: "Government Digital Service",
     abbreviation: "GDS",
   )
+  gds.organisation_domains.create! domain: "digital.cabinet-office.gov.uk"
+  gds.organisation_domains.create! domain: "dsit.gov.uk"
 
   # Create default super-admin
   default_user = User.create!({ email: "example@example.com",
@@ -23,7 +25,7 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
                                 name: "A User",
                                 role: :super_admin,
                                 uid: "123456",
-                                provider: :mock_gds_sso,
+                                provider: :mock_user,
                                 terms_agreed_at: Time.zone.now,
                                 research_contact_status: :consented,
                                 user_research_opted_in_at: Time.zone.now })
@@ -32,6 +34,8 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
 
   # create extra organisations
   test_org = Organisation.create! slug: "test-org", name: "Test Org", abbreviation: "TO"
+  test_org.organisation_domains.create! domain: "digital.cabinet-office.gov.uk"
+  test_org.organisation_domains.create! domain: "dsit.gov.uk"
   mot_org = Organisation.create! slug: "ministry-of-tests", name: "Ministry of Tests", abbreviation: "MOT"
   Organisation.create! slug: "department-for-testing", name: "Department for Testing", abbreviation: "DfT"
   Organisation.create! slug: "closed-org", name: "Closed Org", abbreviation: "CO", closed: true
@@ -127,14 +131,14 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
 
   # create some test groups
   end_to_end_group = Group.create! name: "End to end tests", organisation: gds, status: :active
-  test_group = Group.create! name: "Test Group", organisation: gds, creator: default_user, status: :active
+  test_group = Group.create! name: "Test Group", organisation: gds, creator: default_user, status: :active, send_filler_answers_enabled: true
   multiple_branches_test_group = Group.create! name: "Test Group with multiple branches", organisation: gds, creator: default_user, status: :active, multiple_branches_enabled: true
   Group.create! name: "Ministry of Tests forms", organisation: mot_org
   Group.create! name: "Ministry of Tests forms - secret!", organisation: mot_org, creator: mot_user
 
   Membership.create! user: default_user, group: end_to_end_group, added_by: default_user, role: :group_admin
 
-  submission_email = ENV["EMAIL"] || `git config --get user.email`.strip
+  submission_email = ENV["EMAIL"].presence || `git config --get user.email`.strip.presence || "example@example.com"
 
   all_question_types_form = Form.create!(
     name: "All question types form",
@@ -246,6 +250,8 @@ if (HostingEnvironment.local_development? || HostingEnvironment.review?) && User
     submission_type: "s3",
     submission_format: %w[csv],
     s3_bucket_region: "eu-west-2",
+    s3_bucket_name: "govuk-forms-submissions-to-s3-test",
+    s3_bucket_aws_account_id: "711966560482",
   )
   e2e_s3_forms.set_task_status_service(TaskStatusService.new(form: e2e_s3_forms, current_user: craig))
   e2e_s3_forms.make_live!

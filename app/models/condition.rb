@@ -2,11 +2,14 @@ class Condition < ApplicationRecord
   include ConditionMethods
   extend Mobility
 
+  NONE_OF_THE_ABOVE = :none_of_the_above.to_s
+
   belongs_to :routing_page, class_name: "Page"
   belongs_to :check_page, class_name: "Page", optional: true
   belongs_to :goto_page, class_name: "Page", optional: true
 
   has_one :form, through: :routing_page
+  belongs_to :exit_page, optional: true
 
   before_destroy :destroy_postconditions
 
@@ -52,7 +55,7 @@ class Condition < ApplicationRecord
     return nil if has_precondition? && answer_value.nil?
 
     answer_options = check_page&.answer_settings&.dig("selection_options")&.pluck("name")
-    return nil if answer_options.blank? || answer_options.include?(answer_value) || answer_value == :none_of_the_above.to_s && check_page.is_optional?
+    return nil if answer_options.blank? || answer_options.include?(answer_value) || answer_value == NONE_OF_THE_ABOVE && check_page.is_optional?
 
     DataStruct.new(name: "answer_value_doesnt_exist")
   end

@@ -3,9 +3,9 @@ class Reports::FormDocumentsService
     def form_documents(tag:)
       form_document_tags = tag == "live-or-archived" ? %w[live archived] : tag
       form_documents = FormDocument.joins(form: { group_form: { group: :organisation } })
-                  .where(tag: form_document_tags, language: "en")
-                  .where.not(organisation: { "internal": true })
-                  .select("form_documents.*", "organisation.name AS organisation_name", "organisation.id AS organisation_id", "groups.external_id AS group_external_id", "groups.name AS group_name", "welsh_completed AS welsh_completed")
+                                   .where(tag: form_document_tags, language: "en")
+                                   .where.not(organisation: { "internal": true })
+                                   .select("form_documents.*", "organisation.name AS organisation_name", "organisation.id AS organisation_id", "groups.external_id AS group_external_id", "groups.name AS group_name", "welsh_completed AS welsh_completed")
 
       if tag == "draft"
         form_documents = form_documents.where(form: { "state": %w[draft live_with_draft archived_with_draft] })
@@ -74,6 +74,10 @@ class Reports::FormDocumentsService
 
     def has_welsh_translation(form_document)
       form_document["welsh_completed"].present?
+    end
+
+    def copy_of_answers_enabled?(form_document)
+      form_document.dig("content", "send_copy_of_answers") == "enabled"
     end
 
   private

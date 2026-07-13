@@ -6,8 +6,10 @@ describe FormTaskListService do
   let(:organisation) { build :organisation, :with_signed_mou, id: 1 }
   let(:form) { create(:form, :new_form, pages:) }
   let(:pages) { [] }
-  let(:group) { create(:group, name: "Group 1", organisation:, status: group_status) }
+  let(:group) { create(:group, name: "Group 1", organisation:, status: group_status, send_filler_answers_enabled:, custom_branding_enabled:) }
   let(:group_status) { :trial }
+  let(:send_filler_answers_enabled) { true }
+  let(:custom_branding_enabled) { true }
 
   let(:can_view_form) { true }
   let(:can_make_form_live) { false }
@@ -155,16 +157,33 @@ describe FormTaskListService do
         expect(section_rows.first[:path]).to eq "/forms/#{form.id}/payment-link"
       end
 
-      context "when the send_filler_answers feature is enabled", :feature_send_filler_answers do
-        it "has link to copy of answers settings" do
-          expect(section_rows[1][:task_name]).to eq "Give people the option to ask for a copy of their answers"
-          expect(section_rows[1][:path]).to eq "/forms/#{form.id}/copy-of-answers"
+      context "when the custom_branding feature is enabled" do
+        it "has link to brand settings" do
+          expect(section_rows[1][:task_name]).to eq "Choose a brand for your form"
+          expect(section_rows[1][:path]).to eq "/forms/#{form.id}/brand"
         end
       end
 
-      context "when the send_filler_answers feature is disabled", feature_send_filler_answers: false do
+      context "when the custom_branding feature is disabled" do
+        let(:custom_branding_enabled) { false }
+
+        it "does not have link to brand settings" do
+          expect(section_rows.map { |row| row[:path] }).not_to include("/forms/#{form.id}/brand")
+        end
+      end
+
+      context "when the send_filler_answers feature is enabled" do
+        it "has link to copy of answers settings" do
+          expect(section_rows[2][:task_name]).to eq "Give people the option to ask for a copy of their answers"
+          expect(section_rows[2][:path]).to eq "/forms/#{form.id}/copy-of-answers"
+        end
+      end
+
+      context "when the send_filler_answers feature is disabled" do
+        let(:send_filler_answers_enabled) { false }
+
         it "does not have link to copy of answers settings" do
-          expect(section_rows.count).to eq 1
+          expect(section_rows.count).to eq 2
         end
       end
     end
@@ -469,11 +488,27 @@ describe FormTaskListService do
               it "has the correct default status" do
                 expect(section_rows.second[:status]).to eq :not_started
               end
+
+              context "when the form has Welsh translations" do
+                let(:form) { create(:form, :ready_for_live, :with_welsh_translation, welsh_completed: false) }
+
+                it "has a link to make the English form live" do
+                  expect(section_rows.second[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_english_form_live")
+                  expect(section_rows.second[:path]).to eq "/forms/#{form.id}/make-live/en"
+                  expect(section_rows.second[:status]).to eq :not_started
+                end
+
+                it "has the make Welsh live task without a link" do
+                  expect(section_rows.third[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_welsh_form_live")
+                  expect(section_rows.third[:path]).to eq ""
+                  expect(section_rows.third[:status]).to eq :cannot_start
+                end
+              end
             end
 
             context "when form is live" do
               before do
-                allow(form).to receive(:is_live?).and_return(true)
+                allow(form).to receive_messages(is_live?: true, has_live_version: true)
               end
 
               it "has tasks" do
@@ -487,6 +522,74 @@ describe FormTaskListService do
               it "describes the task correctly" do
                 expect(section_rows.second[:task_name]).to eq I18n.t("forms.task_list_edit.make_form_live_section.make_live")
               end
+
+              context "when the form has a draft with welsh translations" do
+                before do
+                  allow(form).to receive(:has_welsh_translation?).and_return(true)
+                end
+
+                context "when the form has English changes that are not yet live" do
+                  before do
+                    allow(form).to receive(:changed_from_live_version?).with(language: "en").and_return(true)
+                  end
+
+                  it "has a link to make the English form live" do
+                    expect(section_rows.second[:task_name]).to eq I18n.t("forms.task_list_edit.make_form_live_section.make_english_form_live")
+                    expect(section_rows.second[:path]).to eq "/forms/#{form.id}/make-live/en"
+                    expect(section_rows.second[:status]).to eq :not_started
+                  end
+
+                  it "has the make Welsh live task without a link" do
+                    expect(section_rows.third[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_welsh_form_live")
+                    expect(section_rows.third[:path]).to eq ""
+                    expect(section_rows.third[:status]).to eq :cannot_start
+                  end
+
+                  context "when the Welsh version can be made live" do
+                    before do
+                      allow(form).to receive(:can_make_language_live?).with(language: "en").and_return(true)
+                      allow(form).to receive(:can_make_language_live?).with(language: "cy").and_return(true)
+                    end
+
+                    it "has a link to make the Welsh form live" do
+                      expect(section_rows.third[:task_name]).to eq "Make your Welsh form live"
+                      expect(section_rows.third[:path]).to eq "/forms/#{form.id}/make-live/cy"
+                      expect(section_rows.third[:status]).to eq :not_started
+                    end
+                  end
+                end
+
+                context "when the form has no draft English changes" do
+                  before do
+                    allow(form).to receive(:changed_from_live_version?).with(language: "en").and_return(false)
+                  end
+
+                  it "has the make English live task without a link" do
+                    expect(section_rows.second[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_english_form_live")
+                    expect(section_rows.second[:path]).to eq ""
+                    expect(section_rows.second[:status]).to eq :completed
+                  end
+
+                  it "has the make Welsh live task without a link" do
+                    expect(section_rows.third[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_welsh_form_live")
+                    expect(section_rows.third[:path]).to eq ""
+                    expect(section_rows.third[:status]).to eq :cannot_start
+                  end
+
+                  context "when the Welsh version can be made live" do
+                    before do
+                      allow(form).to receive(:can_make_language_live?).with(language: "en").and_return(true)
+                      allow(form).to receive(:can_make_language_live?).with(language: "cy").and_return(true)
+                    end
+
+                    it "has a link to make the Welsh form live" do
+                      expect(section_rows.third[:task_name]).to eq "Make your Welsh form live"
+                      expect(section_rows.third[:path]).to eq "/forms/#{form.id}/make-live/cy"
+                      expect(section_rows.third[:status]).to eq :not_started
+                    end
+                  end
+                end
+              end
             end
 
             context "when the form is archived" do
@@ -496,6 +599,26 @@ describe FormTaskListService do
                 expect(section_rows.second[:task_name]).to eq "Make your form live"
                 expect(section_rows.second[:path]).to eq "/forms/#{form.id}/make-live"
               end
+
+              context "when the form has a draft with welsh translations" do
+                let(:form) { create(:form, :archived_with_draft) }
+
+                before do
+                  allow(form).to receive(:has_welsh_translation?).and_return(true)
+                end
+
+                it "has a link to make the English form live" do
+                  expect(section_rows.second[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_english_form_live")
+                  expect(section_rows.second[:path]).to eq "/forms/#{form.id}/make-live/en"
+                  expect(section_rows.second[:status]).to eq :not_started
+                end
+
+                it "has the make Welsh live task without a link" do
+                  expect(section_rows.third[:task_name]).to eq I18n.t("forms.task_list_create.make_form_live_section.make_welsh_form_live")
+                  expect(section_rows.third[:path]).to eq ""
+                  expect(section_rows.third[:status]).to eq :cannot_start
+                end
+              end
             end
           end
         end
@@ -504,7 +627,6 @@ describe FormTaskListService do
 
     context "when editing an existing form" do
       let(:form) { create(:form, :live) }
-      let(:group) { create(:group, name: "Group 1", organisation:, status: group_status) }
       let(:can_make_form_live) { true }
 
       it "has the expected section titles" do
@@ -528,6 +650,7 @@ describe FormTaskListService do
           I18n.t("forms.task_list_edit.create_form_section.declaration"),
           I18n.t("forms.task_list_edit.create_form_section.what_happens_next"),
           I18n.t("forms.task_list_edit.create_form_optional_subsection.payment_link"),
+          I18n.t("forms.task_list_edit.create_form_optional_subsection.brand"),
           I18n.t("forms.task_list_edit.create_form_optional_subsection.copy_of_answers"),
           I18n.t("forms.task_list_edit.how_you_get_completed_forms_section.email"),
           I18n.t("forms.task_list_edit.how_you_get_completed_forms_section.confirm_email"),
