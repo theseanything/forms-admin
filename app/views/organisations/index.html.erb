@@ -11,13 +11,13 @@
           hint: { text: t('organisations.index.filter.name.hint') } %>
       </div>
       <div class="govuk-grid-column-one-third">
-        <%= f.govuk_collection_select :mou_signed,
-          @filter_input.mou_signed_options,
+        <%= f.govuk_collection_select :agreement_type,
+          @filter_input.agreement_type_options,
           :value,
           :label,
           class: ["govuk-!-width-full"],
-          label: { text: t('organisations.index.filter.mou_signed.label'), size: 's' },
-          hint: { text: t('organisations.index.filter.mou_signed.hint') } %>
+          label: { text: t('organisations.index.filter.agreement_type.label'), size: 's' },
+          hint: { text: t('organisations.index.filter.agreement_type.hint') } %>
       </div>
       <div class="govuk-grid-column-one-third">
         <%= f.govuk_collection_select :sort,
@@ -59,7 +59,7 @@
           row.with_cell(header: true, text: t("organisations.index.table_headings.name"))
           row.with_cell(header: true, text: t("organisations.index.table_headings.users"), numeric: true)
           row.with_cell(header: true, text: t("organisations.index.table_headings.forms"), numeric: true)
-          row.with_cell(header: true, text: t("organisations.index.table_headings.mou_signed"))
+          row.with_cell(header: true, text: t("organisations.index.table_headings.agreement_type"))
         end
       end %>
 
@@ -71,7 +71,12 @@
             end
             row.with_cell(text: @user_counts.fetch(organisation.id, 0).to_s, numeric: true)
             row.with_cell(text: @form_counts.fetch(organisation.id, 0).to_s, numeric: true)
-            row.with_cell(text: t("organisations.boolean.#{@organisation_ids_with_mou.include?(organisation.id)}"))
+            agreement_types = @agreement_types.fetch(organisation.id, [])
+            if agreement_types.any?
+              row.with_cell(text: agreement_types.map { |agreement_type| t("mou_signatures.index.agreement_type.#{agreement_type}") }.join(", "))
+            else
+              row.with_cell(text: t("organisations.index.agreement_type_none"))
+            end
           end
         end
       end %>

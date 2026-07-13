@@ -6,7 +6,7 @@ describe "organisations/index.html.erb" do
   let(:organisations) { [organisation, closed_organisation] }
   let(:user_counts) { { organisation.id => 3 } }
   let(:form_counts) { { organisation.id => 2 } }
-  let(:organisation_ids_with_mou) { Set.new([organisation.id]) }
+  let(:agreement_types) { { organisation.id => %w[crown] } }
   let(:pagy) { Pagy.new(count: organisations.size, page: 1, limit: 50) }
   let(:filter_input) { Organisations::FilterInput.new }
 
@@ -16,7 +16,7 @@ describe "organisations/index.html.erb" do
     assign(:organisations, organisations)
     assign(:user_counts, user_counts)
     assign(:form_counts, form_counts)
-    assign(:organisation_ids_with_mou, organisation_ids_with_mou)
+    assign(:agreement_types, agreement_types)
 
     render template: "organisations/index"
   end
@@ -31,10 +31,12 @@ describe "organisations/index.html.erb" do
 
   it "contains a filter form" do
     expect(rendered).to have_field("filter[name]")
-    expect(rendered).to have_select("filter[mou_signed]", options: [
-      I18n.t("organisations.index.filter.mou_signed.any"),
-      I18n.t("organisations.boolean.true"),
-      I18n.t("organisations.boolean.false"),
+    expect(rendered).to have_select("filter[agreement_type]", options: [
+      I18n.t("organisations.index.filter.agreement_type.any"),
+      I18n.t("mou_signatures.index.agreement_type.crown"),
+      I18n.t("mou_signatures.index.agreement_type.non_crown"),
+      I18n.t("organisations.index.filter.agreement_type.signed"),
+      I18n.t("organisations.index.filter.agreement_type.none"),
     ])
     expect(rendered).to have_button(I18n.t("organisations.index.filter.submit"))
   end
@@ -78,9 +80,17 @@ describe "organisations/index.html.erb" do
     expect(rendered).to have_xpath "//tbody/tr[2]/td[3]", text: "0"
   end
 
-  it "shows whether an MOU has been signed" do
-    expect(rendered).to have_xpath "//tbody/tr[1]/td[4]", text: I18n.t("organisations.boolean.true")
-    expect(rendered).to have_xpath "//tbody/tr[2]/td[4]", text: I18n.t("organisations.boolean.false")
+  it "shows the agreement type for each organisation" do
+    expect(rendered).to have_xpath "//tbody/tr[1]/td[4]", text: I18n.t("mou_signatures.index.agreement_type.crown")
+    expect(rendered).to have_xpath "//tbody/tr[2]/td[4]", text: I18n.t("organisations.index.agreement_type_none")
+  end
+
+  context "when an organisation has both agreement types" do
+    let(:agreement_types) { { organisation.id => %w[crown non_crown] } }
+
+    it "shows both agreement types" do
+      expect(rendered).to have_xpath "//tbody/tr[1]/td[4]", text: "Crown MOU, Non-crown agreement"
+    end
   end
 
   context "when the organisations span multiple pages" do

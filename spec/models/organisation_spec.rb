@@ -72,20 +72,37 @@ RSpec.describe Organisation, type: :model do
       end
     end
 
-    describe ".by_mou_signed" do
-      let!(:organisation_with_mou) { create :organisation, :with_signed_mou, slug: "org-with-mou" }
-      let!(:organisation_without_mou) { create :organisation, slug: "org-without-mou" }
+    describe ".by_agreement_type" do
+      let!(:organisation_with_crown_mou) { create :organisation, :with_signed_mou, slug: "org-with-crown-mou" }
+      let!(:organisation_with_non_crown_agreement) { create :organisation, slug: "org-with-non-crown-agreement" }
+      let!(:organisation_without_agreement) { create :organisation, slug: "org-without-agreement" }
 
-      it "returns organisations with a signed MOU when true" do
-        expect(described_class.by_mou_signed("true")).to contain_exactly(organisation_with_mou)
+      before do
+        create :mou_signature_for_organisation, organisation: organisation_with_non_crown_agreement, agreement_type: :non_crown
       end
 
-      it "returns organisations without a signed MOU when false" do
-        expect(described_class.by_mou_signed("false")).to contain_exactly(organisation_without_mou)
+      it "returns organisations with a Crown MOU when crown" do
+        expect(described_class.by_agreement_type("crown")).to contain_exactly(organisation_with_crown_mou)
+      end
+
+      it "returns organisations with a non-crown agreement when non_crown" do
+        expect(described_class.by_agreement_type("non_crown")).to contain_exactly(organisation_with_non_crown_agreement)
+      end
+
+      it "returns organisations with any signed agreement when signed" do
+        expect(described_class.by_agreement_type("signed")).to contain_exactly(organisation_with_crown_mou, organisation_with_non_crown_agreement)
+      end
+
+      it "returns organisations without a signed agreement when none" do
+        expect(described_class.by_agreement_type("none")).to contain_exactly(organisation_without_agreement)
       end
 
       it "returns all organisations when blank" do
-        expect(described_class.by_mou_signed(nil)).to contain_exactly(organisation_with_mou, organisation_without_mou)
+        expect(described_class.by_agreement_type(nil)).to contain_exactly(organisation_with_crown_mou, organisation_with_non_crown_agreement, organisation_without_agreement)
+      end
+
+      it "returns all organisations for an unknown value" do
+        expect(described_class.by_agreement_type("malicious")).to contain_exactly(organisation_with_crown_mou, organisation_with_non_crown_agreement, organisation_without_agreement)
       end
     end
   end

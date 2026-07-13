@@ -53,9 +53,12 @@ RSpec.describe OrganisationsController, type: :request do
     end
 
     context "when filtering" do
-      let!(:organisation_with_mou) { create :organisation, :with_signed_mou, slug: "department-with-mou" }
+      let!(:organisation_with_crown_mou) { create :organisation, :with_signed_mou, slug: "department-with-mou" }
+      let!(:organisation_with_non_crown_agreement) { create :organisation, slug: "department-with-non-crown-agreement" }
 
       before do
+        create :mou_signature_for_organisation, organisation: organisation_with_non_crown_agreement, agreement_type: :non_crown
+
         login_as_super_admin_user
       end
 
@@ -66,18 +69,28 @@ RSpec.describe OrganisationsController, type: :request do
         expect(response.body).not_to include(organisation.name)
       end
 
-      it "filters organisations by whether an MOU is signed" do
-        get path, params: { filter: { mou_signed: "true" } }
+      it "filters organisations with a Crown MOU" do
+        get path, params: { filter: { agreement_type: "crown" } }
 
-        expect(response.body).to include(organisation_with_mou.name)
+        expect(response.body).to include(organisation_with_crown_mou.name)
+        expect(response.body).not_to include(organisation_with_non_crown_agreement.name)
         expect(response.body).not_to include(closed_organisation.name)
       end
 
-      it "filters organisations without a signed MOU" do
-        get path, params: { filter: { mou_signed: "false" } }
+      it "filters organisations with a non-crown agreement" do
+        get path, params: { filter: { agreement_type: "non_crown" } }
+
+        expect(response.body).to include(organisation_with_non_crown_agreement.name)
+        expect(response.body).not_to include(organisation_with_crown_mou.name)
+        expect(response.body).not_to include(closed_organisation.name)
+      end
+
+      it "filters organisations without a signed agreement" do
+        get path, params: { filter: { agreement_type: "none" } }
 
         expect(response.body).to include(closed_organisation.name)
-        expect(response.body).not_to include(organisation_with_mou.name)
+        expect(response.body).not_to include(organisation_with_crown_mou.name)
+        expect(response.body).not_to include(organisation_with_non_crown_agreement.name)
       end
     end
 
@@ -125,10 +138,10 @@ RSpec.describe OrganisationsController, type: :request do
         expect(organisation_row_order(response).first).to eq(organisation_a.name_with_abbreviation)
       end
 
-      it "sorts while filtering by MOU signed at the same time" do
+      it "sorts while filtering by agreement type at the same time" do
         organisation_with_mou = create :organisation, :with_signed_mou, name: "Mike department", slug: "mike-department"
 
-        get path, params: { filter: { mou_signed: "true", sort: "users" } }
+        get path, params: { filter: { agreement_type: "crown", sort: "users" } }
 
         expect(response).to have_http_status(:ok)
         expect(organisation_row_order(response)).to include(organisation_with_mou.name_with_abbreviation)

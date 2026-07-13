@@ -10,8 +10,8 @@ RSpec.describe Organisations::FilterInput, type: :model do
       end
     end
 
-    context "when the mou_signed filter is set" do
-      subject(:input) { described_class.new(mou_signed: "true") }
+    context "when the agreement_type filter is set" do
+      subject(:input) { described_class.new(agreement_type: "crown") }
 
       it "returns true" do
         expect(input.has_filters?).to be true
@@ -37,12 +37,14 @@ RSpec.describe Organisations::FilterInput, type: :model do
     end
   end
 
-  describe "#mou_signed_options" do
+  describe "#agreement_type_options" do
     it "returns the correct options" do
-      expect(described_class.new.mou_signed_options).to eq([
-        OpenStruct.new(label: I18n.t("organisations.index.filter.mou_signed.any")),
-        OpenStruct.new(label: I18n.t("organisations.boolean.true"), value: "true"),
-        OpenStruct.new(label: I18n.t("organisations.boolean.false"), value: "false"),
+      expect(described_class.new.agreement_type_options).to eq([
+        OpenStruct.new(label: I18n.t("organisations.index.filter.agreement_type.any")),
+        OpenStruct.new(label: I18n.t("mou_signatures.index.agreement_type.crown"), value: "crown"),
+        OpenStruct.new(label: I18n.t("mou_signatures.index.agreement_type.non_crown"), value: "non_crown"),
+        OpenStruct.new(label: I18n.t("organisations.index.filter.agreement_type.signed"), value: "signed"),
+        OpenStruct.new(label: I18n.t("organisations.index.filter.agreement_type.none"), value: "none"),
       ])
     end
   end
