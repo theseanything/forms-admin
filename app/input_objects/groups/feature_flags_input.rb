@@ -26,11 +26,16 @@ module Groups
       # a group's forms or data in ways that would need to be manually reversed before
       # it is safe to disable, so we only ever turn flags on here.
       group.assign_attributes(flags_to_enable.index_with(true))
+      @flags_changed = group.changed?
 
       return true if group.save
 
       errors.merge!(group.errors)
       false
+    end
+
+    def flags_changed?
+      @flags_changed
     end
 
   private

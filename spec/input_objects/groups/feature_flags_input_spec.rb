@@ -35,4 +35,22 @@ RSpec.describe Groups::FeatureFlagsInput, type: :model do
       expect(group.reload[feature_flag]).to be(true)
     end
   end
+
+  describe "#flags_changed?" do
+    it "is true when submitting enabled a flag" do
+      input = described_class.new({ group:, feature_flag => "true" })
+      input.submit
+
+      expect(input.flags_changed?).to be(true)
+    end
+
+    it "is false when submitting made no changes" do
+      group.update!(feature_flag => true)
+
+      input = described_class.new({ group:, feature_flag => "true" })
+      input.submit
+
+      expect(input.flags_changed?).to be(false)
+    end
+  end
 end

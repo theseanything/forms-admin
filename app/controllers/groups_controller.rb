@@ -119,7 +119,8 @@ class GroupsController < WebController
     @feature_flags_input = Groups::FeatureFlagsInput.new(feature_flags_input_params)
 
     if @feature_flags_input.submit
-      redirect_to @group, success: t("groups.success_messages.feature_flags"), status: :see_other
+      success_message = t("groups.success_messages.feature_flags") if @feature_flags_input.flags_changed?
+      redirect_to @group, success: success_message, status: :see_other
     else
       render :feature_flags, status: :unprocessable_content
     end

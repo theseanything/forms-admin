@@ -502,6 +502,7 @@ RSpec.describe "/groups", type: :request do
         expect(group.reload[feature_flag]).to be(true)
         expect(FeatureService.new(group:).enabled?(feature_name)).to be(true)
         expect(response).to redirect_to(group_path(group))
+        expect(flash[:success]).to eq(I18n.t("groups.success_messages.feature_flags"))
       end
 
       it "does not turn an enabled feature flag off" do
@@ -513,10 +514,18 @@ RSpec.describe "/groups", type: :request do
         expect(FeatureService.new(group:).enabled?(feature_name)).to be(true)
       end
 
+      it "does not show a success message when no flags have changed" do
+        post feature_flags_group_path(group), params: { groups_feature_flags_input: { feature_flag => "false" } }
+
+        expect(response).to redirect_to(group_path(group))
+        expect(flash[:success]).to be_nil
+      end
+
       it "redirects without error when no params are submitted" do
         post feature_flags_group_path(group)
 
         expect(response).to redirect_to(group_path(group))
+        expect(flash[:success]).to be_nil
       end
 
       it "leaves an enabled flag on while enabling another" do
