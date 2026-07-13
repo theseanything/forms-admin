@@ -215,8 +215,6 @@ Rails.application.routes.draw do
     resource :contact_for_research, controller: :contact_for_research, only: %i[edit update]
   end
 
-  resources :mou_signatures, only: %i[index], path: "mous"
-
   resources :organisations, only: %i[index show]
 
   resource :mou_signature, only: %i[new show create], path: "/memorandum-of-understanding", defaults: { agreement_type: :crown }, as: :mou_signature do

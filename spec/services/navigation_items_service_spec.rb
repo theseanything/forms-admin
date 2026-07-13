@@ -19,13 +19,11 @@ describe NavigationItemsService do
 
     context "when user is present" do
       let(:can_manage_user) { false }
-      let(:can_manage_mous) { false }
       let(:can_view_reports) { false }
       let(:can_view_organisations) { false }
 
       before do
         allow(Pundit).to receive(:policy).with(user, :user).and_return(instance_double(UserPolicy, can_manage_user?: can_manage_user))
-        allow(Pundit).to receive(:policy).with(user, :mou_signature).and_return(instance_double(MouSignaturePolicy, can_manage_mous?: can_manage_mous))
         allow(Pundit).to receive(:policy).with(user, :report).and_return(instance_double(ReportPolicy, can_view_reports?: can_view_reports))
         allow(Pundit).to receive(:policy).with(user, :organisation).and_return(instance_double(OrganisationPolicy, can_view_organisations?: can_view_organisations))
         allow(Settings.forms_product_page).to receive(:support_url).and_return(support_url)
@@ -37,15 +35,6 @@ describe NavigationItemsService do
         it "includes users in navigation items" do
           users_item = NavigationItemsService::NavigationItem.new(text: I18n.t("header.users"), href: users_path, active: false)
           expect(service.navigation_items).to include(users_item)
-        end
-      end
-
-      context "when user can manage mous" do
-        let(:can_manage_mous) { true }
-
-        it "includes mous in navigation items" do
-          mous_item = NavigationItemsService::NavigationItem.new(text: I18n.t("header.mous"), href: mou_signatures_path, active: false)
-          expect(service.navigation_items).to include(mous_item)
         end
       end
 
