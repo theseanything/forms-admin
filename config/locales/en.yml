@@ -746,7 +746,7 @@ en:
     feature_flags:
       flags:
         custom_branding_enabled: Custom branding
-        multiple_branches_enabled: Multiple branches and skip conditions
+        multiple_branches_enabled: Multiple branches
         send_filler_answers_enabled: Send a copy of completed answers to form fillers
       hint: You can turn a feature flag on, but not off. A feature can change how a form or group works, which might take extra steps to reverse. Contact the team if you need to switch a feature off.
       title: Feature flags
